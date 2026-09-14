@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1B2733"/>
+      <stop offset="55%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#26C6DA"/>
+    </linearGradient>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#26C6DA"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1920" height="1080" fill="url(#bgGradient)"/>
+
+  <!-- Formas geometricas sutiles de fondo, para dar profundidad sin
+       distraer de los iconos del escritorio. -->
+  <polygon points="0,1080 0,780 700,1080" fill="#FFFFFF" opacity="0.04"/>
+  <polygon points="1920,0 1920,300 1200,0" fill="#FFFFFF" opacity="0.05"/>
+  <circle cx="1650" cy="220" r="260" fill="#FFFFFF" opacity="0.03"/>
+
+  <!-- Logo + wordmark, esquina inferior derecha -->
+  <g transform="translate(1560, 940)">
+    <rect x="0" y="0" width="80" height="80" rx="18" fill="url(#logoGradient)"/>
+    <path d="M 17 29
+             L 32 29
+             L 41 59
+             L 50 36
+             L 59 59
+             L 68 29
+             L 83 29
+             L 65 65
+             L 50 65
+             L 44 50
+             L 38 65
+             L 23 65
+             Z"
+          transform="scale(0.72) translate(6, 11)"
+          fill="#FFFFFF"/>
+    <text x="98" y="35" font-family="'Inter','Noto Sans',sans-serif" font-weight="700"
+          font-size="34" fill="#FFFFFF">WinLux</text>
+    <text x="98" y="60" font-family="'Inter','Noto Sans',sans-serif" font-weight="500"
+          font-size="16" letter-spacing="3" fill="#E3F2FD">OPERATING SYSTEM</text>
+  </g>
+</svg>

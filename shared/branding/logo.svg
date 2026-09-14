@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="winluxGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#26C6DA"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="512" height="512" rx="96" fill="url(#winluxGradient)"/>
+
+  <!-- Estilizacion de una "W" geometrica formada por dos paneles,
+       como guiño tanto a la ventana de Windows como al pinguino de Linux. -->
+  <path d="M 96 160
+           L 176 160
+           L 216 320
+           L 256 200
+           L 296 320
+           L 336 160
+           L 416 160
+           L 336 384
+           L 256 384
+           L 226 300
+           L 196 384
+           L 116 384
+           Z"
+        fill="#FFFFFF"/>
+</svg>

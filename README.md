@@ -79,3 +79,10 @@ el plan de trabajo y el estado actual de cada edición.
 
 Cualquier mejora, corrección o nueva funcionalidad es bienvenida. Abrí un
 issue o un pull request.
+
+## Licencia
+
+El código, los scripts y los assets de marca propios de este proyecto están
+bajo licencia [MIT](LICENSE). El software de terceros que se empaqueta
+dentro de cada edición (entornos de escritorio, aplicaciones, el kernel
+Linux, etc.) mantiene sus propias licencias originales.

@@ -41,6 +41,9 @@ if [[ "$(id -u)" -ne 0 ]]; then
     exec sudo "$0" "$EDITION"
 fi
 
+echo "==> Instalando branding compartido"
+"$REPO_ROOT/shared/scripts/install-branding.sh" "$CONFIG_DIR"
+
 echo "==> Compilando $EDITION"
 cd "$CONFIG_DIR"
 

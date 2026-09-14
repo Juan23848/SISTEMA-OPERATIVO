@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 160" width="720" height="160">
+  <defs>
+    <linearGradient id="winluxGradientWordmark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#26C6DA"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="160" height="160" rx="32" fill="url(#winluxGradientWordmark)"/>
+  <path d="M 34 58
+           L 64 58
+           L 82 118
+           L 100 72
+           L 118 118
+           L 136 58
+           L 166 58
+           L 130 130
+           L 100 130
+           L 88 100
+           L 76 130
+           L 46 130
+           Z"
+        transform="scale(0.72) translate(10, 22)"
+        fill="#FFFFFF"/>
+
+  <text x="190" y="78" font-family="'Inter','Noto Sans',sans-serif" font-weight="700"
+        font-size="64" fill="#1B2733">WinLux</text>
+  <text x="190" y="122" font-family="'Inter','Noto Sans',sans-serif" font-weight="500"
+        font-size="34" letter-spacing="6" fill="#1565C0">OPERATING SYSTEM</text>
+</svg>

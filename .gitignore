@@ -1,5 +1,6 @@
 # Artefactos generados por live-build
 editions/*/build/
+editions/*/config/includes.chroot/usr/
 editions/*/config/.build/
 editions/*/config/cache/
 editions/*/config/chroot/

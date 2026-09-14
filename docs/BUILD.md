@@ -14,8 +14,12 @@ Instalar las herramientas necesarias:
 
 ```bash
 sudo apt update
-sudo apt install live-build qemu-system-x86 xorriso
+sudo apt install live-build qemu-system-x86 xorriso librsvg2-bin
 ```
+
+`librsvg2-bin` es opcional pero recomendado: permite convertir los assets de
+marca (`shared/branding/*.svg`) a PNG durante el build. Si no está instalado,
+`scripts/build.sh` copia los SVG originales igual, sin fallar.
 
 ## Compilar una edición
 
@@ -36,10 +40,13 @@ Ejemplo:
 
 El script:
 
-1. Entra a `editions/<edicion>/config/`.
-2. Corre `lb clean` para asegurar un build limpio.
-3. Corre `lb build`, que descarga paquetes y arma la imagen.
-4. Deja la ISO resultante en `editions/<edicion>/build/`.
+1. Copia el branding compartido (`shared/branding/`) a las rutas del sistema
+   dentro de `includes.chroot/` de la edición (ver
+   [`shared/scripts/install-branding.sh`](../shared/scripts/install-branding.sh)).
+2. Entra a `editions/<edicion>/config/`.
+3. Corre `lb clean` para asegurar un build limpio.
+4. Corre `lb build`, que descarga paquetes y arma la imagen.
+5. Deja la ISO resultante en `editions/<edicion>/build/`.
 
 Un build completo puede tardar entre 30 minutos y varias horas, según la
 conexión a internet y el hardware de la máquina que compila.
