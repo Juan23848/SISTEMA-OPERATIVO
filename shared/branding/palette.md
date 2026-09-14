@@ -1,51 +1,53 @@
-# Paleta e identidad visual de Antü OS
+# Identidad visual de Antü OS
 
-**Antü** ("sol" en mapudungún) es la luz que atraviesa la oscuridad. La
-identidad visual toma esa idea de forma literal: fondos azules muy
-profundos, casi negros, atravesados por líneas de luz curvas — el brillo
-abriéndose paso en la oscuridad — en vez de un imaginario "solar" cálido.
-
-## Colores
-
-| Uso | Nombre | Hex |
-|---|---|---|
-| Fondo profundo | Antü Void | `#04070D` |
-| Fondo base | Antü Navy | `#0A1730` |
-| Primario (glow) | Antü Blue | `#1E6FEB` |
-| Brillo / acento | Antü Cyan | `#5AD8FF` |
-| Brillo intenso | Antü Glow | `#BFEFFF` |
-| Texto sobre oscuro | White | `#F2F9FF` |
-
-El degradé de marca va de **Antü Navy** (oscuridad) hacia **Antü Cyan/Glow**
-(luz), siempre como si la luz emergiera desde un punto y se abriera paso
-entre curvas oscuras. Se usa en el logo, el wallpaper y las pantallas de
-arranque (splash/GRUB).
-
-## Variación por edición
-
-- **Antü Legacy**: mismo concepto pero con glow reducido y sin blur (menos
-  costoso de renderizar en hardware viejo): líneas de luz más simples, casi
-  planas.
-- **Antü Standard**: el balance que está definido acá (glow moderado).
-- **Antü Pro**: glow más intenso y capas adicionales de profundidad,
-  aprovechando que el hardware soporta composición avanzada.
-
-## Tipografía
-
-- Interfaz: la fuente por defecto de cada entorno de escritorio. Recomendado:
-  **Inter** o **Noto Sans** si se quiere unificar look entre ediciones.
-- Wordmark/logo: geométrica, con **letter-spacing amplio** en mayúsculas
-  ("A N T Ü"), como una señal de luz — no un logotipo compacto.
+**Antü** ("sol" en mapudungún) es la luz que atraviesa la oscuridad. Logo y
+wallpaper diseñados por Juan y Sofi (asistente de IA del proyecto).
 
 ## Archivos de esta carpeta
 
-- `logo.svg` — ícono cuadrado: arco de luz en forma de "A" con línea de
-  horizonte brillante debajo (pixmaps, launcher, favicon del proyecto).
-- `wordmark.svg` — logo horizontal con el ícono + "ANTÜ", para
-  documentación, splash screens e instalador.
-- `wallpaper.svg` — fondo de escritorio 1920x1080 con líneas de luz curvas
-  sobre fondo azul profundo, basado en la referencia visual del proyecto.
+- **`logo.png`** — logo oficial (1254×1254, fondo transparente): el ícono
+  "A" tipo arco de luz + el wordmark "ANTÜ" debajo. Es el archivo fuente,
+  úsalo tal cual (no recrear a mano).
+- **`wallpaper-night.png`** (1672×941) — fondo de escritorio "noche": azul
+  muy profundo con haces de luz celestes. Es el wallpaper **por defecto**
+  en las 3 ediciones.
+- **`wallpaper-day.png`** (1672×941) — fondo de escritorio "día": versión
+  más clara, con un brillo dorado/blanco arriba a la derecha (más literal
+  con lo de "sol"). Disponible como alternativa (ver
+  [`docs/BUILD.md`](../../docs/BUILD.md) para cómo usarlo en vez del de
+  noche).
 
-Estos son los assets **fuente** (editables, en SVG). `scripts/build.sh` los
-copia automáticamente a las rutas del sistema dentro de cada edición al
-compilar.
+`scripts/build.sh` copia estos archivos automáticamente a las rutas del
+sistema dentro de cada edición al compilar (vía
+[`shared/scripts/install-branding.sh`](../scripts/install-branding.sh)).
+
+## Colores de referencia
+
+Sampleados directamente de los archivos originales, para quien necesite
+recrear algún elemento de UI a juego (temas, splash screens, etc.):
+
+| Uso | Nombre | Hex | De dónde sale |
+|---|---|---|---|
+| Fondo profundo (noche) | Antü Void | `#00010F` | Esquina más oscura de `wallpaper-night.png` |
+| Fondo base (noche) | Antü Navy | `#011954` | Fondo general de `wallpaper-night.png` |
+| Brillo / línea de luz | Antü Cyan | `#1EAEFC` | Línea de horizonte del logo / haces de luz |
+| Brillo intenso | Antü Glow | `#CCF5FC` | Punto más brillante del pico del logo |
+| Azul del logo (bordes) | Antü Blue | `#006CE2` | Borde exterior de las "patas" de la A |
+| Fondo claro (día) | Antü Dawn | `#FEF2DA` | Brillo dorado de `wallpaper-day.png` |
+| Fondo base (día) | Antü Day Navy | `#092042` | Zona azul de `wallpaper-day.png` |
+
+## Variación por edición
+
+- **Antü Legacy**: wallpaper "noche" sin efectos extra (ya es una imagen
+  estática liviana, no requiere ajuste para hardware viejo).
+- **Antü Standard**: wallpaper "noche" (default).
+- **Antü Pro**: se puede usar el wallpaper "día" como variante distintiva,
+  o mantener "noche" — a definir cuando se arme el tema completo de esta
+  edición.
+
+## Tipografía
+
+El wordmark ya viene renderizado dentro de `logo.png`. Para el resto de la
+interfaz (menús, ventanas), usar la fuente por defecto de cada entorno de
+escritorio, o unificar con **Inter** / **Noto Sans** si se busca consistencia
+entre ediciones.

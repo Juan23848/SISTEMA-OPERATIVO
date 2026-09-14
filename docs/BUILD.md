@@ -14,12 +14,8 @@ Instalar las herramientas necesarias:
 
 ```bash
 sudo apt update
-sudo apt install live-build qemu-system-x86 xorriso librsvg2-bin
+sudo apt install live-build qemu-system-x86 xorriso
 ```
-
-`librsvg2-bin` es opcional pero recomendado: permite convertir los assets de
-marca (`shared/branding/*.svg`) a PNG durante el build. Si no está instalado,
-`scripts/build.sh` copia los SVG originales igual, sin fallar.
 
 ## Compilar una edición
 
@@ -40,9 +36,13 @@ Ejemplo:
 
 El script:
 
-1. Copia el branding compartido (`shared/branding/`) a las rutas del sistema
-   dentro de `includes.chroot/` de la edición (ver
+1. Copia el branding compartido (`shared/branding/`, wallpaper "noche" por
+   defecto y el logo) a las rutas del sistema dentro de `includes.chroot/`
+   de la edición (ver
    [`shared/scripts/install-branding.sh`](../shared/scripts/install-branding.sh)).
+   Para usar el wallpaper "día" en vez del de "noche", corré ese script a
+   mano con `day` como segundo parámetro antes de compilar (por ejemplo:
+   `shared/scripts/install-branding.sh editions/antu-pro/config day`).
 2. Entra a `editions/<edicion>/config/`.
 3. Corre `lb clean` para asegurar un build limpio.
 4. Corre `lb build`, que descarga paquetes y arma la imagen.
