@@ -1,13 +1,13 @@
 #!/bin/sh
 # Sobrescribe /etc/os-release para que el sistema se identifique como
-# WinLux Pro en vez de Debian genérico.
+# Antü Pro en vez de Debian genérico.
 set -e
 
 cat > /etc/os-release <<'EOF'
-PRETTY_NAME="WinLux Pro"
-NAME="WinLux OS"
+PRETTY_NAME="Antü Pro"
+NAME="Antü OS"
 VERSION="Pro"
-ID=winlux
+ID=antu
 ID_LIKE=debian
 HOME_URL="https://github.com/Juan23848/SISTEMA-OPERATIVO"
 EOF

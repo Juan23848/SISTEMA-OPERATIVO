@@ -1,9 +1,12 @@
-# WinLux OS
+# Antü OS
 
 **Un sistema operativo basado en Linux, tan fácil de programar y mantener como
 Linux, con la robustez y el entorno gráfico familiar de Windows.**
 
-WinLux OS es una distribución basada en Debian/Ubuntu que reemplaza el
+*Antü* significa "sol" en mapudungún: la luz que se abre paso en la
+oscuridad. Es la idea detrás de este proyecto y de su identidad visual.
+
+Antü OS es una distribución basada en Debian/Ubuntu que reemplaza el
 escritorio por defecto con un entorno gráfico propio inspirado en Windows,
 manteniendo por debajo toda la base técnica de Linux: kernel, gestor de
 paquetes (APT), compatibilidad de hardware y drivers.
@@ -13,9 +16,9 @@ hardware y distinto uso:
 
 | Edición | Carpeta | Hardware objetivo | Inspiración de escritorio |
 |---|---|---|---|
-| **WinLux Legacy** | [`editions/winlux-legacy`](editions/winlux-legacy) | PCs viejas, equivalentes a las que corrían Windows XP (32 bits, poca RAM) | Escritorio clásico, mínimo consumo de recursos |
-| **WinLux Standard** | [`editions/winlux-standard`](editions/winlux-standard) | Uso doméstico/oficina, equivalente a Windows 7 en adelante | Escritorio moderno pero liviano, barra de tareas y menú inicio clásicos |
-| **WinLux Pro** | [`editions/winlux-pro`](editions/winlux-pro) | Hardware potente actual | Escritorio con efectos visuales completos, mejor aprovechamiento de CPU/GPU/multinúcleo |
+| **Antü Legacy** | [`editions/antu-legacy`](editions/antu-legacy) | PCs viejas, equivalentes a las que corrían Windows XP (32 bits, poca RAM) | Escritorio clásico, mínimo consumo de recursos |
+| **Antü Standard** | [`editions/antu-standard`](editions/antu-standard) | Uso doméstico/oficina, equivalente a Windows 7 en adelante | Escritorio moderno pero liviano, barra de tareas y menú inicio clásicos |
+| **Antü Pro** | [`editions/antu-pro`](editions/antu-pro) | Hardware potente actual | Escritorio con efectos visuales completos, mejor aprovechamiento de CPU/GPU/multinúcleo |
 
 ## Filosofía del proyecto
 
@@ -43,9 +46,9 @@ SISTEMA-OPERATIVO/
 │   ├── ROADMAP.md
 │   └── BUILD.md
 ├── editions/
-│   ├── winlux-legacy/       # Edición para hardware antiguo (estilo XP)
-│   ├── winlux-standard/     # Edición hogar/oficina (estilo Windows 7+)
-│   └── winlux-pro/          # Edición de alto rendimiento
+│   ├── antu-legacy/         # Edición para hardware antiguo (estilo XP)
+│   ├── antu-standard/       # Edición hogar/oficina (estilo Windows 7+)
+│   └── antu-pro/            # Edición de alto rendimiento
 ├── shared/
 │   ├── branding/            # Logo, wallpapers y assets comunes a las 3 ediciones
 │   └── scripts/             # Utilidades compartidas por los scripts de build
@@ -65,10 +68,10 @@ Ver [`docs/BUILD.md`](docs/BUILD.md) para la guía completa. En resumen:
 # Requiere Debian/Ubuntu con live-build instalado
 sudo apt install live-build
 
-./scripts/build.sh winlux-standard
+./scripts/build.sh antu-standard
 ```
 
-Esto genera una imagen ISO booteable en `editions/winlux-standard/build/`.
+Esto genera una imagen ISO booteable en `editions/antu-standard/build/`.
 
 ## Estado del proyecto
 

@@ -1,13 +1,13 @@
 #!/bin/sh
 # Sobrescribe /etc/os-release para que el sistema se identifique como
-# WinLux Legacy en vez de Debian genérico.
+# Antü Legacy en vez de Debian genérico.
 set -e
 
 cat > /etc/os-release <<'EOF'
-PRETTY_NAME="WinLux Legacy"
-NAME="WinLux OS"
+PRETTY_NAME="Antü Legacy"
+NAME="Antü OS"
 VERSION="Legacy"
-ID=winlux
+ID=antu
 ID_LIKE=debian
 HOME_URL="https://github.com/Juan23848/SISTEMA-OPERATIVO"
 EOF

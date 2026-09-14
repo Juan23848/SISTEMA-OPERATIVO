@@ -1,6 +1,6 @@
 # Guía de compilación
 
-WinLux OS se compila con [`live-build`](https://manpages.debian.org/testing/live-build/lb.1.en.html),
+Antü OS se compila con [`live-build`](https://manpages.debian.org/testing/live-build/lb.1.en.html),
 la herramienta oficial de Debian para construir imágenes live/instalables.
 
 ## Requisitos
@@ -29,13 +29,13 @@ Desde la raíz del repositorio:
 ./scripts/build.sh <edicion>
 ```
 
-Donde `<edicion>` es una de: `winlux-legacy`, `winlux-standard`,
-`winlux-pro`.
+Donde `<edicion>` es una de: `antu-legacy`, `antu-standard`,
+`antu-pro`.
 
 Ejemplo:
 
 ```bash
-./scripts/build.sh winlux-standard
+./scripts/build.sh antu-standard
 ```
 
 El script:
@@ -54,7 +54,7 @@ conexión a internet y el hardware de la máquina que compila.
 ## Probar la ISO en una máquina virtual
 
 ```bash
-./scripts/test-qemu.sh editions/winlux-standard/build/*.iso
+./scripts/test-qemu.sh editions/antu-standard/build/*.iso
 ```
 
 Esto levanta QEMU con RAM y CPU razonables para probar el arranque en modo

@@ -1,4 +1,4 @@
-# WinLux Standard
+# Antü Standard
 
 Edición para uso **doméstico y de oficina**, en hardware equivalente al de
 **Windows 7 en adelante**: procesadores multinúcleo modernos, 4GB+ de RAM.
@@ -8,7 +8,8 @@ Edición para uso **doméstico y de oficina**, en hardware equivalente al de
 - Arquitectura: `amd64`.
 - Escritorio: **Cinnamon**, con menú inicio, barra de tareas y bandeja del
   sistema con la disposición clásica de Windows 7/10.
-- Apariencia: moderna pero liviana, balance entre estética y recursos.
+- Apariencia: identidad Antü con glow moderado (fondo azul profundo, líneas
+  de luz), balance entre estética y recursos.
 - Aplicaciones base: navegador, suite ofimática, reproductor multimedia,
   editor de imágenes.
 
@@ -21,7 +22,7 @@ público más amplio.
 Desde la raíz del repositorio:
 
 ```bash
-./scripts/build.sh winlux-standard
+./scripts/build.sh antu-standard
 ```
 
 Ver [`docs/BUILD.md`](../../docs/BUILD.md) para más detalle.

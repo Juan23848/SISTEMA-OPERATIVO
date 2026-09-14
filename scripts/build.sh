@@ -1,12 +1,12 @@
 #!/bin/bash
-# Compila la ISO de una edición de WinLux OS usando live-build.
+# Compila la ISO de una edición de Antü OS usando live-build.
 #
-# Uso: ./scripts/build.sh <winlux-legacy|winlux-standard|winlux-pro>
+# Uso: ./scripts/build.sh <antu-legacy|antu-standard|antu-pro>
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 EDITION="${1:-}"
-VALID_EDITIONS=(winlux-legacy winlux-standard winlux-pro)
+VALID_EDITIONS=(antu-legacy antu-standard antu-pro)
 
 usage() {
     echo "Uso: $0 <${VALID_EDITIONS[*]// /|}>"

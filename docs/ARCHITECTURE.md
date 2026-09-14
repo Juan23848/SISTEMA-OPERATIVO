@@ -1,8 +1,8 @@
-# Arquitectura de WinLux OS
+# Arquitectura de Antü OS
 
 ## Idea general
 
-WinLux OS **no** es un kernel ni un sistema operativo escrito desde cero.
+Antü OS **no** es un kernel ni un sistema operativo escrito desde cero.
 Es una **distribución Linux personalizada** (un "respin" de Debian/Ubuntu)
 que:
 
@@ -45,7 +45,7 @@ más de 30 años de desarrollo. Por eso la estrategia de este proyecto es
 
 ## Las tres ediciones
 
-### WinLux Legacy (`editions/winlux-legacy`)
+### Antü Legacy (`editions/antu-legacy`)
 
 - Público: PCs con hardware equivalente a la era de Windows XP (Pentium 4 /
   Core 2 Duo, 512MB–2GB RAM, sin aceleración 3D confiable).
@@ -54,7 +54,7 @@ más de 30 años de desarrollo. Por eso la estrategia de este proyecto es
 - Arquitectura: `i386` (32 bits) además de `amd64`, para máxima compatibilidad.
 - Prioridad: arrancar rápido y consumir poca RAM, no efectos visuales.
 
-### WinLux Standard (`editions/winlux-standard`)
+### Antü Standard (`editions/antu-standard`)
 
 - Público: uso doméstico/oficina, hardware equivalente a Windows 7 en
   adelante (Core i3+, 4GB+ RAM).
@@ -64,7 +64,7 @@ más de 30 años de desarrollo. Por eso la estrategia de este proyecto es
 - Arquitectura: `amd64`.
 - Prioridad: balance entre estética moderna y bajo consumo de recursos.
 
-### WinLux Pro (`editions/winlux-pro`)
+### Antü Pro (`editions/antu-pro`)
 
 - Público: hardware potente (multinúcleo, GPU dedicada, SSD, 16GB+ RAM).
 - Escritorio: **KDE Plasma**, con todos los efectos de composición

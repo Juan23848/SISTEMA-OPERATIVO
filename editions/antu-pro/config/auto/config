@@ -1,5 +1,5 @@
 #!/bin/sh
-# Configuración de live-build para WinLux Pro.
+# Configuración de live-build para Antü Pro.
 # Pensada para hardware potente: multinúcleo, GPU dedicada, SSD.
 set -e
 
@@ -10,7 +10,7 @@ lb config noauto \
     --archive-areas "main contrib non-free non-free-firmware" \
     --debian-installer "live" \
     --linux-flavours "amd64" \
-    --iso-application "WinLux Pro" \
-    --iso-volume "WINLUX_PRO" \
-    --iso-publisher "WinLux OS Project" \
+    --iso-application "Antu Pro" \
+    --iso-volume "ANTU_PRO" \
+    --iso-publisher "Antu OS Project" \
     "${@}"

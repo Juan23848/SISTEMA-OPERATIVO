@@ -1,6 +1,6 @@
 # shared/
 
-Recursos compartidos por las tres ediciones de WinLux OS.
+Recursos compartidos por las tres ediciones de Antü OS.
 
 - `branding/`: logo, wallpapers e iconos comunes. Cada edición puede
   agregar o sobrescribir assets propios en su carpeta

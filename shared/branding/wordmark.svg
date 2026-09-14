@@ -1,30 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 160" width="720" height="160">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 160" width="760" height="160">
   <defs>
-    <linearGradient id="winluxGradientWordmark" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1565C0"/>
-      <stop offset="100%" stop-color="#26C6DA"/>
+    <radialGradient id="bgGlowWordmark" cx="30%" cy="30%" r="90%">
+      <stop offset="0%" stop-color="#123A6B"/>
+      <stop offset="60%" stop-color="#0A1730"/>
+      <stop offset="100%" stop-color="#04070D"/>
+    </radialGradient>
+    <linearGradient id="peakGradientWordmark" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#F2F9FF"/>
+      <stop offset="45%" stop-color="#5AD8FF"/>
+      <stop offset="100%" stop-color="#1E6FEB"/>
     </linearGradient>
+    <linearGradient id="horizonGradientWordmark" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1E6FEB" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#BFEFFF"/>
+      <stop offset="100%" stop-color="#1E6FEB" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glowWordmark" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
 
-  <rect x="0" y="0" width="160" height="160" rx="32" fill="url(#winluxGradientWordmark)"/>
-  <path d="M 34 58
-           L 64 58
-           L 82 118
-           L 100 72
-           L 118 118
-           L 136 58
-           L 166 58
-           L 130 130
-           L 100 130
-           L 88 100
-           L 76 130
-           L 46 130
-           Z"
-        transform="scale(0.72) translate(10, 22)"
-        fill="#FFFFFF"/>
+  <rect x="0" y="0" width="760" height="160" rx="24" fill="url(#bgGlowWordmark)"/>
+  <path d="M 80 44 C 110 30, 130 30, 140 44"
+        transform="translate(0,60)"
+        fill="none" stroke="url(#horizonGradientWordmark)" stroke-width="5"
+        stroke-linecap="round" filter="url(#glowWordmark)"/>
+  <path d="M 80 34 L 116 114 L 96 114 L 80 76 L 64 114 L 44 114 Z"
+        fill="url(#peakGradientWordmark)"/>
 
-  <text x="190" y="78" font-family="'Inter','Noto Sans',sans-serif" font-weight="700"
-        font-size="64" fill="#1B2733">WinLux</text>
-  <text x="190" y="122" font-family="'Inter','Noto Sans',sans-serif" font-weight="500"
-        font-size="34" letter-spacing="6" fill="#1565C0">OPERATING SYSTEM</text>
+  <text x="192" y="98" font-family="'Inter','Noto Sans',sans-serif" font-weight="600"
+        font-size="58" letter-spacing="14" fill="#F2F9FF">ANTÜ</text>
 </svg>

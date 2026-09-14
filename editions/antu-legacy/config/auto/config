@@ -1,5 +1,5 @@
 #!/bin/sh
-# Configuración de live-build para WinLux Legacy.
+# Configuración de live-build para Antü Legacy.
 # Pensada para hardware de la era Windows XP: poca RAM, sin GPU confiable.
 set -e
 
@@ -10,7 +10,7 @@ lb config noauto \
     --archive-areas "main contrib non-free non-free-firmware" \
     --debian-installer "live" \
     --memtest "none" \
-    --iso-application "WinLux Legacy" \
-    --iso-volume "WINLUX_LEGACY" \
-    --iso-publisher "WinLux OS Project" \
+    --iso-application "Antu Legacy" \
+    --iso-volume "ANTU_LEGACY" \
+    --iso-publisher "Antu OS Project" \
     "${@}"

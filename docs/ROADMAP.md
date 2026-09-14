@@ -16,7 +16,7 @@ placeholder) pero **todavía no se compiló ninguna ISO**.
 - [ ] Primera compilación exitosa de una ISO (Standard) en un entorno con
       `live-build`.
 
-## Fase 1 — WinLux Standard (MVP)
+## Fase 1 — Antü Standard (MVP)
 
 Se prioriza esta edición porque cubre el público más amplio (uso
 doméstico/oficina).
@@ -30,13 +30,13 @@ doméstico/oficina).
       gestor de archivos.
 - [ ] Probar en hardware real (no solo QEMU).
 
-## Fase 2 — WinLux Legacy
+## Fase 2 — Antü Legacy
 
 - [ ] Adaptar la configuración a `i386` además de `amd64`.
 - [ ] Reducir el set de paquetes y desactivar composición/efectos.
 - [ ] Validar arranque y uso fluido en hardware con ≤2GB RAM.
 
-## Fase 3 — WinLux Pro
+## Fase 3 — Antü Pro
 
 - [ ] Entorno KDE Plasma con efectos completos.
 - [ ] Ajustes de kernel/scheduler para multinúcleo.

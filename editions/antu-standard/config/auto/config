@@ -1,5 +1,5 @@
 #!/bin/sh
-# Configuración de live-build para WinLux Standard.
+# Configuración de live-build para Antü Standard.
 # Pensada para uso doméstico/oficina en hardware equivalente a Windows 7+.
 set -e
 
@@ -9,7 +9,7 @@ lb config noauto \
     --binary-images "iso-hybrid" \
     --archive-areas "main contrib non-free non-free-firmware" \
     --debian-installer "live" \
-    --iso-application "WinLux Standard" \
-    --iso-volume "WINLUX_STANDARD" \
-    --iso-publisher "WinLux OS Project" \
+    --iso-application "Antu Standard" \
+    --iso-volume "ANTU_STANDARD" \
+    --iso-publisher "Antu OS Project" \
     "${@}"

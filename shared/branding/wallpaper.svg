@@ -1,45 +1,83 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
   <defs>
-    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1B2733"/>
-      <stop offset="55%" stop-color="#1565C0"/>
-      <stop offset="100%" stop-color="#26C6DA"/>
+    <radialGradient id="bgGlowWallpaper" cx="82%" cy="8%" r="90%">
+      <stop offset="0%" stop-color="#173C6E"/>
+      <stop offset="35%" stop-color="#0A1730"/>
+      <stop offset="100%" stop-color="#04070D"/>
+    </radialGradient>
+
+    <linearGradient id="beamGradient1" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0A1730" stop-opacity="0"/>
+      <stop offset="45%" stop-color="#1E6FEB"/>
+      <stop offset="70%" stop-color="#5AD8FF"/>
+      <stop offset="100%" stop-color="#0A1730" stop-opacity="0"/>
     </linearGradient>
-    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1565C0"/>
-      <stop offset="100%" stop-color="#26C6DA"/>
+    <linearGradient id="beamGradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0A1730" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#1E6FEB"/>
+      <stop offset="100%" stop-color="#0A1730" stop-opacity="0"/>
     </linearGradient>
+    <linearGradient id="beamGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A1730" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#5AD8FF"/>
+      <stop offset="100%" stop-color="#0A1730" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="peakGradientWallpaper" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#F2F9FF"/>
+      <stop offset="45%" stop-color="#5AD8FF"/>
+      <stop offset="100%" stop-color="#1E6FEB"/>
+    </linearGradient>
+    <linearGradient id="horizonGradientWallpaper" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1E6FEB" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#BFEFFF"/>
+      <stop offset="100%" stop-color="#1E6FEB" stop-opacity="0"/>
+    </linearGradient>
+
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="22" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+      </feMerge>
+    </filter>
+    <filter id="tightGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
 
-  <rect x="0" y="0" width="1920" height="1080" fill="url(#bgGradient)"/>
+  <rect x="0" y="0" width="1920" height="1080" fill="url(#bgGlowWallpaper)"/>
 
-  <!-- Formas geometricas sutiles de fondo, para dar profundidad sin
-       distraer de los iconos del escritorio. -->
-  <polygon points="0,1080 0,780 700,1080" fill="#FFFFFF" opacity="0.04"/>
-  <polygon points="1920,0 1920,300 1200,0" fill="#FFFFFF" opacity="0.05"/>
-  <circle cx="1650" cy="220" r="260" fill="#FFFFFF" opacity="0.03"/>
+  <!-- Haces de luz: cada uno es un trazo ancho y difuminado (glow) debajo
+       de un trazo fino y nítido (nucleo brillante), como rayos que
+       atraviesan la oscuridad. -->
+
+  <path d="M -80 40 C 250 260, 500 520, 780 560 C 1060 600, 1350 380, 2000 60"
+        fill="none" stroke="url(#beamGradient1)" stroke-width="34" opacity="0.55" filter="url(#softGlow)"/>
+  <path d="M -80 40 C 250 260, 500 520, 780 560 C 1060 600, 1350 380, 2000 60"
+        fill="none" stroke="url(#beamGradient1)" stroke-width="4" filter="url(#tightGlow)"/>
+
+  <path d="M -80 640 C 300 560, 650 560, 950 590 C 1300 625, 1600 560, 2000 700"
+        fill="none" stroke="url(#beamGradient2)" stroke-width="26" opacity="0.4" filter="url(#softGlow)"/>
+  <path d="M -80 640 C 300 560, 650 560, 950 590 C 1300 625, 1600 560, 2000 700"
+        fill="none" stroke="url(#beamGradient2)" stroke-width="3" opacity="0.9" filter="url(#tightGlow)"/>
+
+  <path d="M -80 300 C 280 120, 620 90, 900 220 C 1200 360, 1500 620, 2000 760"
+        fill="none" stroke="url(#beamGradient3)" stroke-width="20" opacity="0.3" filter="url(#softGlow)"/>
+  <path d="M -80 300 C 280 120, 620 90, 900 220 C 1200 360, 1500 620, 2000 760"
+        fill="none" stroke="url(#beamGradient3)" stroke-width="2" opacity="0.7" filter="url(#tightGlow)"/>
 
   <!-- Logo + wordmark, esquina inferior derecha -->
-  <g transform="translate(1560, 940)">
-    <rect x="0" y="0" width="80" height="80" rx="18" fill="url(#logoGradient)"/>
-    <path d="M 17 29
-             L 32 29
-             L 41 59
-             L 50 36
-             L 59 59
-             L 68 29
-             L 83 29
-             L 65 65
-             L 50 65
-             L 44 50
-             L 38 65
-             L 23 65
-             Z"
-          transform="scale(0.72) translate(6, 11)"
-          fill="#FFFFFF"/>
-    <text x="98" y="35" font-family="'Inter','Noto Sans',sans-serif" font-weight="700"
-          font-size="34" fill="#FFFFFF">WinLux</text>
-    <text x="98" y="60" font-family="'Inter','Noto Sans',sans-serif" font-weight="500"
-          font-size="16" letter-spacing="3" fill="#E3F2FD">OPERATING SYSTEM</text>
+  <g transform="translate(1660, 900)">
+    <path d="M 20 68 C 45 55, 65 55, 78 68"
+          fill="none" stroke="url(#horizonGradientWallpaper)" stroke-width="6"
+          stroke-linecap="round" filter="url(#tightGlow)"/>
+    <path d="M 49 12 L 76 82 L 62 82 L 49 50 L 36 82 L 22 82 Z"
+          fill="url(#peakGradientWallpaper)"/>
+    <text x="0" y="118" font-family="'Inter','Noto Sans',sans-serif" font-weight="600"
+          font-size="30" letter-spacing="9" fill="#F2F9FF">ANTÜ</text>
   </g>
 </svg>

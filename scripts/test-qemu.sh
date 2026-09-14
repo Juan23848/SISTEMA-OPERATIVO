@@ -1,5 +1,5 @@
 #!/bin/bash
-# Bootea una ISO de WinLux OS en una VM QEMU para pruebas rápidas.
+# Bootea una ISO de Antü OS en una VM QEMU para pruebas rápidas.
 #
 # Uso: ./scripts/test-qemu.sh <ruta-a-la-iso> [RAM_MB]
 set -euo pipefail

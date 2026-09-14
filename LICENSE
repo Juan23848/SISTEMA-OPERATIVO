@@ -25,7 +25,7 @@ SOFTWARE.
 Esta licencia MIT aplica al código propio de este proyecto: scripts,
 configuración de build, documentación y assets de marca (`shared/branding/`).
 
-WinLux OS se construye sobre Debian/Ubuntu y el kernel Linux, y empaqueta
+Antü OS se construye sobre Debian/Ubuntu y el kernel Linux, y empaqueta
 software de terceros (entornos de escritorio, aplicaciones, drivers, etc.)
 que mantiene sus propias licencias originales (mayormente GPL y licencias
 compatibles). Esta licencia MIT no reemplaza ni modifica esas licencias.

@@ -1,47 +1,51 @@
-# Paleta e identidad visual de WinLux OS
+# Paleta e identidad visual de Antü OS
 
-Identidad visual base, común a las 3 ediciones. Cada edición puede aplicar
-variaciones de tono (ver abajo) manteniendo estos colores y esta tipografía
-como base.
+**Antü** ("sol" en mapudungún) es la luz que atraviesa la oscuridad. La
+identidad visual toma esa idea de forma literal: fondos azules muy
+profundos, casi negros, atravesados por líneas de luz curvas — el brillo
+abriéndose paso en la oscuridad — en vez de un imaginario "solar" cálido.
 
 ## Colores
 
 | Uso | Nombre | Hex |
 |---|---|---|
-| Primario | WinLux Blue | `#1565C0` |
-| Secundario / acento | WinLux Teal | `#26C6DA` |
-| Superficie oscura | Slate | `#1B2733` |
-| Superficie clara | Cloud | `#F4F7FA` |
-| Texto sobre oscuro | White | `#FFFFFF` |
-| Texto sobre claro | Ink | `#1B2733` |
+| Fondo profundo | Antü Void | `#04070D` |
+| Fondo base | Antü Navy | `#0A1730` |
+| Primario (glow) | Antü Blue | `#1E6FEB` |
+| Brillo / acento | Antü Cyan | `#5AD8FF` |
+| Brillo intenso | Antü Glow | `#BFEFFF` |
+| Texto sobre oscuro | White | `#F2F9FF` |
 
-El degradé principal de marca va de **WinLux Blue** a **WinLux Teal**,
-en diagonal (135°). Se usa en el logo, el wallpaper y las pantallas de
+El degradé de marca va de **Antü Navy** (oscuridad) hacia **Antü Cyan/Glow**
+(luz), siempre como si la luz emergiera desde un punto y se abriera paso
+entre curvas oscuras. Se usa en el logo, el wallpaper y las pantallas de
 arranque (splash/GRUB).
 
 ## Variación por edición
 
-- **WinLux Legacy**: mismos colores, pero sin degradé ni transparencias
-  (colores planos), para que se vea bien incluso sin aceleración gráfica.
-- **WinLux Standard**: degradé suave, como está definido acá.
-- **WinLux Pro**: degradé + un sutil efecto de brillo/blur, aprovechando
-  que el hardware soporta composición avanzada.
+- **Antü Legacy**: mismo concepto pero con glow reducido y sin blur (menos
+  costoso de renderizar en hardware viejo): líneas de luz más simples, casi
+  planas.
+- **Antü Standard**: el balance que está definido acá (glow moderado).
+- **Antü Pro**: glow más intenso y capas adicionales de profundidad,
+  aprovechando que el hardware soporta composición avanzada.
 
 ## Tipografía
 
-- Interfaz: la fuente por defecto de cada entorno de escritorio (evita
-  problemas de licencias y de renderizado). Recomendado: **Inter** o
-  **Noto Sans** si se quiere unificar look entre ediciones.
-- Wordmark/logo: geométrica, peso bold, todo en un solo peso para que se
-  vea consistente en tamaños chicos (íconos) y grandes (wallpaper).
+- Interfaz: la fuente por defecto de cada entorno de escritorio. Recomendado:
+  **Inter** o **Noto Sans** si se quiere unificar look entre ediciones.
+- Wordmark/logo: geométrica, con **letter-spacing amplio** en mayúsculas
+  ("A N T Ü"), como una señal de luz — no un logotipo compacto.
 
 ## Archivos de esta carpeta
 
-- `logo.svg` — ícono cuadrado (para pixmaps, launcher, favicon del proyecto).
-- `wordmark.svg` — logo horizontal con texto "WinLux OS", para documentación,
-  splash screens y el instalador.
-- `wallpaper.svg` — fondo de escritorio 1920x1080 con la identidad de marca.
+- `logo.svg` — ícono cuadrado: arco de luz en forma de "A" con línea de
+  horizonte brillante debajo (pixmaps, launcher, favicon del proyecto).
+- `wordmark.svg` — logo horizontal con el ícono + "ANTÜ", para
+  documentación, splash screens e instalador.
+- `wallpaper.svg` — fondo de escritorio 1920x1080 con líneas de luz curvas
+  sobre fondo azul profundo, basado en la referencia visual del proyecto.
 
-Estos son los assets **fuente** (editables). `scripts/build.sh` los copia
-automáticamente a las rutas del sistema dentro de cada edición al compilar,
-así que no hace falta duplicarlos a mano en cada `editions/*/config/`.
+Estos son los assets **fuente** (editables, en SVG). `scripts/build.sh` los
+copia automáticamente a las rutas del sistema dentro de cada edición al
+compilar.
