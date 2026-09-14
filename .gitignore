@@ -1,0 +1,10 @@
+# Artefactos generados por live-build
+editions/*/build/
+editions/*/config/.build/
+editions/*/config/cache/
+editions/*/config/chroot/
+editions/*/config/binary/
+editions/*/config/local/
+*.iso
+*.img
+*.log

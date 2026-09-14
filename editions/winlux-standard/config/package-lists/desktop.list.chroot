@@ -1,0 +1,8 @@
+# Entorno gráfico: Cinnamon, con menú inicio y barra de tareas estilo Windows 7/10.
+xorg
+cinnamon-core
+lightdm
+lightdm-gtk-greeter
+network-manager
+network-manager-gnome
+pulseaudio

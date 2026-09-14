@@ -1,0 +1,16 @@
+#!/bin/sh
+# Configuración de live-build para WinLux Legacy.
+# Pensada para hardware de la era Windows XP: poca RAM, sin GPU confiable.
+set -e
+
+lb config noauto \
+    --architectures "i386 amd64" \
+    --distribution "bookworm" \
+    --binary-images "iso-hybrid" \
+    --archive-areas "main contrib non-free non-free-firmware" \
+    --debian-installer "live" \
+    --memtest "none" \
+    --iso-application "WinLux Legacy" \
+    --iso-volume "WINLUX_LEGACY" \
+    --iso-publisher "WinLux OS Project" \
+    "${@}"

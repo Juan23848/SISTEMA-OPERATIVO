@@ -1,0 +1,4 @@
+# Firmware y utilidades para sacar provecho de hardware moderno.
+firmware-linux
+firmware-misc-nonfree
+cpufrequtils

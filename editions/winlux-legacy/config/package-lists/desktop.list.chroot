@@ -1,0 +1,9 @@
+# Entorno gráfico: XFCE, liviano y sin composición por defecto.
+# Objetivo: arrancar rápido y consumir poca RAM en hardware viejo.
+xorg
+xfce4
+xfce4-terminal
+lightdm
+lightdm-gtk-greeter
+network-manager
+network-manager-gnome

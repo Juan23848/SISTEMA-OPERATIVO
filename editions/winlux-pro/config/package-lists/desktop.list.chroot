@@ -1,0 +1,8 @@
+# Entorno gráfico: KDE Plasma completo, con todos los efectos habilitados.
+xorg
+kde-plasma-desktop
+plasma-workspace-wayland
+sddm
+network-manager
+pulseaudio
+pipewire

@@ -1,0 +1,15 @@
+#!/bin/sh
+# Sobrescribe /etc/os-release para que el sistema se identifique como
+# WinLux Legacy en vez de Debian genérico.
+set -e
+
+cat > /etc/os-release <<'EOF'
+PRETTY_NAME="WinLux Legacy"
+NAME="WinLux OS"
+VERSION="Legacy"
+ID=winlux
+ID_LIKE=debian
+HOME_URL="https://github.com/Juan23848/SISTEMA-OPERATIVO"
+EOF
+
+cp /etc/os-release /etc/lsb-release 2>/dev/null || true
