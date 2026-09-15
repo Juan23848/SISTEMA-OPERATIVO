@@ -1,4 +1,5 @@
-# Entorno gráfico: Cinnamon, con menú inicio y barra de tareas estilo Windows 7/10.
+# Entorno gráfico: Cinnamon, con la barra superior única de Antü
+# (ver docs/ARCHITECTURE.md, sección "Shell de escritorio").
 xorg
 cinnamon-core
 lightdm
@@ -6,3 +7,4 @@ lightdm-gtk-greeter
 network-manager
 network-manager-gnome
 pulseaudio
+dconf-cli

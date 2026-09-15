@@ -1,0 +1,8 @@
+#!/bin/sh
+# Compila la base de dconf a partir de /etc/dconf/db/local.d/, para que
+# los defaults de escritorio de Antü (panel, wallpaper) se apliquen de
+# verdad. Sin este paso, los archivos en local.d quedan escritos pero
+# dconf nunca los lee.
+set -e
+
+dconf update

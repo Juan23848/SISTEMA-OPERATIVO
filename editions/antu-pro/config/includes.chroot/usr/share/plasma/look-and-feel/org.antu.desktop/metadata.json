@@ -1,0 +1,16 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Antü OS"
+            }
+        ],
+        "Category": "",
+        "Description": "Diseño de escritorio por defecto de Antü Pro: barra superior única con lanzador, tareas, bandeja y reloj.",
+        "Icon": "preferences-desktop-wallpaper",
+        "Id": "org.antu.desktop",
+        "Name": "Antü",
+        "Version": "1.0"
+    }
+}

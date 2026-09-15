@@ -1,6 +1,10 @@
 # Artefactos generados por live-build
 editions/*/build/
-editions/*/config/includes.chroot/usr/
+# Branding copiado en build time por shared/scripts/install-branding.sh
+# (no confundir con archivos que sí escribimos a mano dentro de
+# includes.chroot, como el look-and-feel de Plasma en antu-pro).
+editions/*/config/includes.chroot/usr/share/backgrounds/antu/
+editions/*/config/includes.chroot/usr/share/pixmaps/antu/
 editions/*/config/config/
 editions/*/config/.build/
 editions/*/config/cache/

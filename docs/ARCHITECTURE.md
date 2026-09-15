@@ -8,9 +8,10 @@ que:
 
 1. Usa el **kernel Linux** y la base de Debian/Ubuntu tal cual, para heredar
    soporte de hardware, drivers, seguridad y actualizaciones.
-2. Reemplaza la capa de **escritorio y experiencia de usuario** por una
-   configuración propia (tema, layout, atajos, menú inicio, barra de tareas)
-   inspirada en Windows.
+2. Reemplaza la capa de **escritorio y experiencia de usuario** por un
+   diseño propio: familiar y fácil de usar para cualquiera que venga de
+   Windows o mac, pero sin copiar a ninguno de los dos (ver sección
+   "Shell de escritorio" más abajo).
 3. Se empaqueta como **imagen ISO booteable e instalable** usando
    [`live-build`](https://manpages.debian.org/testing/live-build/lb.1.en.html),
    la herramienta oficial de Debian para construir distribuciones live/
@@ -39,8 +40,8 @@ más de 30 años de desarrollo. Por eso la estrategia de este proyecto es
 | Init / servicios | systemd | Estándar de Debian/Ubuntu. |
 | Gestor de paquetes | APT / dpkg | Mismo ecosistema que Debian/Ubuntu, sin cambios. |
 | Entorno gráfico base | X11 (Wayland opcional en Pro) | Depende de la edición. |
-| Escritorio | XFCE (Legacy) / Cinnamon o XFCE (Standard) / KDE Plasma (Pro) | Elegidos por consumo de recursos vs. features. |
-| Apariencia "Windows" | Temas GTK/Qt, iconos, layout de panel/taskbar, menú inicio | Vive en `shared/branding/` y en `editions/*/branding/`. |
+| Escritorio | XFCE (Legacy) / Cinnamon (Standard) / KDE Plasma (Pro) | Elegidos por consumo de recursos vs. features. |
+| Shell / identidad | Barra superior única propia de Antü, wallpaper, logo | Configurada por edición en `editions/*/config/includes.chroot/`, assets en `shared/branding/`. Ver sección "Shell de escritorio". |
 | Build system | `live-build` | Config declarativa en `editions/*/config/`. |
 
 ## Las tres ediciones
@@ -49,8 +50,8 @@ más de 30 años de desarrollo. Por eso la estrategia de este proyecto es
 
 - Público: PCs con hardware equivalente a la era de Windows XP (Pentium 4 /
   Core 2 Duo, 512MB–2GB RAM, sin aceleración 3D confiable).
-- Escritorio: **XFCE**, con compositor desactivado por defecto, tema visual
-  tipo "clásico" (barra de tareas simple, menú inicio con lista de programas).
+- Escritorio: **XFCE**, con compositor desactivado por defecto. Shell:
+  barra superior única (ver "Shell de escritorio"), sin dock ni animaciones.
 - Arquitectura: `i386` (32 bits). `live-build` solo permite una arquitectura
   por configuración, y `i386` corre tanto en hardware de 32 como de 64 bits,
   a diferencia de `amd64` (que no arranca en máquinas puramente de 32 bits) —
@@ -61,9 +62,9 @@ más de 30 años de desarrollo. Por eso la estrategia de este proyecto es
 
 - Público: uso doméstico/oficina, hardware equivalente a Windows 7 en
   adelante (Core i3+, 4GB+ RAM).
-- Escritorio: **Cinnamon** (o XFCE con compositor activado, a definir en la
-  implementación) con menú inicio, barra de tareas y bandeja del sistema
-  con la disposición clásica de Windows 7/10.
+- Escritorio: **Cinnamon**. Shell: barra superior única (ver "Shell de
+  escritorio"); el dock separado y más applets quedan para una siguiente
+  etapa (ver `docs/ROADMAP.md`).
 - Arquitectura: `amd64`.
 - Prioridad: balance entre estética moderna y bajo consumo de recursos.
 
@@ -76,6 +77,52 @@ más de 30 años de desarrollo. Por eso la estrategia de este proyecto es
 - Arquitectura: `amd64` (con perfiles opcionales para `arm64` a futuro).
 - Prioridad: máximo aprovechamiento del hardware disponible, sin resignar
   robustez.
+
+## Shell de escritorio
+
+Antü no copia ni a Windows ni a mac: toma la idea de una **barra global
+única** (como mac, en vez de la barra de tareas de Windows) porque es un
+patrón de interacción probado y fácil de aprender, pero la usa a su manera
+y con la identidad visual propia (el arco de luz del logo, la paleta azul
+profunda).
+
+**Base común a las 3 ediciones** (implementada):
+
+- Una única barra fija arriba de la pantalla, con:
+  - Lanzador de aplicaciones a la izquierda, con el logo de Antü.
+  - Lista de ventanas/tareas abiertas junto al lanzador.
+  - Bandeja del sistema y reloj a la derecha.
+- Wallpaper de Antü como fondo por defecto.
+
+Esto está configurado de fábrica en cada edición usando el mecanismo nativo
+de cada entorno de escritorio (no es un tema visual superficial, son los
+archivos de configuración reales que lee cada DE al iniciar sesión):
+
+| Edición | Mecanismo | Archivos |
+|---|---|---|
+| Legacy (XFCE) | `xfconf` vía `/etc/skel` | `editions/antu-legacy/config/includes.chroot/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/` |
+| Standard (Cinnamon) | Defaults de `dconf` | `editions/antu-standard/config/includes.chroot/etc/dconf/db/local.d/00-antu-desktop` |
+| Pro (KDE Plasma) | Paquete "Look and Feel" propio (`org.antu.desktop`) | `editions/antu-pro/config/includes.chroot/usr/share/plasma/look-and-feel/org.antu.desktop/` |
+
+Los defaults de Legacy y Standard se validaron de verdad durante el
+desarrollo (XML bien formado con `xmllint`, y la base de `dconf` se
+compiló sin errores con `dconf update`). La pieza de Plasma (Pro) sigue el
+formato y la API de scripting documentados de KDE, pero **no se pudo
+probar en una sesión gráfica real** (este proyecto se desarrolló sin
+entorno gráfico disponible) — conviene confirmarla arrancando la ISO antes
+de darla por definitiva.
+
+**Lo que falta, y que se piensa agregar de forma incremental por edición**
+(de más simple a más compleja, ver `docs/ROADMAP.md`):
+
+- Un **dock** inferior (apps fijadas + abiertas), con el indicador de "app
+  abierta" usando el arco de luz del logo en vez de un puntito genérico.
+- Un **lanzador a pantalla completa** con buscador (en vez de un menú de
+  carpetas), abierto desde el logo de la barra.
+- Un panel de **ajustes rápidos** (red, volumen, brillo) desplegable desde
+  la derecha de la barra.
+- Efectos visuales (blur, animaciones) en las ediciones con más recursos
+  (Pro primero, después Standard). Legacy se mantiene siempre simple.
 
 ## Flujo de build
 

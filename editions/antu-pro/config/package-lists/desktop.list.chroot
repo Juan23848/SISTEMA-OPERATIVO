@@ -1,4 +1,6 @@
-# Entorno gráfico: KDE Plasma completo, con todos los efectos habilitados.
+# Entorno gráfico: KDE Plasma completo, con la barra superior única de
+# Antü (ver docs/ARCHITECTURE.md, sección "Shell de escritorio") y todos
+# los efectos de composición habilitados.
 xorg
 kde-plasma-desktop
 plasma-workspace-wayland
