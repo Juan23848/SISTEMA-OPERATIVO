@@ -127,12 +127,26 @@ escribís y filtra al toque, sin scrollear menús.
 A diferencia del resto del shell, esta pieza **sí se pudo probar
 visualmente de verdad**: se armó una pantalla virtual (`Xvfb`) en el
 entorno de desarrollo, se abrió el lanzador contra esa pantalla y se sacó
-una captura real. Esto hizo aparecer dos bugs reales que ya se corrigieron:
-el nombre técnico del modo ("drun") se colaba pegado al texto de búsqueda,
-y sin especificar una fuente el tema usaba la tipografía monoespaciada por
-defecto de rofi (daba un aire a terminal/DOS de los 90, nada que ver con
-la identidad de Antü) — ahora usa **Inter** (`fonts-inter`, agregado a
-`package-lists`).
+una captura real en cada iteración. Eso hizo aparecer varios bugs reales,
+ya corregidos:
+
+- El nombre técnico del modo ("drun") se colaba pegado al texto de
+  búsqueda.
+- Sin especificar una fuente, el tema usaba la tipografía monoespaciada
+  por defecto de rofi (daba un aire a terminal/DOS de los 90) — ahora usa
+  **Inter** (`fonts-inter`, agregado a `package-lists`).
+- La primera versión se veía plana/rudimentaria. Se le agregó
+  profundidad real: un degradé de fondo (más claro arriba, más oscuro
+  abajo) y el ítem seleccionado con su propio degradé tipo "botón con
+  relieve" — una referencia directa a cómo Windows viene resolviendo esto
+  desde siempre, para que se sienta familiar.
+- Al armar el degradé aparecieron 2 límites reales de esta versión de
+  rofi (1.7.5), no evidentes sin probar: `linear-gradient()` no acepta
+  variables `@nombre` como color (hay que poner el hex literal), y
+  `border-color` no admite un color distinto por lado (no se pudo hacer
+  el bisel de dos tonos que se había probado primero). También un
+  separador visual se infló y ocupó toda la ventana por faltarle
+  `expand: false` — quedó como una línea fina de 1px.
 
 ![Lanzador de Antü](screenshots/antu-launcher.png)
 

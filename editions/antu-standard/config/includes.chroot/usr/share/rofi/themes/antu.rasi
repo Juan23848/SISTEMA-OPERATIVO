@@ -4,12 +4,13 @@
  */
 
 * {
-    antu-void:   #04070Dee;
-    antu-navy:   #0A1730CC;
-    antu-cyan:   #5AD8FFFF;
-    antu-glow:   #BFEFFFFF;
-    antu-text:   #F2F9FFFF;
-    antu-muted:  #7FA8C9FF;
+    antu-void:      #04070Dee;
+    antu-navy:      #0A1730CC;
+    antu-navy-hi:   #16294ACC;
+    antu-cyan:      #5AD8FFFF;
+    antu-glow:      #BFEFFFFF;
+    antu-text:      #F2F9FFFF;
+    antu-muted:     #7FA8C9FF;
 
     background-color: transparent;
     text-color:       @antu-text;
@@ -17,31 +18,44 @@
 }
 
 window {
-    width:            42%;
-    location:         center;
-    anchor:           center;
-    background-color: @antu-void;
-    border:           2px;
-    border-color:     @antu-cyan;
-    border-radius:    16px;
-    padding:          24px;
+    width:             42%;
+    location:          center;
+    anchor:            center;
+    /* Degradé sutil (arriba más claro, abajo más oscuro) en vez de un
+       relleno plano: da sensación de profundidad sin depender de sombras
+       (esta versión de rofi no las soporta). IMPORTANTE: las variables
+       @nombre no se pueden usar dentro de linear-gradient() en rofi
+       1.7 — hay que repetir los valores hex literales acá. */
+    background-image:  linear-gradient(to bottom, #24406FE6, #04070Dee);
+    border:            2px;
+    border-color:      @antu-cyan;
+    border-radius:     16px;
+    padding:           4px 24px 24px 24px;
 }
 
 mainbox {
-    children: [ inputbar, listview ];
-    spacing:  16px;
+    children: [ inputbar, separator, listview ];
+    spacing:  0px;
 }
 
 inputbar {
     children:         [ entry ];
     background-color: @antu-navy;
     border-radius:    10px;
-    padding:          10px 14px;
+    padding:          12px 14px;
+    margin:           20px 0px 16px 0px;
 }
 
 entry {
     placeholder:       "Buscar en Antü…";
     placeholder-color: @antu-muted;
+}
+
+separator {
+    background-color: @antu-cyan;
+    expand:            false;
+    padding:           1px 0px;
+    margin:            0px 0px 16px 0px;
 }
 
 listview {
@@ -52,7 +66,7 @@ listview {
 }
 
 element {
-    padding:       8px 10px;
+    padding:       9px 10px;
     border-radius: 8px;
 }
 
@@ -62,7 +76,8 @@ element normal.normal {
 }
 
 element selected.normal {
-    background-color: @antu-cyan;
+    /* Literal, no variable: ver nota en el bloque de "window" más arriba. */
+    background-image: linear-gradient(to bottom, #BFEFFF, #5AD8FF);
     text-color:        @antu-void;
 }
 
