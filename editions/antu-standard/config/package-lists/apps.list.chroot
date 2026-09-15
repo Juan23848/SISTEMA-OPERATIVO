@@ -5,3 +5,6 @@ gnome-calculator
 file-roller
 vlc
 gimp
+
+# Lanzador de apps de Antü (ver docs/ARCHITECTURE.md, "Shell de escritorio").
+rofi

@@ -6,12 +6,15 @@ Existe el scaffold de las 3 ediciones (estructura de configuración de
 `live-build`, listas de paquetes iniciales, branding real) y la
 configuración de `live-build` de las 3 **ya fue probada y corre sin
 errores** hasta el punto de descargar paquetes de Debian. Las 3 ediciones
-también tienen ya un **shell de escritorio propio** (barra superior única
-con la identidad de Antü, ver `docs/ARCHITECTURE.md`). **Todavía no se
-compiló ninguna ISO completa**, porque eso requiere una máquina con acceso
-a internet a los mirrors de Debian (no disponible en el entorno donde se
-desarrolló este proyecto) — por lo tanto tampoco se pudo ver el shell de
-escritorio funcionando en una sesión gráfica real todavía.
+también tienen ya un **shell de escritorio propio** (barra superior +
+dock, con la identidad de Antü, ver `docs/ARCHITECTURE.md`) y Standard
+suma un **lanzador con buscador** (rofi). **Todavía no se compiló ninguna
+ISO completa**, porque eso requiere una máquina con acceso a internet a
+los mirrors de Debian (no disponible en el entorno donde se desarrolló
+este proyecto) — por lo tanto tampoco se pudo ver el shell completo
+funcionando en una sesión gráfica real todavía, **con la excepción del
+lanzador**, que sí se probó de verdad con una pantalla virtual (Xvfb) y
+tiene una captura real en `docs/ARCHITECTURE.md`.
 
 ## Fase 0 — Scaffold (completa)
 
@@ -51,7 +54,11 @@ doméstico/oficina).
 - [x] Dock inferior (grouped-window-list: apps fijadas + abiertas en un
       panel aparte). Falta el indicador propio (el arco de luz del logo
       en vez de un puntito), que necesita un tema visual propio.
-- [ ] Lanzador de apps a pantalla completa con buscador.
+- [x] Lanzador con buscador (rofi + tema propio, Super+Espacio). **Es la
+      única pieza del shell que se pudo probar visualmente de verdad**
+      (con una pantalla virtual Xvfb) — ver captura en
+      `docs/ARCHITECTURE.md`. Falta que el logo de la barra también lo
+      abra (hoy abre el menú nativo de Cinnamon).
 - [ ] Panel de ajustes rápidos (red, volumen, brillo) desde la barra.
 - [ ] Tema visual propio (iconos, cursores, colores, GTK theme oscuro).
 - [ ] Paquetería base: navegador, ofimática, reproductor multimedia,

@@ -114,9 +114,29 @@ Los defaults de Legacy y Standard se validaron de verdad durante el
 desarrollo (XML bien formado con `xmllint`, y la base de `dconf` se
 compiló sin errores con `dconf update`). La pieza de Plasma (Pro) sigue el
 formato y la API de scripting documentados de KDE, pero **no se pudo
-probar en una sesión gráfica real** (este proyecto se desarrolló sin
-entorno gráfico disponible) — conviene confirmarla arrancando la ISO antes
-de darla por definitiva.
+probar en una sesión gráfica real** — conviene confirmarla arrancando la
+ISO antes de darla por definitiva.
+
+### Lanzador de Antü (Standard)
+
+En vez de un menú de carpetas, Antü Standard abre con **Super+Espacio** un
+buscador de aplicaciones (`rofi`, con un tema propio en
+`shared/branding/` → `editions/antu-standard/config/includes.chroot/usr/share/rofi/themes/antu.rasi`):
+escribís y filtra al toque, sin scrollear menús.
+
+A diferencia del resto del shell, esta pieza **sí se pudo probar
+visualmente de verdad**: se armó una pantalla virtual (`Xvfb`) en el
+entorno de desarrollo, se abrió el lanzador contra esa pantalla y se sacó
+una captura real. Esto además hizo aparecer un bug real (el nombre técnico
+del modo, "drun", se colaba pegado al texto de búsqueda) que se corrigió
+antes de subir el archivo.
+
+![Lanzador de Antü](screenshots/antu-launcher.png)
+
+Todavía falta: que el logo de la barra superior abra este lanzador (hoy
+abre el menú nativo de Cinnamon; el atajo de teclado sí es de Antü), e
+íconos por app en el buscador (dependen del tema de íconos, que también es
+un pendiente).
 
 **Lo que falta, y que se piensa agregar de forma incremental por edición**
 (de más simple a más compleja, ver `docs/ROADMAP.md`):
@@ -124,8 +144,9 @@ de darla por definitiva.
 - El indicador de "app abierta" en el dock usando el arco de luz del logo
   en vez del puntito genérico de cada DE — requiere un tema visual propio
   (CSS/Qt), todavía no existe.
-- Un **lanzador a pantalla completa** con buscador (en vez de un menú de
-  carpetas), abierto desde el logo de la barra.
+- Que el logo de la barra abra el lanzador de Antü (por ahora solo el
+  atajo de teclado lo hace).
+- El lanzador con buscador en Legacy y Pro (por ahora solo en Standard).
 - Un panel de **ajustes rápidos** (red, volumen, brillo) desplegable desde
   la derecha de la barra.
 - Efectos visuales (blur, animaciones) en las ediciones con más recursos

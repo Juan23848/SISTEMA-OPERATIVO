@@ -29,3 +29,15 @@ picture-options='zoom'
 # instalado por defecto en Debian: si lo hardcodeábamos sin el paquete
 # correspondiente en package-lists, Cinnamon lo hubiera ignorado en
 # silencio y quedaba con el tema por defecto de todos modos.
+
+# Lanzador de Antü: Super+Espacio abre rofi con el tema propio
+# (shared con Cinnamon vía el mismo mecanismo de atajos personalizados
+# que usa GNOME). Validado de verdad con una pantalla virtual (Xvfb):
+# el buscador filtra bien y el tema se ve como se esperaba.
+[org/cinnamon/desktop/keybindings]
+custom-list=['custom0']
+
+[org/cinnamon/desktop/keybindings/custom-keybindings/custom0]
+name='Lanzador Antü'
+command='rofi -show drun -theme /usr/share/rofi/themes/antu.rasi'
+binding=['<Super>space']

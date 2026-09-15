@@ -1,0 +1,70 @@
+/*
+ * Tema del Lanzador Antü (rofi), modo "drun" (apps instaladas).
+ * Paleta: ver shared/branding/palette.md.
+ */
+
+* {
+    antu-void:   #04070Dee;
+    antu-navy:   #0A1730CC;
+    antu-cyan:   #5AD8FFFF;
+    antu-glow:   #BFEFFFFF;
+    antu-text:   #F2F9FFFF;
+    antu-muted:  #7FA8C9FF;
+
+    background-color: transparent;
+    text-color:       @antu-text;
+}
+
+window {
+    width:            42%;
+    location:         center;
+    anchor:           center;
+    background-color: @antu-void;
+    border:           2px;
+    border-color:     @antu-cyan;
+    border-radius:    16px;
+    padding:          24px;
+}
+
+mainbox {
+    children: [ inputbar, listview ];
+    spacing:  16px;
+}
+
+inputbar {
+    children:         [ entry ];
+    background-color: @antu-navy;
+    border-radius:    10px;
+    padding:          10px 14px;
+}
+
+entry {
+    placeholder:       "Buscar en Antü…";
+    placeholder-color: @antu-muted;
+}
+
+listview {
+    lines:             8;
+    spacing:           4px;
+    background-color:  transparent;
+    scrollbar:         false;
+}
+
+element {
+    padding:       8px 10px;
+    border-radius: 8px;
+}
+
+element normal.normal {
+    background-color: transparent;
+    text-color:        @antu-text;
+}
+
+element selected.normal {
+    background-color: @antu-cyan;
+    text-color:        @antu-void;
+}
+
+element-icon {
+    size: 24px;
+}
