@@ -16,6 +16,8 @@ sesiones de escritorio reales** (XFCE y Cinnamon, contra una pantalla
 virtual) — no solo por sintaxis — y encontraron y corrigieron bugs reales
 en el camino (ver `docs/ARCHITECTURE.md` y las capturas en
 `docs/screenshots/`). Pro (KDE Plasma) todavía no se pudo probar así.
+Las 3 ediciones también tienen **español (Argentina) como idioma por
+defecto** — ver Fase 0.5 — y queda pendiente un set de íconos propios.
 
 ## Fase 0 — Scaffold (completa)
 
@@ -40,6 +42,29 @@ en el camino (ver `docs/ARCHITECTURE.md` y las capturas en
          32 y 64 bits).
 - [ ] Primera compilación **completa** de una ISO (Standard), en una
       máquina con acceso real a los mirrors de Debian.
+
+## Fase 0.5 — Identidad propia (despegarse de Linux/Windows)
+
+Criterio del proyecto: que Antü se sienta propio, no "Linux con logo
+pegado". Aplica a las 3 ediciones por igual.
+
+- [x] **Español (Argentina) como idioma por defecto** de las 3 ediciones
+      (`hooks/0300-locale-es.hook.chroot`, genera y activa
+      `es_AR.UTF-8`). Validado con una sesión XFCE real: los nombres y
+      categorías de las aplicaciones se traducen correctamente. La
+      cobertura de los textos propios de cada herramienta (botones,
+      títulos de ventana) depende de la traducción que traiga cada
+      paquete — confirmar en Debian real (se probó en un entorno de
+      desarrollo basado en Ubuntu). Ver `docs/ARCHITECTURE.md`.
+- [ ] **Set de íconos propios**, con el lenguaje visual de Antü (arco de
+      luz, paleta azul) en vez del genérico de Linux. El lanzador ya usa
+      el logo de Antü; falta el resto. Arrancar por los más visibles:
+      carpetas, papelera, configuración, terminal. Partir de un set
+      existente con licencia permisiva y modificarlo, no dibujar todo
+      desde cero.
+      - Idea: la papelera se ve distinta si tiene algo adentro.
+      - Idea: las carpetas muestran "hojas" adentro al pasar el mouse.
+      - Sin empezar — a definir en una próxima sesión.
 
 ## Fase 1 — Antü Standard (MVP)
 

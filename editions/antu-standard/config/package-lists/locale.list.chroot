@@ -1,0 +1,3 @@
+# Español (Argentina) como idioma por defecto del sistema.
+# Ver hooks/0300-locale-es.hook.chroot y docs/ARCHITECTURE.md.
+locales

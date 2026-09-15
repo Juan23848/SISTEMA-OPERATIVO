@@ -173,6 +173,50 @@ entorno de sesión (`XDG_SESSION_TYPE`) que `cinnamon-session` no llegaba
 a exportar antes de fallar. Arrancar `cinnamon` directamente, ya con esas
 dos cosas resueltas a mano, funcionó de punta a punta.
 
+## Español como idioma por defecto
+
+Antü busca despegarse de Linux/Windows también en el idioma: en vez de
+dejar el sistema en inglés (lo habitual en la mayoría de las distros),
+**español (Argentina) es el idioma por defecto** de las 3 ediciones,
+configurado vía `hooks/0300-locale-es.hook.chroot` (genera y activa el
+locale `es_AR.UTF-8` durante el build).
+
+Esto traduce automáticamente casi todos los menús, categorías y textos
+genéricos del sistema, porque tira de la traducción que la gran mayoría
+de las aplicaciones de escritorio ya traen incluida — no hace falta
+tocar cada aplicación a mano. Los nombres propios de las apps (Firefox,
+LibreOffice, VLC) no se traducen, son marcas.
+
+Se validó con una sesión XFCE real (`xfce4-appfinder`) que los nombres y
+categorías de las aplicaciones efectivamente aparecen en español
+("Accesibilidad", "Archivos", "Aplicaciones predeterminadas", etc.). La
+cobertura de los textos propios de cada herramienta (botones, títulos de
+ventana) depende de qué tan completa sea la traducción que traiga cada
+paquete empaquetado — variará de programa a programa, y conviene
+reconfirmarlo en Debian real (esto se probó en un entorno de desarrollo
+basado en Ubuntu, que maneja los paquetes de idioma de forma distinta a
+Debian).
+
+## Íconos propios (pendiente, ideas para la próxima sesión)
+
+Además del idioma, la idea es que Antü tenga su **propio set de íconos**
+en vez de reusar el genérico de Linux — diseñados con el mismo lenguaje
+visual del logo (arco de luz, paleta azul) y, donde tenga sentido, con
+pequeños detalles animados que refuercen la función del ícono:
+
+- La papelera podría verse distinta según si tiene algo adentro o no.
+- Las carpetas podrían mostrar "hojas" adentro al pasar el mouse, como
+  una carpeta real.
+
+Es un proyecto de diseño grande (un set de íconos siguiendo el estándar
+freedesktop cubre cientos de casos). El plan es arrancar por los íconos
+más visibles (lanzador —ya está—, carpetas, papelera, configuración,
+terminal) y dejar el resto con una base genérica hasta ir
+reemplazándolos de a poco. Se puede partir de un set existente con
+licencia permisiva y hacerle las modificaciones necesarias, en vez de
+dibujar cada ícono desde cero. Sin empezar todavía — queda para una
+próxima sesión.
+
 ### Pro: todavía sin sesión real
 
 La pieza de Plasma sigue el formato y la API de scripting documentados de
