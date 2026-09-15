@@ -5,7 +5,8 @@ procesadores de 1-2 núcleos, 512MB–2GB de RAM, sin aceleración 3D confiable.
 
 ## Características
 
-- Arquitecturas: `i386` (32 bits) y `amd64`.
+- Arquitectura: `i386` (32 bits). Corre tanto en hardware de 32 como de 64
+  bits, a diferencia de `amd64` — por eso es la elegida para esta edición.
 - Escritorio: **XFCE**, sin compositor activado por defecto.
 - Apariencia: identidad Antü con glow reducido y sin blur (colores planos),
   para que se vea bien incluso sin aceleración gráfica.

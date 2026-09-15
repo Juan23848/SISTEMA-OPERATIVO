@@ -4,7 +4,8 @@
 set -e
 
 lb config noauto \
-    --architectures "i386 amd64" \
+    --mode debian \
+    --architectures "i386" \
     --distribution "bookworm" \
     --binary-images "iso-hybrid" \
     --archive-areas "main contrib non-free non-free-firmware" \

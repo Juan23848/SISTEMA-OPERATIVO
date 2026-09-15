@@ -51,7 +51,10 @@ más de 30 años de desarrollo. Por eso la estrategia de este proyecto es
   Core 2 Duo, 512MB–2GB RAM, sin aceleración 3D confiable).
 - Escritorio: **XFCE**, con compositor desactivado por defecto, tema visual
   tipo "clásico" (barra de tareas simple, menú inicio con lista de programas).
-- Arquitectura: `i386` (32 bits) además de `amd64`, para máxima compatibilidad.
+- Arquitectura: `i386` (32 bits). `live-build` solo permite una arquitectura
+  por configuración, y `i386` corre tanto en hardware de 32 como de 64 bits,
+  a diferencia de `amd64` (que no arranca en máquinas puramente de 32 bits) —
+  por eso es la opción que da máxima compatibilidad con hardware viejo.
 - Prioridad: arrancar rápido y consumir poca RAM, no efectos visuales.
 
 ### Antü Standard (`editions/antu-standard`)

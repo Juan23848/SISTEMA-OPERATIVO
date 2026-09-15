@@ -4,6 +4,7 @@
 set -e
 
 lb config noauto \
+    --mode debian \
     --architectures "amd64" \
     --distribution "bookworm" \
     --binary-images "iso-hybrid" \
