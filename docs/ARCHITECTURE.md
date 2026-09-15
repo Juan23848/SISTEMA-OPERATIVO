@@ -110,12 +110,47 @@ archivos de configuración reales que lee cada DE al iniciar sesión):
 | Standard (Cinnamon) | Defaults de `dconf` | `editions/antu-standard/config/includes.chroot/etc/dconf/db/local.d/00-antu-desktop` |
 | Pro (KDE Plasma) | Paquete "Look and Feel" propio (`org.antu.desktop`) | `editions/antu-pro/config/includes.chroot/usr/share/plasma/look-and-feel/org.antu.desktop/` |
 
-Los defaults de Legacy y Standard se validaron de verdad durante el
-desarrollo (XML bien formado con `xmllint`, y la base de `dconf` se
-compiló sin errores con `dconf update`). La pieza de Plasma (Pro) sigue el
-formato y la API de scripting documentados de KDE, pero **no se pudo
-probar en una sesión gráfica real** — conviene confirmarla arrancando la
-ISO antes de darla por definitiva.
+### Legacy: probado con una sesión XFCE real, no solo a mano
+
+A diferencia del resto (validado solo por sintaxis), **Antü Legacy se
+probó levantando una sesión XFCE real** (`xfce4-session`, con `xfwm4` +
+`xfdesktop` + `xfce4-panel`) contra una pantalla virtual (`Xvfb`). Esto
+encontró y corrigió dos bugs reales que ningún chequeo de sintaxis iba a
+detectar:
+
+1. **El wallpaper no se aplicaba.** `xfce4-desktop` nombra la propiedad
+   del fondo según el monitor que detecta en cada máquina (`monitor0`,
+   `monitorVGA-1`, `monitorHDMI-1`... varía según el hardware/driver de
+   video). El XML estático que se había escrito a mano adivinaba un
+   nombre que no coincidía con el real, así que el wallpaper de Antü
+   nunca se veía — quedaba el de Debian/Xubuntu por defecto.
+2. **XFCE tiene 4 escritorios virtuales**, cada uno con wallpaper propio.
+   Aplicar el cambio solo al primero no alcanzaba: al abrir sesión en
+   otro escritorio, volvía a aparecer el fondo por defecto.
+
+La solución: en vez de adivinar nombres en un XML estático, un script
+(`usr/local/bin/antu-set-wallpaper`, disparado por un autostart en
+`etc/xdg/autostart/antu-wallpaper.desktop`) le pregunta a `xfconf` qué
+monitores y escritorios existen de verdad al iniciar sesión, y aplica el
+wallpaper de Antü a todas las combinaciones — y fuerza el redibujado con
+`xfdesktop --reload`, porque tampoco se actualiza solo.
+
+Con este fix, una sesión completamente nueva (sin ningún ajuste manual)
+ya muestra el wallpaper y el logo de Antü correctamente:
+
+![Escritorio de Antü Legacy](screenshots/antu-legacy-desktop.png)
+
+### Standard y Pro: todavía sin sesión real
+
+Los defaults de Standard se validaron por sintaxis (la base de `dconf` se
+compiló sin errores con `dconf update`), pero **no se probaron con una
+sesión Cinnamon real** — dado lo que pasó con Legacy, es razonable
+esperar que aparezcan bugs similares (nombres de propiedades que no
+coinciden, valores que necesitan un "reload" explícito) recién al
+probarlo de verdad. La pieza de Plasma (Pro) sigue el formato y la API de
+scripting documentados de KDE, pero tampoco se pudo probar en una sesión
+gráfica real. Ambas quedan pendientes de la misma validación que ya le
+hizo bien a Legacy (ver `docs/ROADMAP.md`).
 
 ### Lanzador de Antü (Standard)
 

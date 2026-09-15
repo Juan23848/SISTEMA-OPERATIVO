@@ -1,0 +1,43 @@
+#!/bin/sh
+# Aplica el wallpaper de Antü al iniciar sesión en XFCE.
+#
+# Por qué existe (dos problemas reales, encontrados probando de verdad
+# con una sesión XFCE en una pantalla virtual, no evidentes a mano):
+#
+# 1. xfce4-desktop nombra la propiedad del wallpaper según el monitor
+#    que detecta en cada máquina (ej. "monitor0", "monitorVGA-1",
+#    "monitorHDMI-1"...), y ese nombre varía según el hardware/driver de
+#    video. Fijarlo en un XML estático (como se intentó primero) solo
+#    funciona si el nombre adivinado coincide con el real.
+# 2. XFCE tiene 4 escritorios virtuales por defecto, cada uno con su
+#    propio wallpaper independiente. Aplicar el cambio solo al
+#    "workspace0" no alcanza: si la sesión arranca en otro escritorio (u
+#    el usuario cambia de escritorio), vuelve a aparecer el wallpaper
+#    por defecto de Debian/Xubuntu.
+#
+# Por eso este script pregunta a xfconf qué monitores y escritorios
+# existen de verdad, y aplica el wallpaper a todas las combinaciones.
+WALLPAPER="/usr/share/backgrounds/antu/wallpaper.png"
+
+# xfdesktop crea sus propiedades de monitor/escritorio al arrancar, en
+# paralelo con este script (ambos son autostarts) — esperar un poco si
+# hace falta.
+PATHS=""
+i=0
+while [ "$i" -lt 20 ]; do
+    PATHS=$(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E '/workspace[0-9]+/last-image$')
+    [ -n "$PATHS" ] && break
+    i=$((i + 1))
+    sleep 0.5
+done
+
+for p in $PATHS; do
+    xfconf-query -c xfce4-desktop -p "$p" -s "$WALLPAPER" 2>/dev/null
+    style_path=$(printf '%s' "$p" | sed 's#/last-image$#/image-style#')
+    xfconf-query -c xfce4-desktop -p "$style_path" -s 5 -t int --create 2>/dev/null
+done
+
+# xfdesktop arranca en paralelo con este script y puede haber dibujado
+# el wallpaper por defecto ANTES de que termináramos de escribir los
+# valores de arriba. No redibuja solo: hay que pedírselo.
+xfdesktop --reload 2>/dev/null

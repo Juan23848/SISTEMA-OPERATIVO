@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Antü Wallpaper
+Comment=Aplica el wallpaper de Antü (necesario porque XFCE nombra el monitor de forma distinta en cada máquina)
+Exec=/usr/local/bin/antu-set-wallpaper
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+OnlyShowIn=XFCE;

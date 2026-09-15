@@ -70,8 +70,16 @@ doméstico/oficina).
 - [x] Configurar la edición en `i386` (`live-build` no soporta múltiples
       arquitecturas en una misma configuración; `i386` corre en hardware de
       32 y 64 bits, a diferencia de `amd64`).
-- [x] Shell de escritorio propio en XFCE (barra superior única), validado
-      con `xmllint` (XML bien formado, sin probar en sesión gráfica real).
+- [x] Shell de escritorio propio en XFCE (barra superior única),
+      **probado con una sesión XFCE real** (Xvfb + xfce4-session) — la
+      única de las 3 ediciones validada así hasta ahora. Encontró y
+      corrigió 2 bugs reales: el wallpaper no se aplicaba (el nombre del
+      monitor varía por hardware, no se puede adivinar en un XML
+      estático) y XFCE tiene 4 escritorios virtuales con wallpaper
+      independiente cada uno. Solución: `usr/local/bin/antu-set-wallpaper`
+      + autostart, que detecta los nombres reales en vez de adivinarlos.
+      Ver `docs/ARCHITECTURE.md` y la captura real en
+      `docs/screenshots/antu-legacy-desktop.png`.
 - [ ] Reducir el set de paquetes y desactivar composición/efectos.
 - [ ] Validar arranque y uso fluido en hardware con ≤2GB RAM.
 
