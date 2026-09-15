@@ -140,17 +140,47 @@ ya muestra el wallpaper y el logo de Antü correctamente:
 
 ![Escritorio de Antü Legacy](screenshots/antu-legacy-desktop.png)
 
-### Standard y Pro: todavía sin sesión real
+### Standard: también probado con una sesión Cinnamon real
 
-Los defaults de Standard se validaron por sintaxis (la base de `dconf` se
-compiló sin errores con `dconf update`), pero **no se probaron con una
-sesión Cinnamon real** — dado lo que pasó con Legacy, es razonable
-esperar que aparezcan bugs similares (nombres de propiedades que no
-coinciden, valores que necesitan un "reload" explícito) recién al
-probarlo de verdad. La pieza de Plasma (Pro) sigue el formato y la API de
-scripting documentados de KDE, pero tampoco se pudo probar en una sesión
-gráfica real. Ambas quedan pendientes de la misma validación que ya le
-hizo bien a Legacy (ver `docs/ROADMAP.md`).
+Le fue igual de bien que a Legacy. Se levantó `cinnamon` de verdad (no
+`cinnamon-session` completo, que en este entorno de desarrollo específico
+no llegaba a arrancar el shell por limitaciones del propio contenedor —
+ver nota abajo) contra `Xvfb`, con nuestros defaults de `dconf` ya
+aplicados. Resultado: **el mecanismo central funciona tal cual se
+diseñó**, sin necesitar ningún fix como el de Legacy (Cinnamon guarda el
+wallpaper en una clave de `gsettings` simple, sin nombres de monitor que
+adivinar):
+
+![Escritorio de Antü Standard](screenshots/antu-standard-desktop.png)
+
+Se ve la barra superior (menú a la izquierda, reloj a la derecha) y el
+dock abajo (`grouped-window-list`), ambos cargando los applets que
+configuramos, con el wallpaper y el logo de Antü de fondo. Quedó
+confirmado también un pendiente que ya estaba anotado: el ícono del
+lanzador sigue siendo el genérico de Cinnamon, no el logo de Antü —
+cambiarlo requiere tocar una configuración específica de esa instancia
+del applet, más delicada que una propiedad global, y se dejó pendiente a
+propósito (ver `docs/ROADMAP.md`).
+
+*Nota sobre cómo se probó:* en este entorno de desarrollo puntual, correr
+`cinnamon-session` completo (el gestor de sesión real) no llegaba a
+mostrar el shell — dos causas, ninguna relacionada con la configuración
+de Antü: el `python3` por defecto de este contenedor en particular no
+coincidía con la versión para la que estaban compiladas las bindings de
+`gi` (un contenedor de desarrollo normal, o la máquina de un usuario
+final, no tiene este conflicto), y Cinnamon necesitaba variables de
+entorno de sesión (`XDG_SESSION_TYPE`) que `cinnamon-session` no llegaba
+a exportar antes de fallar. Arrancar `cinnamon` directamente, ya con esas
+dos cosas resueltas a mano, funcionó de punta a punta.
+
+### Pro: todavía sin sesión real
+
+La pieza de Plasma sigue el formato y la API de scripting documentados de
+KDE, pero **no se pudo probar en una sesión gráfica real** — KWin (el
+compositor de Plasma) tiene requisitos más pesados que XFCE y Cinnamon, y
+no se llegó a levantar en el tiempo disponible. Queda pendiente la misma
+validación que ya le hizo bien a Legacy y Standard (ver
+`docs/ROADMAP.md`).
 
 ### Lanzador de Antü (Standard)
 

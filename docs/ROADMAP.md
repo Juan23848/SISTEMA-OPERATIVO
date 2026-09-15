@@ -11,10 +11,11 @@ dock, con la identidad de Antü, ver `docs/ARCHITECTURE.md`) y Standard
 suma un **lanzador con buscador** (rofi). **Todavía no se compiló ninguna
 ISO completa**, porque eso requiere una máquina con acceso a internet a
 los mirrors de Debian (no disponible en el entorno donde se desarrolló
-este proyecto) — por lo tanto tampoco se pudo ver el shell completo
-funcionando en una sesión gráfica real todavía, **con la excepción del
-lanzador**, que sí se probó de verdad con una pantalla virtual (Xvfb) y
-tiene una captura real en `docs/ARCHITECTURE.md`.
+este proyecto). Pese a eso, **Legacy y Standard sí se probaron con
+sesiones de escritorio reales** (XFCE y Cinnamon, contra una pantalla
+virtual) — no solo por sintaxis — y encontraron y corrigieron bugs reales
+en el camino (ver `docs/ARCHITECTURE.md` y las capturas en
+`docs/screenshots/`). Pro (KDE Plasma) todavía no se pudo probar así.
 
 ## Fase 0 — Scaffold (completa)
 
@@ -49,11 +50,16 @@ doméstico/oficina).
 - [ ] Instalador funcional (usar `calamares` o el instalador de Debian).
 - [x] Shell de escritorio propio (barra superior: lanzador, bandeja,
       reloj) — ver `docs/ARCHITECTURE.md`, sección "Shell de escritorio".
-      Configurado vía `dconf`, validado con `dconf update` pero sin
-      probar en una sesión gráfica real.
+      **Probado con una sesión Cinnamon real** (Xvfb): funciona tal cual
+      se diseñó, sin necesitar fixes como los de Legacy. Ver captura real
+      en `docs/screenshots/antu-standard-desktop.png`.
 - [x] Dock inferior (grouped-window-list: apps fijadas + abiertas en un
-      panel aparte). Falta el indicador propio (el arco de luz del logo
-      en vez de un puntito), que necesita un tema visual propio.
+      panel aparte), también confirmado con la sesión real. Falta el
+      indicador propio (el arco de luz del logo en vez de un puntito),
+      que necesita un tema visual propio.
+- [ ] Ícono del lanzador con el logo de Antü (hoy usa el genérico de
+      Cinnamon — confirmado al probar con sesión real; cambiarlo requiere
+      tocar la configuración específica de esa instancia del applet).
 - [x] Lanzador con buscador (rofi + tema propio, Super+Espacio). **Es la
       única pieza del shell que se pudo probar visualmente de verdad**
       (con una pantalla virtual Xvfb) — ver captura en
