@@ -81,6 +81,18 @@ element selected.normal {
     text-color:        @antu-void;
 }
 
+/* El color de texto de "element" no lo hereda el sub-widget que
+   realmente dibuja el texto (element-text): hay que fijarlo acá también,
+   si no el texto (y el fragmento resaltado por la búsqueda) queda
+   blanco sobre el fondo celeste claro del ítem seleccionado y no se lee. */
+element-text {
+    text-color: inherit;
+}
+
+element-text selected.normal {
+    text-color: @antu-void;
+}
+
 element-icon {
     size: 24px;
 }

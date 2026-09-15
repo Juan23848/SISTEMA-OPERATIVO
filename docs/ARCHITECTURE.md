@@ -147,6 +147,11 @@ ya corregidos:
   el bisel de dos tonos que se había probado primero). También un
   separador visual se infló y ocupó toda la ventana por faltarle
   `expand: false` — quedó como una línea fina de 1px.
+- El texto del ítem seleccionado (celeste claro) quedaba en blanco y no
+  se leía — el color de texto que se le pone a `element` no lo hereda el
+  sub-widget `element-text`, que es el que en realidad dibuja el texto
+  (y el fragmento resaltado por la búsqueda). Hubo que fijarlo ahí
+  también, explícitamente.
 
 ![Lanzador de Antü](screenshots/antu-launcher.png)
 
