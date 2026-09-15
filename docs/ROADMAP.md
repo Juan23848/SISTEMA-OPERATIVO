@@ -44,12 +44,13 @@ doméstico/oficina).
 
 - [ ] Compilar ISO booteable en modo live (sin instalar).
 - [ ] Instalador funcional (usar `calamares` o el instalador de Debian).
-- [x] Shell de escritorio propio (barra superior única: lanzador, tareas,
-      bandeja, reloj) — ver `docs/ARCHITECTURE.md`, sección "Shell de
-      escritorio". Configurado vía `dconf`, validado con `dconf update`
-      pero sin probar en una sesión gráfica real.
-- [ ] Dock inferior (apps fijadas + abiertas) con indicador propio (el
-      arco de luz del logo en vez de un puntito).
+- [x] Shell de escritorio propio (barra superior: lanzador, bandeja,
+      reloj) — ver `docs/ARCHITECTURE.md`, sección "Shell de escritorio".
+      Configurado vía `dconf`, validado con `dconf update` pero sin
+      probar en una sesión gráfica real.
+- [x] Dock inferior (grouped-window-list: apps fijadas + abiertas en un
+      panel aparte). Falta el indicador propio (el arco de luz del logo
+      en vez de un puntito), que necesita un tema visual propio.
 - [ ] Lanzador de apps a pantalla completa con buscador.
 - [ ] Panel de ajustes rápidos (red, volumen, brillo) desde la barra.
 - [ ] Tema visual propio (iconos, cursores, colores, GTK theme oscuro).
@@ -70,9 +71,12 @@ doméstico/oficina).
 ## Fase 3 — Antü Pro
 
 - [x] Shell de escritorio propio vía un paquete "Look and Feel" de Plasma
-      (`org.antu.desktop`). Es la pieza con más riesgo de las 3 (formato
-      de Plasma más complejo) y la que más necesita probarse en una
-      sesión gráfica real antes de darla por buena.
+      (`org.antu.desktop`): barra superior (lanzador, bandeja, reloj) +
+      dock inferior (icontasks). Es la pieza con más riesgo de las 3
+      (formato de Plasma más complejo) y la que más necesita probarse en
+      una sesión gráfica real antes de darla por buena.
+- [ ] Efectos del dock (auto-hide, magnificación al pasar el mouse) y
+      efectos visuales en general (blur, animaciones).
 - [ ] Entorno KDE Plasma con efectos completos.
 - [ ] Ajustes de kernel/scheduler para multinúcleo.
 - [ ] Soporte de drivers propietarios de GPU (NVIDIA/AMD) opcional durante

@@ -1,17 +1,23 @@
 # Defaults de escritorio de Antü Standard (Cinnamon).
 #
-# Barra superior única: menú (lanzador) + lista de ventanas agrupada a la
-# izquierda, bandeja del sistema + calendario/reloj a la derecha. Sin dock
-# separado todavía (queda para una siguiente etapa, ver docs/ROADMAP.md).
+# - Barra superior (panel1): menú (lanzador) a la izquierda, bandeja del
+#   sistema + calendario/reloj a la derecha. Sin lista de ventanas: eso
+#   vive en el dock de abajo.
+# - Dock (panel2): grouped-window-list centrado, funciona como dock
+#   (apps fijadas + abiertas en un solo ícono por app, con click para
+#   abrir/cambiar de ventana). El indicador visual de "app abierta" con
+#   el arco de luz del logo (en vez del punto genérico de Cinnamon) queda
+#   para cuando se arme el tema visual propio (ver docs/ROADMAP.md).
 #
 # Son valores por DEFECTO: el usuario los puede cambiar después desde
 # Configuración de Cinnamon sin romper nada.
 
 [org/cinnamon]
-panels-enabled=['1:0:top']
+panels-enabled=['1:0:top', '2:0:bottom']
+panels-height=['1:32', '2:56']
 panel-edit-mode=false
-enabled-applets=['panel1:left:0:menu@cinnamon.org:1', 'panel1:left:1:grouped-window-list@cinnamon.org:2', 'panel1:right:0:systray@cinnamon.org:3', 'panel1:right:1:notifications@cinnamon.org:4', 'panel1:right:2:calendar@cinnamon.org:5']
-next-applet-id=6
+enabled-applets=['panel1:left:0:menu@cinnamon.org:1', 'panel1:right:0:systray@cinnamon.org:3', 'panel1:right:1:notifications@cinnamon.org:4', 'panel1:right:2:calendar@cinnamon.org:5', 'panel2:center:0:grouped-window-list@cinnamon.org:6']
+next-applet-id=7
 
 [org/cinnamon/desktop/background]
 picture-uri='file:///usr/share/backgrounds/antu/wallpaper.png'

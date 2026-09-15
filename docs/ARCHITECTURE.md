@@ -88,11 +88,17 @@ profunda).
 
 **Base común a las 3 ediciones** (implementada):
 
-- Una única barra fija arriba de la pantalla, con:
+- Una barra fija arriba de la pantalla, con:
   - Lanzador de aplicaciones a la izquierda, con el logo de Antü.
-  - Lista de ventanas/tareas abiertas junto al lanzador.
   - Bandeja del sistema y reloj a la derecha.
+- Un **dock** fijo abajo (Standard y Pro; Legacy no lo tiene, ver más
+  abajo) con las apps fijadas y abiertas — ahí vive el cambio de ventana,
+  no en la barra de arriba.
 - Wallpaper de Antü como fondo por defecto.
+
+En **Legacy** no hay dock separado (para no gastar recursos en un panel
+extra): la lista de ventanas abiertas queda directamente en la barra de
+arriba, como única barra.
 
 Esto está configurado de fábrica en cada edición usando el mecanismo nativo
 de cada entorno de escritorio (no es un tema visual superficial, son los
@@ -115,8 +121,9 @@ de darla por definitiva.
 **Lo que falta, y que se piensa agregar de forma incremental por edición**
 (de más simple a más compleja, ver `docs/ROADMAP.md`):
 
-- Un **dock** inferior (apps fijadas + abiertas), con el indicador de "app
-  abierta" usando el arco de luz del logo en vez de un puntito genérico.
+- El indicador de "app abierta" en el dock usando el arco de luz del logo
+  en vez del puntito genérico de cada DE — requiere un tema visual propio
+  (CSS/Qt), todavía no existe.
 - Un **lanzador a pantalla completa** con buscador (en vez de un menú de
   carpetas), abierto desde el logo de la barra.
 - Un panel de **ajustes rápidos** (red, volumen, brillo) desplegable desde
