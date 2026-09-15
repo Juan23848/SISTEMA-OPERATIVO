@@ -127,11 +127,20 @@ escribís y filtra al toque, sin scrollear menús.
 A diferencia del resto del shell, esta pieza **sí se pudo probar
 visualmente de verdad**: se armó una pantalla virtual (`Xvfb`) en el
 entorno de desarrollo, se abrió el lanzador contra esa pantalla y se sacó
-una captura real. Esto además hizo aparecer un bug real (el nombre técnico
-del modo, "drun", se colaba pegado al texto de búsqueda) que se corrigió
-antes de subir el archivo.
+una captura real. Esto hizo aparecer dos bugs reales que ya se corrigieron:
+el nombre técnico del modo ("drun") se colaba pegado al texto de búsqueda,
+y sin especificar una fuente el tema usaba la tipografía monoespaciada por
+defecto de rofi (daba un aire a terminal/DOS de los 90, nada que ver con
+la identidad de Antü) — ahora usa **Inter** (`fonts-inter`, agregado a
+`package-lists`).
 
 ![Lanzador de Antü](screenshots/antu-launcher.png)
+
+*(El fondo negro liso de la captura es una limitación del banco de
+pruebas — una pantalla X vacía sin el escritorio corriendo detrás — no
+del diseño: en el sistema real se ve el wallpaper de Antü, que se
+configura por otro lado y ya está validado — ver la sección de Cinnamon
+más arriba.)*
 
 Todavía falta: que el logo de la barra superior abra este lanzador (hoy
 abre el menú nativo de Cinnamon; el atajo de teclado sí es de Antü), e

@@ -13,6 +13,7 @@
 
     background-color: transparent;
     text-color:       @antu-text;
+    font:             "Inter 12";
 }
 
 window {
