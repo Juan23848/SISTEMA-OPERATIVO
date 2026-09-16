@@ -17,12 +17,16 @@
       <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.85"/>
       <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
     </linearGradient>
+    <linearGradient id="spineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0E2C5C"/>
+      <stop offset="100%" stop-color="#2A5CA0"/>
+    </linearGradient>
     <linearGradient id="paperGrad" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#FFFFFF"/>
       <stop offset="100%" stop-color="#E4EEFB"/>
     </linearGradient>
     <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#020818" flood-opacity="0.5"/>
+      <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#020818" flood-opacity="0.5"/>
     </filter>
     <filter id="glowBlur" x="-80%" y="-80%" width="260%" height="260%">
       <feGaussianBlur stdDeviation="3"/>
@@ -32,50 +36,60 @@
     </filter>
   </defs>
 
-  <!-- Hojas asomando -->
-  <g filter="url(#paperShadow)">
-    <rect x="112" y="28" width="68" height="94" rx="4" fill="url(#paperGrad)" transform="rotate(7 146 75)"/>
-    <rect x="97" y="24" width="68" height="96" rx="4" fill="url(#paperGrad)" transform="rotate(-5 131 72)"/>
-    <g transform="rotate(1 128 70)">
-      <rect x="93" y="22" width="68" height="96" rx="4" fill="#FFFFFF"/>
-      <rect x="105" y="38" width="44" height="4" rx="2" fill="#2E9FE0"/>
-      <rect x="105" y="48" width="36" height="4" rx="2" fill="#B9CEE8"/>
-      <rect x="105" y="58" width="40" height="4" rx="2" fill="#B9CEE8"/>
-      <rect x="105" y="32" width="24" height="4" rx="2" fill="#5AD8FF"/>
+  <ellipse cx="130" cy="223" rx="98" ry="8" fill="#020818" opacity="0.35"/>
+
+  <g transform="rotate(-5 128 140)" filter="url(#softShadow)">
+
+    <!-- Hojas asomando, dentro del mismo grupo inclinado -->
+    <g filter="url(#paperShadow)">
+      <rect x="112" y="28" width="68" height="94" rx="4" fill="url(#paperGrad)" transform="rotate(7 146 75)"/>
+      <rect x="97" y="24" width="68" height="96" rx="4" fill="url(#paperGrad)" transform="rotate(-5 131 72)"/>
+      <g transform="rotate(1 128 70)">
+        <rect x="93" y="22" width="68" height="96" rx="4" fill="#FFFFFF"/>
+        <rect x="105" y="38" width="44" height="4" rx="2" fill="#2E9FE0"/>
+        <rect x="105" y="48" width="36" height="4" rx="2" fill="#B9CEE8"/>
+        <rect x="105" y="58" width="40" height="4" rx="2" fill="#B9CEE8"/>
+        <rect x="105" y="32" width="24" height="4" rx="2" fill="#5AD8FF"/>
+      </g>
     </g>
+
+    <!-- Canto lateral izquierdo -->
+    <path d="M 12 70 L 20 68 L 20 206 L 28 218 L 14 218 Q 6 216 6 206 L 6 80 Q 6 72 12 70 Z"
+          fill="url(#spineGrad)"/>
+
+    <!-- Panel trasero con pestaña -->
+    <path d="M 22 58
+             L 92 58
+             L 108 80
+             L 232 80
+             Q 240 80 240 88
+             L 240 206
+             Q 240 216 230 216
+             L 30 216
+             Q 20 216 20 206
+             L 20 68
+             Q 20 58 22 58 Z"
+          fill="url(#backGrad)"/>
+
+    <rect x="22" y="58" width="70" height="8" rx="3" fill="url(#tabGlow)"/>
+
+    <!-- Solapa delantera -->
+    <path d="M 18 104
+             L 238 104
+             L 227 208
+             Q 226 218 216 218
+             L 40 218
+             Q 30 218 29 208
+             Z"
+          fill="url(#flapGrad)"/>
+
+    <path d="M 18 104 L 29 208 Q 30 218 40 218 L 33 218 Q 24 217 22 208 L 12 106 Z"
+          fill="#B7D6FF" opacity="0.55"/>
+
+    <path d="M 24 105 L 232 105" stroke="url(#tabGlow)" stroke-width="6" stroke-linecap="round" opacity="0.8" filter="url(#glowBlur)"/>
+    <path d="M 24 105 L 232 105" stroke="#EAFBFF" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+
+    <path d="M 30 112 Q 90 100 170 112 L 150 145 Q 90 130 34 148 Z" fill="url(#sheen)" opacity="0.55"/>
+    <ellipse cx="55" cy="118" rx="22" ry="8" fill="#FFFFFF" opacity="0.35"/>
   </g>
-
-  <!-- Panel trasero con pestaña -->
-  <path d="M 22 58
-           L 92 58
-           L 108 80
-           L 232 80
-           Q 240 80 240 88
-           L 240 206
-           Q 240 216 230 216
-           L 30 216
-           Q 20 216 20 206
-           L 20 68
-           Q 20 58 22 58 Z"
-        fill="url(#backGrad)" filter="url(#softShadow)"/>
-
-  <rect x="22" y="58" width="70" height="8" rx="3" fill="url(#tabGlow)"/>
-
-  <!-- Solapa delantera -->
-  <path d="M 18 104
-           L 238 104
-           L 227 208
-           Q 226 218 216 218
-           L 40 218
-           Q 30 218 29 208
-           Z"
-        fill="url(#flapGrad)"/>
-
-  <path d="M 24 105 L 232 105" stroke="url(#tabGlow)" stroke-width="6" stroke-linecap="round" opacity="0.8" filter="url(#glowBlur)"/>
-  <path d="M 24 105 L 232 105" stroke="#EAFBFF" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
-
-  <path d="M 30 112 Q 90 100 170 112 L 150 145 Q 90 130 34 148 Z" fill="url(#sheen)" opacity="0.55"/>
-  <ellipse cx="55" cy="118" rx="22" ry="8" fill="#FFFFFF" opacity="0.35"/>
-
-  <ellipse cx="130" cy="222" rx="95" ry="8" fill="#020818" opacity="0.35"/>
 </svg>

@@ -7,57 +7,62 @@
       <stop offset="65%" stop-color="#93A8C2"/>
       <stop offset="100%" stop-color="#5C7192"/>
     </linearGradient>
-    <linearGradient id="rimGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+    <linearGradient id="rimTop" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#FFFFFF"/>
-      <stop offset="100%" stop-color="#AEC0D8"/>
+      <stop offset="55%" stop-color="#DCE7F4"/>
+      <stop offset="100%" stop-color="#9FB2CC"/>
     </linearGradient>
-    <linearGradient id="tabGlow" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#EAFBFF"/>
-      <stop offset="100%" stop-color="#5AD8FF"/>
+    <linearGradient id="tabGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#5AD8FF" stop-opacity="0.2"/>
+      <stop offset="50%" stop-color="#EAFBFF"/>
+      <stop offset="100%" stop-color="#5AD8FF" stop-opacity="0.2"/>
     </linearGradient>
-    <radialGradient id="insideDark" cx="50%" cy="0%" r="80%">
-      <stop offset="0%" stop-color="#1B2C42"/>
-      <stop offset="100%" stop-color="#324564"/>
+    <radialGradient id="insideDark" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#0F1B2E"/>
+      <stop offset="100%" stop-color="#3A4E70"/>
     </radialGradient>
+    <linearGradient id="baseShade" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4E6285"/>
+      <stop offset="50%" stop-color="#8497B4"/>
+      <stop offset="100%" stop-color="#3E5074"/>
+    </linearGradient>
     <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
       <feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#020818" flood-opacity="0.45"/>
     </filter>
-    <filter id="glowBlur" x="-80%" y="-80%" width="260%" height="260%">
-      <feGaussianBlur stdDeviation="3"/>
-    </filter>
   </defs>
 
-  <!-- Cuerpo -->
-  <path d="M 82 96
-           L 174 96
-           L 162 208
-           Q 161 216 152 216
-           L 104 216
-           Q 95 216 94 208
-           Z"
+  <!-- Cuerpo tronco-conico: pared lateral entre la elipse del borde
+       (arriba) y la elipse de la base (abajo), para que se vea como un
+       objeto real visto desde arriba, no una silueta plana. -->
+  <path d="M 76 96
+           C 74 140, 78 178, 90 206
+           A 38 9 0 0 0 166 206
+           C 178 178, 182 140, 180 96
+           A 52 15 0 0 1 76 96 Z"
         fill="url(#binGrad)" filter="url(#softShadow)"/>
 
-  <!-- Nervaduras verticales -->
-  <g stroke="#5C7192" stroke-width="2.5" opacity="0.55">
-    <line x1="104" y1="104" x2="98" y2="208"/>
-    <line x1="128" y1="104" x2="126" y2="210"/>
-    <line x1="152" y1="104" x2="158" y2="208"/>
+  <!-- Nervaduras verticales, siguiendo la curva del cuerpo -->
+  <g stroke="#5C7192" stroke-width="2.2" opacity="0.5" fill="none">
+    <path d="M 100 100 C 96 140, 97 178, 101 204"/>
+    <path d="M 128 104 C 126 144, 126 180, 127 206"/>
+    <path d="M 156 100 C 160 140, 159 178, 155 204"/>
   </g>
-  <g stroke="#FFFFFF" stroke-width="1.2" opacity="0.5">
-    <line x1="112" y1="104" x2="107" y2="208"/>
-    <line x1="140" y1="104" x2="142" y2="209"/>
+  <g stroke="#FFFFFF" stroke-width="1.1" opacity="0.45" fill="none">
+    <path d="M 110 101 C 106 142, 107 179, 111 205"/>
+    <path d="M 146 101 C 150 142, 149 179, 145 205"/>
   </g>
 
-  <!-- Interior -->
-  <path d="M 88 96 L 168 96 L 163 112 L 93 112 Z" fill="url(#insideDark)"/>
+  <!-- Base: elipse angosta, mas oscura a los costados (sombra propia) -->
+  <ellipse cx="128" cy="206" rx="38" ry="9" fill="url(#baseShade)"/>
 
-  <!-- Reborde -->
-  <rect x="76" y="86" width="104" height="16" rx="6" fill="url(#rimGrad)"/>
-  <rect x="80" y="88" width="96" height="6" rx="3" fill="url(#tabGlow)"/>
+  <!-- Boca de la papelera: elipse (aro), da la ilusion de mirar hacia
+       adentro desde un angulo, en vez de un rectangulo de frente. -->
+  <ellipse cx="128" cy="94" rx="52" ry="15" fill="url(#rimTop)"/>
+  <ellipse cx="128" cy="95.5" rx="43" ry="11" fill="url(#insideDark)"/>
 
-  <!-- Highlight puntual (brillo especular sobre metal) -->
-  <ellipse cx="102" cy="130" rx="8" ry="30" fill="#FFFFFF" opacity="0.5"/>
+  <!-- Acento celeste: arco sobre el frente del borde -->
+  <path d="M 84 100 A 46 12 0 0 0 172 100" fill="none" stroke="url(#tabGlow)" stroke-width="4.5" stroke-linecap="round"/>
 
-  <!-- Sombra de contacto -->
-  <ellipse cx="128" cy="220" rx="46" ry="8" fill="#020818" opacity="0.3"/>
+  <!-- Sombra de contacto en el piso -->
+  <ellipse cx="128" cy="222" rx="48" ry="8" fill="#020818" opacity="0.3"/>
 </svg>
