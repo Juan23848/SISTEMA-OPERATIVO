@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="binGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0A1730"/>
+      <stop offset="18%" stop-color="#2E4E82"/>
+      <stop offset="45%" stop-color="#16294A"/>
+      <stop offset="100%" stop-color="#04070D"/>
+    </linearGradient>
+    <linearGradient id="rimGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3A5C92"/>
+      <stop offset="100%" stop-color="#0E1E38"/>
+    </linearGradient>
+    <linearGradient id="tabGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#BFEFFF"/>
+      <stop offset="100%" stop-color="#5AD8FF"/>
+    </linearGradient>
+    <linearGradient id="paperBall" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#C7DCF2"/>
+    </linearGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000107" flood-opacity="0.55"/>
+    </filter>
+    <filter id="glowSoft" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+  </defs>
+
+  <!-- Brillo celeste debajo, senal de "tiene contenido" (guino al arco de
+       luz del logo, no solo un detalle decorativo). -->
+  <ellipse cx="128" cy="214" rx="46" ry="10" fill="#5AD8FF" opacity="0.35" filter="url(#glowSoft)"/>
+
+  <!-- Cuerpo de la papelera -->
+  <path d="M 82 96
+           L 174 96
+           L 162 208
+           Q 161 216 152 216
+           L 104 216
+           Q 95 216 94 208
+           Z"
+        fill="url(#binGrad)" filter="url(#softShadow)"/>
+
+  <!-- Nervaduras verticales -->
+  <g stroke="#04070D" stroke-width="2" opacity="0.5">
+    <line x1="104" y1="104" x2="98" y2="208"/>
+    <line x1="128" y1="104" x2="126" y2="210"/>
+    <line x1="152" y1="104" x2="158" y2="208"/>
+  </g>
+
+  <!-- Papeles desbordando (dibujados sobre el cuerpo, antes del reborde,
+       para que parezca que salen por arriba) -->
+  <g>
+    <path d="M 90 78 Q 84 66 96 58 Q 106 50 116 60 Q 122 50 132 56 Q 128 68 118 72 Q 122 82 108 84 Q 96 88 90 78 Z" fill="url(#paperBall)"/>
+    <path d="M 122 70 Q 118 56 132 50 Q 146 44 154 56 Q 162 52 166 62 Q 160 74 148 74 Q 150 86 136 86 Q 124 86 122 70 Z" fill="#EAF4FF"/>
+    <path d="M 150 80 Q 148 68 160 64 Q 172 60 176 72 Q 180 82 170 88 Q 160 94 150 88 Q 146 84 150 80 Z" fill="url(#paperBall)"/>
+    <!-- pliegues sutiles -->
+    <path d="M 100 66 L 108 72 M 136 60 L 130 68 M 160 72 L 168 78" stroke="#9CB6D6" stroke-width="1.5" opacity="0.6" fill="none"/>
+  </g>
+
+  <!-- Borde/reborde superior, por encima de los papeles que quedan mas abajo -->
+  <rect x="76" y="86" width="104" height="16" rx="6" fill="url(#rimGrad)"/>
+  <rect x="80" y="88" width="96" height="6" rx="3" fill="url(#tabGlow)"/>
+
+  <!-- Realce a la izquierda -->
+  <path d="M 92 108 Q 88 150 96 200" stroke="#9CC6F2" stroke-width="5" stroke-opacity="0.3" fill="none" stroke-linecap="round"/>
+</svg>

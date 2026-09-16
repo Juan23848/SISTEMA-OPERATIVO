@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="backGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#16294A"/>
+      <stop offset="100%" stop-color="#050B16"/>
+    </linearGradient>
+    <linearGradient id="flapGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2E4E82"/>
+      <stop offset="45%" stop-color="#152B4D"/>
+      <stop offset="100%" stop-color="#060D1A"/>
+    </linearGradient>
+    <linearGradient id="rimGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#5AD8FF" stop-opacity="0.2"/>
+      <stop offset="50%" stop-color="#BFEFFF" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#5AD8FF" stop-opacity="0.2"/>
+    </linearGradient>
+    <linearGradient id="tabGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#BFEFFF"/>
+      <stop offset="100%" stop-color="#5AD8FF"/>
+    </linearGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000107" flood-opacity="0.55"/>
+    </filter>
+    <filter id="glowBlur" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+  </defs>
+
+  <!-- Panel trasero con pestaña -->
+  <path d="M 22 58
+           L 92 58
+           L 108 80
+           L 232 80
+           Q 240 80 240 88
+           L 240 206
+           Q 240 216 230 216
+           L 30 216
+           Q 20 216 20 206
+           L 20 68
+           Q 20 58 22 58 Z"
+        fill="url(#backGrad)" filter="url(#softShadow)"/>
+
+  <!-- Franja celeste en el borde de la pestaña: acento de marca, visible
+       incluso a tamaño chico. -->
+  <rect x="22" y="58" width="70" height="8" rx="3" fill="url(#tabGlow)"/>
+
+  <!-- Solapa delantera (da la sensacion de volumen) -->
+  <path d="M 18 104
+           L 238 104
+           L 227 208
+           Q 226 218 216 218
+           L 40 218
+           Q 30 218 29 208
+           Z"
+        fill="url(#flapGrad)"/>
+
+  <!-- Brillo/linea de luz en el borde superior de la solapa, guino a la
+       identidad de Antu (arco de luz del logo). Doble trazo: uno ancho y
+       difuminado (glow) y uno fino y nitido encima (nucleo), para que se
+       note incluso reducido a un icono chico. -->
+  <path d="M 24 105 L 232 105" stroke="url(#rimGlow)" stroke-width="6" stroke-linecap="round" filter="url(#glowBlur)"/>
+  <path d="M 24 105 L 232 105" stroke="url(#rimGlow)" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Realce (highlight) diagonal, como un reflejo de luz sobre plastico/vidrio -->
+  <path d="M 30 112 Q 80 100 140 108 L 132 122 Q 78 115 32 124 Z" fill="#9CC6F2" opacity="0.25"/>
+</svg>
