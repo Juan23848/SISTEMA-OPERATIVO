@@ -197,25 +197,52 @@ reconfirmarlo en Debian real (esto se probó en un entorno de desarrollo
 basado en Ubuntu, que maneja los paquetes de idioma de forma distinta a
 Debian).
 
-## Íconos propios (pendiente, ideas para la próxima sesión)
+## Íconos propios
 
-Además del idioma, la idea es que Antü tenga su **propio set de íconos**
-en vez de reusar el genérico de Linux — diseñados con el mismo lenguaje
-visual del logo (arco de luz, paleta azul) y, donde tenga sentido, con
-pequeños detalles animados que refuercen la función del ícono:
+Antü tiene su **propio tema de íconos** (`Antu`) en vez de reusar el
+genérico de Linux, con el mismo lenguaje visual del logo: skeuomórfico,
+en vidrio/metal azul con acentos cian y el "arco de luz" cruzando cada
+pieza. Las fuentes originales (renders de alta resolución, 1254×1254,
+con transparencia real) viven en `shared/branding/icons/png/`; a partir
+de ahí se generó el tema instalable en
+`shared/branding/icons/antu-icons/` siguiendo el estándar freedesktop
+(hicolor), en 3 tamaños (256×256, 48×48 y 24×24 — se revisaron los tres
+a mano para confirmar que se siguen leyendo bien en el tamaño chico de
+panel/lista, no solo a full size):
 
-- La papelera podría verse distinta según si tiene algo adentro o no.
-- Las carpetas podrían mostrar "hojas" adentro al pasar el mouse, como
-  una carpeta real.
+| Ícono | Nombre freedesktop | Contexto |
+|---|---|---|
+| Papelera vacía | `user-trash` | Places |
+| Papelera llena | `user-trash-full` | Places |
+| Carpeta (genérica) | `folder` | Places |
+| Carpeta (variante) | `folder-open` | Places |
+| Descargas | `folder-download` | Places |
+| Equipo | `computer` | Devices |
+| Red | `network-workgroup` | Devices |
+| Bienvenida a Antü | `start-here` | Applications |
 
-Es un proyecto de diseño grande (un set de íconos siguiendo el estándar
-freedesktop cubre cientos de casos). El plan es arrancar por los íconos
-más visibles (lanzador —ya está—, carpetas, papelera, configuración,
-terminal) y dejar el resto con una base genérica hasta ir
-reemplazándolos de a poco. Se puede partir de un set existente con
-licencia permisiva y hacerle las modificaciones necesarias, en vez de
-dibujar cada ícono desde cero. Sin empezar todavía — queda para una
-próxima sesión.
+La papelera usa el mecanismo nativo del estándar freedesktop
+(`user-trash` / `user-trash-full`): el gestor de archivos elige sola cuál
+mostrar según si la papelera tiene contenido, sin ninguna lógica
+adicional de nuestra parte — es un cambio de nombre de archivo, no de
+comportamiento. Las carpetas no tienen un estado "vacía/llena" nativo en
+el estándar (a diferencia de la papelera); se usa `folder` como ícono
+genérico por defecto (la variante con hojas asomando, que es la más
+"Antü"), dejando `folder-open` disponible como alternativa.
+
+El tema se instala en cada edición vía
+`shared/scripts/install-branding.sh` (copia
+`shared/branding/icons/antu-icons/` a
+`includes.chroot/usr/share/icons/Antu/`) y se fija como tema por
+defecto en la configuración de cada escritorio: `xsettings.xml`
+(`Net/IconThemeName`) en XFCE/Legacy, `icon-theme` en
+`org/cinnamon/desktop/interface` vía dconf en Cinnamon/Standard, y
+`[Icons] Theme=Antu` en `kdeglobals` en Plasma/Pro.
+
+Queda para una próxima sesión: cubrir el resto de los íconos de sistema
+(configuración, terminal, etc.) con el mismo lenguaje visual — por ahora
+esos quedan con la base genérica del tema heredado (`hicolor`) hasta ir
+reemplazándolos de a poco.
 
 ### Pro: todavía sin sesión real
 
@@ -271,9 +298,11 @@ configura por otro lado y ya está validado — ver la sección de Cinnamon
 más arriba.)*
 
 Todavía falta: que el logo de la barra superior abra este lanzador (hoy
-abre el menú nativo de Cinnamon; el atajo de teclado sí es de Antü), e
-íconos por app en el buscador (dependen del tema de íconos, que también es
-un pendiente).
+abre el menú nativo de Cinnamon; el atajo de teclado sí es de Antü). El
+buscador ya hereda el tema de íconos propio (`Antu`) para las carpetas
+del sistema; los íconos por app individual dependen de que cada paquete
+tenga su propio ícono en el tema activo, algo fuera del alcance de
+`antu-icons`.
 
 **Lo que falta, y que se piensa agregar de forma incremental por edición**
 (de más simple a más compleja, ver `docs/ROADMAP.md`):

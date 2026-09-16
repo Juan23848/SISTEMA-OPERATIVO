@@ -17,7 +17,8 @@ virtual) — no solo por sintaxis — y encontraron y corrigieron bugs reales
 en el camino (ver `docs/ARCHITECTURE.md` y las capturas en
 `docs/screenshots/`). Pro (KDE Plasma) todavía no se pudo probar así.
 Las 3 ediciones también tienen **español (Argentina) como idioma por
-defecto** — ver Fase 0.5 — y queda pendiente un set de íconos propios.
+defecto** y un **set de íconos propios** (tema `Antu`) instalado como
+tema de sistema real — ver Fase 0.5.
 
 ## Fase 0 — Scaffold (completa)
 
@@ -56,15 +57,17 @@ pegado". Aplica a las 3 ediciones por igual.
       títulos de ventana) depende de la traducción que traiga cada
       paquete — confirmar en Debian real (se probó en un entorno de
       desarrollo basado en Ubuntu). Ver `docs/ARCHITECTURE.md`.
-- [ ] **Set de íconos propios**, con el lenguaje visual de Antü (arco de
-      luz, paleta azul) en vez del genérico de Linux. El lanzador ya usa
-      el logo de Antü; falta el resto. Arrancar por los más visibles:
-      carpetas, papelera, configuración, terminal. Partir de un set
-      existente con licencia permisiva y modificarlo, no dibujar todo
-      desde cero.
-      - Idea: la papelera se ve distinta si tiene algo adentro.
-      - Idea: las carpetas muestran "hojas" adentro al pasar el mouse.
-      - Sin empezar — a definir en una próxima sesión.
+- [x] **Set de íconos propios** (tema `Antu`, skeuomórfico, lenguaje
+      visual de Antü: vidrio/metal azul + arco de luz cian), instalado
+      como tema freedesktop real (`shared/branding/icons/antu-icons/`,
+      3 tamaños: 256/48/24px) y fijado por defecto en las 3 ediciones.
+      Cubre: papelera vacía/llena (con swap automático nativo del
+      estándar `user-trash`/`user-trash-full`), carpeta genérica,
+      carpeta Descargas, Equipo, Red y la insignia "Bienvenida a Antü".
+      Ver `docs/ARCHITECTURE.md`, sección "Íconos propios". Pendiente
+      para más adelante: el resto de los íconos de sistema
+      (configuración, terminal, etc.), que por ahora usan la base
+      genérica heredada (`hicolor`).
 
 ## Fase 1 — Antü Standard (MVP)
 

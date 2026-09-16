@@ -13,9 +13,13 @@ BRANDING_SRC="$REPO_ROOT/shared/branding"
 
 BG_DEST="$CONFIG_DIR/includes.chroot/usr/share/backgrounds/antu"
 ICON_DEST="$CONFIG_DIR/includes.chroot/usr/share/pixmaps/antu"
+THEME_DEST="$CONFIG_DIR/includes.chroot/usr/share/icons/Antu"
 
-mkdir -p "$BG_DEST" "$ICON_DEST"
+mkdir -p "$BG_DEST" "$ICON_DEST" "$THEME_DEST"
 
 echo "==> Instalando wallpaper ($WALLPAPER_VARIANT) y logo de Antü"
 cp "$BRANDING_SRC/wallpaper-$WALLPAPER_VARIANT.png" "$BG_DEST/wallpaper.png"
 cp "$BRANDING_SRC/logo.png" "$ICON_DEST/antu-logo.png"
+
+echo "==> Instalando tema de íconos propio de Antü"
+cp -r "$BRANDING_SRC/icons/antu-icons/." "$THEME_DEST/"

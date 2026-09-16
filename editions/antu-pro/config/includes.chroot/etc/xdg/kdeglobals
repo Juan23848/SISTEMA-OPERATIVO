@@ -1,2 +1,8 @@
 [KDE]
 LookAndFeelPackage=org.antu.desktop
+
+# Tema de íconos propio (Antu, skeuomórfico, ver
+# shared/branding/icons/antu-icons), instalado en /usr/share/icons/Antu
+# por shared/scripts/install-branding.sh.
+[Icons]
+Theme=Antu

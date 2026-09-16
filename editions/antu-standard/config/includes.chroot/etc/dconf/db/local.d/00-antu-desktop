@@ -23,12 +23,18 @@ next-applet-id=7
 picture-uri='file:///usr/share/backgrounds/antu/wallpaper.png'
 picture-options='zoom'
 
-# El tema GTK/íconos oscuro propio de Antü todavía no existe (queda para
-# más adelante, ver docs/ROADMAP.md). No forzamos un tema de otra distro
-# (como Mint-Y) porque ni es parte de nuestra identidad visual ni está
-# instalado por defecto en Debian: si lo hardcodeábamos sin el paquete
-# correspondiente en package-lists, Cinnamon lo hubiera ignorado en
-# silencio y quedaba con el tema por defecto de todos modos.
+# Tema de íconos propio (Antu, skeuomórfico, ver
+# shared/branding/icons/antu-icons), instalado en /usr/share/icons/Antu
+# por shared/scripts/install-branding.sh.
+[org/cinnamon/desktop/interface]
+icon-theme='Antu'
+
+# El tema GTK (colores/ventanas) oscuro propio de Antü todavía no existe
+# (queda para más adelante, ver docs/ROADMAP.md). No forzamos un tema de
+# otra distro (como Mint-Y) porque ni es parte de nuestra identidad
+# visual ni está instalado por defecto en Debian: si lo hardcodeábamos
+# sin el paquete correspondiente en package-lists, Cinnamon lo hubiera
+# ignorado en silencio y quedaba con el tema por defecto de todos modos.
 
 # Lanzador de Antü: Super+Espacio abre rofi con el tema propio
 # (shared con Cinnamon vía el mismo mecanismo de atajos personalizados

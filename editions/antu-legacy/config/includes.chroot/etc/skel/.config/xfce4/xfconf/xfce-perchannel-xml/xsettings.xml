@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Tema de íconos por defecto: Antu (propio, ver
+     shared/branding/icons/antu-icons). Instalado en
+     /usr/share/icons/Antu por shared/scripts/install-branding.sh. -->
+<channel name="xsettings" version="1.0">
+  <property name="Net" type="empty">
+    <property name="IconThemeName" type="string" value="Antu"/>
+  </property>
+</channel>

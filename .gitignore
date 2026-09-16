@@ -5,6 +5,7 @@ editions/*/build/
 # includes.chroot, como el look-and-feel de Plasma en antu-pro).
 editions/*/config/includes.chroot/usr/share/backgrounds/antu/
 editions/*/config/includes.chroot/usr/share/pixmaps/antu/
+editions/*/config/includes.chroot/usr/share/icons/Antu/
 editions/*/config/config/
 editions/*/config/.build/
 editions/*/config/cache/
