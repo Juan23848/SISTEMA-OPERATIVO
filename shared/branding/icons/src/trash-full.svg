@@ -57,13 +57,16 @@
 
   <ellipse cx="128" cy="206" rx="38" ry="9" fill="url(#baseShade)"/>
 
-  <!-- Papeles desbordando, detras del aro del borde -->
-  <g>
-    <path d="M 90 74 Q 84 60 97 52 Q 108 44 118 54 Q 124 43 135 50 Q 130 63 119 67 Q 124 78 109 80 Q 96 84 90 74 Z" fill="url(#paperBall)"/>
-    <path d="M 122 64 Q 118 49 133 43 Q 148 36 156 49 Q 165 45 169 56 Q 163 69 150 68 Q 152 81 137 82 Q 124 82 122 64 Z" fill="#FFFFFF"/>
-    <path d="M 150 75 Q 148 62 161 58 Q 174 54 178 67 Q 182 78 171 84 Q 160 91 150 84 Q 145 80 150 75 Z" fill="url(#paperBall)"/>
-    <path d="M 100 61 L 108 68 M 137 54 L 130 63 M 161 67 L 170 74" stroke="#9CB6D6" stroke-width="1.5" opacity="0.6" fill="none"/>
+  <!-- Papeles desbordando: bien metidos hacia abajo (llegan hasta
+       y~106-113) para que el aro y el agujero, dibujados despues, los
+       tapen de verdad en la parte de abajo. Sin este solape se ve un
+       hueco y el papel queda "flotando" arriba de la papelera. -->
+  <g stroke="#9CB6D6" stroke-width="1.2">
+    <path d="M 90 96 Q 84 82 97 74 Q 108 66 118 76 Q 124 65 135 72 Q 130 85 119 89 Q 124 100 109 102 Q 96 106 90 96 Z" fill="url(#paperBall)"/>
+    <path d="M 122 86 Q 118 71 133 65 Q 148 58 156 71 Q 165 67 169 78 Q 163 91 150 90 Q 152 103 137 104 Q 124 104 122 86 Z" fill="#FFFFFF"/>
+    <path d="M 150 97 Q 148 84 161 80 Q 174 76 178 89 Q 182 100 171 106 Q 160 113 150 106 Q 145 102 150 97 Z" fill="url(#paperBall)"/>
   </g>
+  <path d="M 100 83 L 108 90 M 137 76 L 130 85 M 161 89 L 170 96" stroke="#7A93B8" stroke-width="1.5" opacity="0.7" fill="none"/>
 
   <!-- Boca de la papelera -->
   <ellipse cx="128" cy="94" rx="52" ry="15" fill="url(#rimTop)"/>

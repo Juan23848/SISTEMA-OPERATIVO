@@ -23,7 +23,8 @@
     </linearGradient>
     <linearGradient id="paperGrad" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#FFFFFF"/>
-      <stop offset="100%" stop-color="#E4EEFB"/>
+      <stop offset="65%" stop-color="#EFF5FC"/>
+      <stop offset="100%" stop-color="#9BB3D0"/>
     </linearGradient>
     <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
       <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#020818" flood-opacity="0.5"/>
@@ -31,25 +32,32 @@
     <filter id="glowBlur" x="-80%" y="-80%" width="260%" height="260%">
       <feGaussianBlur stdDeviation="3"/>
     </filter>
-    <filter id="paperShadow" x="-40%" y="-40%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0A1730" flood-opacity="0.35"/>
-    </filter>
+    <!-- Recorte: solo se ve el papel por ENCIMA del borde real de la
+         carpeta (la pestaña). Sin esto, el papel "flota" delante en vez
+         de asomar desde adentro. -->
+    <clipPath id="folderOpening">
+      <path d="M 0 0 L 256 0 L 256 80 L 108 80 L 92 58 L 22 58 L 0 58 Z"/>
+    </clipPath>
   </defs>
 
   <ellipse cx="130" cy="223" rx="98" ry="8" fill="#020818" opacity="0.35"/>
 
   <g transform="rotate(-5 128 140)" filter="url(#softShadow)">
 
-    <!-- Hojas asomando, dentro del mismo grupo inclinado -->
-    <g filter="url(#paperShadow)">
-      <rect x="112" y="28" width="68" height="94" rx="4" fill="url(#paperGrad)" transform="rotate(7 146 75)"/>
-      <rect x="97" y="24" width="68" height="96" rx="4" fill="url(#paperGrad)" transform="rotate(-5 131 72)"/>
-      <g transform="rotate(1 128 70)">
-        <rect x="93" y="22" width="68" height="96" rx="4" fill="#FFFFFF"/>
-        <rect x="105" y="38" width="44" height="4" rx="2" fill="#2E9FE0"/>
-        <rect x="105" y="48" width="36" height="4" rx="2" fill="#B9CEE8"/>
-        <rect x="105" y="58" width="40" height="4" rx="2" fill="#B9CEE8"/>
-        <rect x="105" y="32" width="24" height="4" rx="2" fill="#5AD8FF"/>
+    <!-- Hojas asomando: se dibujan bien abajo (hasta y=130, mas alla del
+         borde de la carpeta en y=58-80) para que el recorte + el cuerpo
+         de la carpeta las tapen de verdad, no dejando ningun hueco. -->
+    <g clip-path="url(#folderOpening)">
+      <g stroke="#B9CEE8" stroke-width="1.5">
+        <rect x="112" y="20" width="68" height="130" rx="4" fill="url(#paperGrad)" transform="rotate(7 146 85)"/>
+        <rect x="97" y="16" width="68" height="132" rx="4" fill="url(#paperGrad)" transform="rotate(-5 131 82)"/>
+        <g transform="rotate(1 128 80)">
+          <rect x="93" y="14" width="68" height="132" rx="4" fill="#FFFFFF"/>
+          <rect x="105" y="32" width="44" height="4" rx="2" fill="#2E9FE0" stroke="none"/>
+          <rect x="105" y="42" width="36" height="4" rx="2" fill="#B9CEE8" stroke="none"/>
+          <rect x="105" y="52" width="40" height="4" rx="2" fill="#B9CEE8" stroke="none"/>
+          <rect x="105" y="26" width="24" height="4" rx="2" fill="#5AD8FF" stroke="none"/>
+        </g>
       </g>
     </g>
 
