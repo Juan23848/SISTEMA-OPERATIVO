@@ -165,11 +165,24 @@ apuro (plazo: el año que viene).
       Se instala como Flatpak desde la tienda de apps que ya está
       configurada (Fase 0.6); no se bakea en la ISO porque necesitaría
       internet real a Flathub durante el build, algo no probado en este
-      entorno.
-- [ ] **Red mixta con PCs Windows (Samba)**: ver el ícono "Red" (Fase
-      0.5) poblado con las PCs Windows de la misma red, copiar archivos
-      para los dos lados sin configurar nada. `samba` + `cifs-utils` +
-      `winbind`. No arrancado todavía.
+      entorno. Una vez instalado no necesita integración a medida: va a
+      aparecer solo como alternativa en el "Abrir con..." de cualquier
+      `.exe`, al lado del Resolver (mecanismo estándar de asociación de
+      archivos, ver `docs/ARCHITECTURE.md`).
+- [x] **Red mixta con PCs Windows (Samba)**: el ícono "Red" (Fase 0.5)
+      ahora tiene algo real detrás. `samba` + `smbclient` + `cifs-utils`
+      + `wsdd` (para que Windows 10/11 vea a Antü en la red con el
+      mecanismo de descubrimiento moderno, no el NetBIOS viejo) en las
+      3 ediciones, con una carpeta compartida de acceso libre
+      (`/srv/antu-compartido`, sin pedir usuario/contraseña) lista de
+      fábrica. Compartir la carpeta personal de cada usuario con su
+      propia contraseña queda para más adelante — no se puede resolver
+      en el momento de compilar la ISO porque el usuario todavía no
+      existe. Validado con protocolo SMB real: se subió y bajó un
+      archivo con `smbclient` contra un `smbd` corrido en este entorno,
+      confirmando que el archivo llega de verdad al filesystem y vuelve
+      sin corromperse. Ver `docs/ARCHITECTURE.md`, sección "Red mixta
+      con PCs Windows (Samba)".
 - [ ] **Gaming (Proton/Steam)**: que la biblioteca de Steam con juegos
       de Windows funcione, pensado sobre todo para Antü Pro (hardware
       potente). No arrancado todavía.

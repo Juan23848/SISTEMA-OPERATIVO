@@ -1,0 +1,11 @@
+# Red mixta con PCs Windows: ver y compartir carpetas/impresoras entre
+# Antü y equipos Windows de la misma red, sin configurar nada.
+samba
+smbclient
+cifs-utils
+
+# Anuncia a Antü en la red al estilo moderno de Windows 10/11
+# (WS-Discovery), que reemplazó al viejo NetBIOS que ya casi no se usa.
+# Sin esto, una PC con Windows nuevo puede no "ver" a Antü en la lista
+# de Red (y viceversa), aunque el resto de Samba funcione bien.
+wsdd

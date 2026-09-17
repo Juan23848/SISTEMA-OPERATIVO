@@ -558,6 +558,47 @@ través del Resolver, la ventana apareció, y el archivo de caché quedó
 escrito con `{"blocdenotas.exe": {"engine": "wine", "status": "ok",
 ...}}` — antes incluso de que la ventana terminara de aparecer.
 
+### Red mixta con PCs Windows (Samba)
+
+Wine resuelve "correr un programa de Windows". Esto resuelve otra parte
+de la fusión: que Antü y una PC con Windows en la misma red doméstica u
+oficina se vean y compartan archivos entre sí, sin instalar nada
+aparte ni tocar una consola — el ícono "Red" (Fase 0.5) apuntando a algo
+real. Se arma con `samba` (el servidor SMB, el mismo protocolo que usa
+Windows para "Compartir carpeta") + `smbclient` + `cifs-utils` (para que
+Antü también pueda montar carpetas compartidas por una PC Windows) +
+`wsdd`, que anuncia a Antü en la red al estilo moderno de Windows 10/11
+(WS-Discovery) — el viejo NetBIOS que dependía de un "explorador
+maestro" en la red es cada vez menos confiable, así que sin `wsdd` una
+PC con Windows nuevo puede directamente no ver a Antü en su lista de
+Red.
+
+Antü trae de fábrica una carpeta compartida (`/srv/antu-compartido`,
+visible como `\\antu-hostname\Compartido` desde Windows) con **acceso
+de invitado** — sin pedir usuario ni contraseña. Es una decisión
+deliberada para la primera versión: compartir la carpeta personal de
+cada usuario (la opción `[homes]` de Samba) sería más privado, pero
+Samba necesita su propia contraseña, separada de la contraseña de
+Linux (`smbpasswd`) — y esa contraseña no se puede configurar en el
+momento de compilar la ISO porque el usuario todavía no existe (se crea
+recién en la instalación). Queda documentado como mejora futura, no
+como algo que se pueda resolver en el build.
+
+**Validado de verdad, protocolo real**: se armó la configuración
+(`etc/samba/smb.conf`), se corrió `smbd` (sin `systemd`, igual que se
+hizo con `udisks2` en la sección de compatibilidad) y se probó un ciclo
+completo con `smbclient`, el cliente SMB de línea de comandos:
+
+```
+$ smbclient //localhost/Compartido -N -c "put prueba.txt prueba.txt"
+putting file prueba.txt as \prueba.txt (32.2 kb/s)
+```
+
+El archivo subido por el protocolo SMB apareció de verdad en
+`/srv/antu-compartido/` del lado del sistema de archivos, y se pudo
+volver a bajar por SMB sin corromperse — el mismo camino que recorrería
+un archivo copiado desde el Explorador de Windows.
+
 ### Honestidad sobre los límites
 
 Wine reimplementa a mano miles de funciones de la API de Windows —no es
@@ -580,7 +621,17 @@ de programas puntuales antes de instalarlos.
   ISO. No se intentó automatizar su instalación *durante* el build
   porque necesitaría acceso a internet real a Flathub en el momento de
   compilar, algo que no se puede probar en este entorno (mismo motivo
-  por el que no se compiló una ISO completa todavía).
+  por el que no se compiló una ISO completa todavía). Una vez instalado,
+  no hace falta que Antü haga nada especial para que aparezca como
+  alternativa al abrir un `.exe`: las apps de Flatpak exportan sus
+  propios `.desktop` con `MimeType`, así que Bottles va a listarse solo
+  en el "Abrir con..." del gestor de archivos, al lado de "Abrir con
+  Antü" (el Resolver) — es el mecanismo estándar de asociación de
+  archivos, el mismo que usa el Resolver, no algo que haya que integrar
+  a mano. No se pudo instalar Bottles de verdad en este entorno para
+  confirmarlo en la práctica (sin acceso a Flathub), así que queda
+  como "razonablemente seguro por cómo funciona el estándar", no como
+  "validado".
 - **Proton/Steam** para juegos (ver `docs/ROADMAP.md`), pensado
   principalmente para Antü Pro.
 - Una **"Antü Store" propia** que unifique apt + Flatpak + AppImage +

@@ -1,0 +1,9 @@
+#!/bin/sh
+# La carpeta compartida (/srv/antu-compartido, ver includes.chroot y
+# etc/samba/smb.conf) necesita permisos abiertos para que el acceso de
+# invitado de Samba pueda escribir en ella. includes.chroot copia el
+# archivo .gitkeep con los permisos por defecto, no los 0777 que
+# necesita una carpeta de acceso libre.
+set -e
+
+chmod 0777 /srv/antu-compartido
