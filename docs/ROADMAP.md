@@ -110,6 +110,7 @@ perdió funcionalidad. Aplica a las 3 ediciones (`compat.list.chroot` y
       desde el navegador y LibreOffice respectivamente. Queda pendiente,
       si se quiere, armar un acceso directo de escritorio que abra
       claude.ai "como app".
+
 ## Fase 0.7 — Fusión funcional (WinLux de verdad)
 
 Criterio del proyecto, dicho por Juan desde el arranque: Antü no es
@@ -132,6 +133,33 @@ apuro (plazo: el año que viene).
       archivos Windows↔Linux funcionando (escribir desde el lado
       Windows, leer desde el lado Linux). Ver `docs/ARCHITECTURE.md`,
       sección "Fusión funcional: correr programas de Windows (Wine)".
+- [x] **Antü Resolver**: componente central que decide cómo abrir/
+      instalar cada archivo (`.exe`/`.msi` → Wine, `.AppImage` →
+      ejecución directa, `.deb` → apt, `.flatpakref` → Flatpak), con una
+      caché en disco (`~/.local/share/antu/resolver-profiles.json`) de
+      qué motor le funcionó a cada app para no repetir el intento cada
+      vez. Idea sugerida por Sofi; implementada como herramienta real
+      (`shared/resolver/antu-resolver`, instalada en las 3 ediciones) y
+      no solo como concepto. Los `.desktop` de asociación de `.exe`/
+      `.msi` ahora llaman al Resolver, no a Wine directo — de cara al
+      usuario dice "Abrir con Antü", no "Abrir con Wine". Validado de
+      punta a punta contra una pantalla virtual, con un bug real
+      encontrado y corregido en el camino (la primera versión esperaba
+      a que el usuario cerrara la app para recién ahí guardar si
+      "había andado" — se corrigió para decidirlo a los pocos segundos
+      de abrir el proceso). Ver `docs/ARCHITECTURE.md`, sección "Antü
+      Resolver".
+- [x] **ANTU Home** (idea de Sofi: que los documentos sean "los mismos"
+      para cualquier app, sea nativa o de Windows): ya está lograda para
+      todo lo que corre por Wine, gratis, sin construir nada — es cómo
+      Wine mapea de fábrica `C:\Users\...\Documents` a la carpeta real
+      de Linux (confirmado con la prueba de escritura/lectura cruzada
+      de la Fase anterior).
+- [x] **ANTU Device Bridge** (idea de Sofi: compartir portapapeles/
+      impresora/audio entre apps nativas y de Windows): mismo caso,
+      para Wine ya viene gratis (portapapeles de X11 compartido,
+      impresión por CUPS). Solo haría falta construir algo a medida si
+      más adelante se suma una VM (ver "ANTU Windows Core" más abajo).
 - [ ] **Bottles**: interfaz gráfica sobre Wine (un "prefijo" aislado por
       app, instalador visual) — mucho más amigable que Wine pelado.
       Se instala como Flatpak desde la tienda de apps que ya está
@@ -151,10 +179,34 @@ apuro (plazo: el año que viene).
 - [ ] **Antü Store propia**: una única app (no la Store genérica de
       cada DE) que unifique apt + Flatpak + AppImage + instaladores de
       Wine en una sola interfaz — "instalar" sin que el usuario sepa ni
-      le importe qué mecanismo hay detrás. Es la pieza más ambiciosa de
-      toda la fusión (desarrollo de una aplicación propia, no solo
-      configuración) — dejarla para cuando el resto de esta fase esté
-      maduro. No arrancado todavía.
+      le importe qué mecanismo hay detrás. `antu-resolver` ya distingue
+      `.deb`/`.flatpakref` además de `.exe`/`.msi`, así que la lógica de
+      backend ya arrancó; falta la interfaz gráfica. Es la pieza más
+      ambiciosa de toda la fusión — dejarla para cuando el resto de esta
+      fase esté maduro.
+- [ ] **ANTU Windows Core** (idea de Sofi: VM de Windows tan integrada
+      que se sienta invisible, para el software que ni Wine ni Proton
+      logren correr). Objetivo de largo plazo, con dos límites reales
+      que no son de ingeniería: necesita que el usuario aporte su propia
+      licencia e ISO de Windows (ninguna distro puede regalar Windows
+      por dentro), y mostrar *solo* la ventana de la app con GPU
+      acelerada es un problema serio (la técnica más conocida,
+      RemoteApp, necesita Windows Server/RDS; la GPU acelerada en una
+      VM en general necesita dos placas de video). Ver
+      `docs/ARCHITECTURE.md` para el detalle. Una VM de Windows normal
+      (ventana completa, sin el modo "invisible") sí sería simple de
+      ofrecer desde ya con `virt-manager`, si en algún momento hace
+      falta.
+- [ ] **ANTU Link** (idea de Sofi: app complementaria para Windows que
+      sincronice carpetas/preferencias, para migrar sin perder el punto
+      de partida). En vez de programarlo desde cero, evaluar armarlo
+      sobre **Syncthing** (software libre y maduro) con la cara de Antü
+      encima.
+- [ ] **Perfiles de compatibilidad comunitarios** (idea de Sofi): antes
+      de construir una base propia (necesita una comunidad de usuarios
+      que hoy no existe), evaluar que `antu-resolver` consulte bases ya
+      existentes como [WineHQ AppDB](https://appdb.winehq.org) o
+      [ProtonDB](https://www.protondb.com).
 
 ## Fase 1 — Antü Standard (MVP)
 

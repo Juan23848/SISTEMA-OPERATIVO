@@ -1,7 +1,7 @@
 [Desktop Entry]
-Name=Ejecutar con Wine
-Comment=Abre programas de Windows (.exe) sobre Antü
-Exec=wine %f
+Name=Abrir con Antü
+Comment=Ejecuta programas de Windows sobre Antü
+Exec=antu-resolver run %f
 Type=Application
 Terminal=false
 NoDisplay=true

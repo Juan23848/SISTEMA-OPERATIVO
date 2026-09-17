@@ -9,3 +9,7 @@ winetricks
 # registrar la asociación de .exe/.msi (ver includes.chroot/usr/share/
 # applications/). Ya viene con XFCE, se deja explícito por las dudas.
 desktop-file-utils
+
+# Trae notify-send: antu-resolver lo usa para avisar que esta
+# abriendo/instalando algo, sin que el usuario necesite abrir un log.
+libnotify-bin

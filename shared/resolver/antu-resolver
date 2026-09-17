@@ -1,0 +1,213 @@
+#!/usr/bin/env python3
+"""Antú Resolver: decide cómo abrir/instalar un archivo, sin que el
+usuario tenga que saber si es de Linux o de Windows.
+
+Uso:
+    antu-resolver run <archivo>      abre/ejecuta el archivo
+    antu-resolver install <archivo>  instala el archivo como app
+
+No es "inteligencia artificial": es una tabla de motores conocidos
+(Wine para .exe/.msi, apt para .deb, Flatpak para .flatpakref, ejecución
+directa para .AppImage) más una caché en disco de qué motor le
+funcionó a cada app la última vez, para no repetir el mismo intento
+cada vez que se abre el mismo programa. El mismo mecanismo que usan
+Lutris o Bottles para juegos/apps de Windows, aplicado acá a cualquier
+formato.
+"""
+
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+
+CACHE_DIR = os.path.join(
+    os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share")),
+    "antu",
+)
+CACHE_FILE = os.path.join(CACHE_DIR, "resolver-profiles.json")
+
+
+def notify(message):
+    """Aviso opcional por notificación de escritorio. Si no hay demonio
+    de notificaciones (notify-send ausente), simplemente no hace nada
+    en vez de romper: el resolver tiene que funcionar igual en una
+    sesión sin entorno gráfico completo."""
+    if shutil.which("notify-send"):
+        try:
+            subprocess.run(
+                ["notify-send", "-i", "utilities-terminal", "Antü", message],
+                check=False,
+                timeout=5,
+            )
+        except Exception:
+            pass
+
+
+def load_cache():
+    try:
+        with open(CACHE_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def save_cache(cache):
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    with open(CACHE_FILE, "w", encoding="utf-8") as f:
+        json.dump(cache, f, indent=2, ensure_ascii=False, sort_keys=True)
+
+
+def app_key(path):
+    """Identificador de la app para la caché. Se usa el nombre de
+    archivo, no un hash del contenido: el objetivo es reconocer "este
+    programa" entre distintas descargas/versiones, no un archivo
+    puntual. Limitación conocida: si el instalador cambia de nombre,
+    el resolver no lo reconoce y vuelve a probar desde cero."""
+    return os.path.basename(path).lower()
+
+
+def detect_mimetype(path):
+    try:
+        result = subprocess.run(
+            ["xdg-mime", "query", "filetype", path],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        mimetype = result.stdout.strip()
+        if mimetype:
+            return mimetype
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    return None
+
+
+# Motores conocidos, en el orden en que Antü los va a sumar. Por ahora
+# solo existe Wine (WinLayer) — Windows Core (VM) queda para más
+# adelante y depende de que el usuario aporte su propia licencia de
+# Windows, no es algo que Antü pueda ofrecer de fábrica (ver
+# docs/ARCHITECTURE.md).
+WINE_MIMETYPES = {"application/x-ms-dos-executable", "application/x-msdownload"}
+MSI_MIMETYPES = {"application/x-msi"}
+DEB_MIMETYPES = {"application/vnd.debian.binary-package"}
+FLATPAKREF_MIMETYPES = {"application/vnd.flatpak.ref"}
+
+
+def is_appimage(path, mimetype):
+    if path.lower().endswith(".appimage"):
+        return True
+    return mimetype in {"application/x-iso9660-appimage", "application/vnd.appimage"}
+
+
+def run_wine(path, cache, key, msi=False):
+    engine = "wine-msi" if msi else "wine"
+    known = cache.get(key)
+    if known and known.get("engine") == engine and known.get("status") == "failed":
+        # Ya sabemos que a esta app no le fue bien con Wine. Por ahora
+        # es el único motor disponible, así que se avisa en vez de
+        # reintentar en silencio una y otra vez.
+        notify(f"'{os.path.basename(path)}' ya falló antes con Wine. Se vuelve a intentar.")
+
+    notify(f"Abriendo '{os.path.basename(path)}' con Antü WinLayer (Wine)...")
+    cmd = ["wine", "msiexec", "/i", path] if msi else ["wine", path]
+
+    # No se puede usar subprocess.run() (espera a que el proceso
+    # termine): una app con ventana se queda abierta hasta que el
+    # usuario la cierra, a veces horas después, y recién ahí se sabría
+    # si "funcionó". Lo que en realidad indica si el lanzamiento
+    # anduvo es si el proceso sigue vivo pasados unos segundos (no se
+    # cayó de entrada por una DLL faltante, una excepción, etc.) — eso
+    # se puede saber sin esperar a que se cierre.
+    try:
+        proc = subprocess.Popen(cmd)
+    except FileNotFoundError:
+        notify("Wine no está instalado en este sistema.")
+        return 1
+
+    time.sleep(3)
+    ok = proc.poll() is None or proc.returncode == 0
+
+    cache[key] = {
+        "engine": engine,
+        "status": "ok" if ok else "failed",
+        "last_used": int(time.time()),
+    }
+    save_cache(cache)
+
+    if not ok:
+        notify(f"'{os.path.basename(path)}' no pudo abrirse con Wine.")
+        return proc.returncode
+
+    # El lanzamiento fue bien: ahora sí se espera a que el usuario
+    # cierre la app, para que antu-resolver no corte el proceso al
+    # terminar (el .desktop que lo invoca no debe volver antes).
+    return proc.wait()
+
+
+def run_appimage(path):
+    if not os.access(path, os.X_OK):
+        os.chmod(path, os.stat(path).st_mode | 0o111)
+    notify(f"Abriendo '{os.path.basename(path)}' (AppImage)...")
+    return subprocess.run([path], check=False).returncode
+
+
+def install_deb(path):
+    notify(f"Instalando '{os.path.basename(path)}' con apt...")
+    gdebi = shutil.which("gdebi-gtk") or shutil.which("gdebi")
+    if gdebi:
+        return subprocess.run(["pkexec", gdebi, path], check=False).returncode
+    return subprocess.run(
+        ["pkexec", "apt-get", "install", "-y", path], check=False
+    ).returncode
+
+
+def install_flatpakref(path):
+    notify(f"Instalando '{os.path.basename(path)}' desde Flathub...")
+    return subprocess.run(["flatpak", "install", "-y", path], check=False).returncode
+
+
+def resolve(path):
+    if not os.path.isfile(path):
+        print(f"antu-resolver: no existe el archivo '{path}'", file=sys.stderr)
+        return 1
+
+    mimetype = detect_mimetype(path)
+    cache = load_cache()
+    key = app_key(path)
+
+    if mimetype in WINE_MIMETYPES:
+        return run_wine(path, cache, key, msi=False)
+    if mimetype in MSI_MIMETYPES:
+        return run_wine(path, cache, key, msi=True)
+    if is_appimage(path, mimetype):
+        return run_appimage(path)
+    if mimetype in DEB_MIMETYPES or path.lower().endswith(".deb"):
+        return install_deb(path)
+    if mimetype in FLATPAKREF_MIMETYPES or path.lower().endswith(".flatpakref"):
+        return install_flatpakref(path)
+
+    # Extensión conocida pero shared-mime-info no la identificó (puede
+    # pasar con un .exe/.msi corrupto o con una extensión rara).
+    ext = os.path.splitext(path)[1].lower()
+    if ext == ".exe":
+        return run_wine(path, cache, key, msi=False)
+    if ext == ".msi":
+        return run_wine(path, cache, key, msi=True)
+
+    notify(f"Antü no reconoce el formato de '{os.path.basename(path)}'.")
+    print(f"antu-resolver: formato no reconocido (mimetype={mimetype!r})", file=sys.stderr)
+    return 1
+
+
+def main(argv):
+    if len(argv) != 3 or argv[1] not in ("run", "install"):
+        print(f"Uso: {argv[0]} <run|install> <archivo>", file=sys.stderr)
+        return 2
+    return resolve(argv[2])
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

@@ -15,3 +15,5 @@ editions/*/config/local/
 *.iso
 *.img
 *.log
+__pycache__/
+*.pyc

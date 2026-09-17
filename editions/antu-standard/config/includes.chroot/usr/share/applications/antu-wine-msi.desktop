@@ -1,7 +1,7 @@
 [Desktop Entry]
-Name=Instalar con Wine
-Comment=Instala paquetes de Windows (.msi) sobre Antü
-Exec=wine msiexec /i %f
+Name=Instalar con Antü
+Comment=Instala programas de Windows sobre Antü
+Exec=antu-resolver install %f
 Type=Application
 Terminal=false
 NoDisplay=true

@@ -479,16 +479,21 @@ instaló el paquete, se probó el motor funcionando):
 
 Que Wine esté instalado no alcanza — si el usuario tiene que abrir una
 terminal y escribir `wine programa.exe`, no es una fusión, es una
-opción para expertos. Antü asocia los tipos de archivo de Windows con
-Wine de fábrica (`includes.chroot/usr/share/applications/`):
+opción para expertos. Antü asocia los tipos de archivo de Windows de
+fábrica (`includes.chroot/usr/share/applications/`) con el **Antü
+Resolver** (ver más abajo), no con Wine directamente:
 
-- `antu-wine-exe.desktop` → `wine %f` (abre cualquier `.exe`).
-- `antu-wine-msi.desktop` → `wine msiexec /i %f` (instala cualquier
-  `.msi`, el formato de instalador estándar de Windows).
+- `antu-wine-exe.desktop` ("Abrir con Antü") → `antu-resolver run %f`.
+- `antu-wine-msi.desktop` ("Instalar con Antü") → `antu-resolver
+  install %f` (`.msi` es el formato de instalador estándar de Windows).
 - `mimeapps.list` los declara como aplicación **por defecto** para
   `application/x-ms-dos-executable`, `application/x-msdownload` (los
   dos nombres que usa el estándar freedesktop para "ejecutable de
   Windows") y `application/x-msi`.
+
+Que el nombre visible sea "Abrir con Antü" y no "Abrir con Wine" es
+deliberado: al usuario no le tiene que importar qué corre por debajo,
+solo que la app abre.
 
 **Validado de verdad**: se armó un archivo con el encabezado real de un
 ejecutable de Windows (los bytes `MZ` con los que arranca todo `.exe`),
@@ -504,12 +509,54 @@ antu-wine-exe.desktop
 ```
 
 Es decir: el sistema reconoce el `.exe` por su contenido real (no por
-la extensión del nombre) y ya sabe que se abre con Wine — sin que el
+la extensión del nombre) y ya sabe que se abre con Antü — sin que el
 usuario toque nada. Como los archivos de `includes.chroot` se copian
 directo al sistema de archivos (no pasan por `apt`), no disparan solos
 el aviso que actualiza la caché de aplicaciones; por eso
 `hooks/0500-wine-desktop-db.hook.chroot` corre `update-desktop-database`
 explícitamente después de copiarlos.
+
+### Antü Resolver: el cerebro que decide cómo abrir cada archivo
+
+Idea sugerida por Sofi (la colaboradora de ChatGPT de Juan en este
+proyecto) en un documento de propuesta: que el usuario nunca tenga que
+preguntarse "¿esto es de Windows o de Linux?" — un único componente
+central decide cómo ejecutar o instalar cada cosa. No hace falta que
+sea "inteligencia artificial": alcanza con una tabla de motores
+conocidos más una caché de qué le funcionó a cada app, el mismo
+mecanismo que usan por dentro Lutris o Bottles para juegos.
+
+`shared/resolver/antu-resolver` es una primera versión real de esto, no
+solo la idea (instalado como `/usr/bin/antu-resolver` en las 3
+ediciones). Recibe un archivo y decide:
+
+- `.exe`/`.msi` (detectado por contenido real, no por extensión) →
+  Wine.
+- `.AppImage` → se le da permiso de ejecución y se corre directo.
+- `.deb` → se instala con `apt`/`gdebi`.
+- `.flatpakref` → se instala con `flatpak install`.
+
+Cada vez que abre un `.exe`/`.msi` por primera vez, guarda el resultado
+en `~/.local/share/antu/resolver-profiles.json` (motor usado, si
+funcionó, cuándo) usando el nombre del archivo como identificador de la
+app — así la segunda vez ya sabe qué esperar, sin volver a "adivinar".
+Es una limitación conocida y aceptada de esta primera versión: si el
+mismo programa se descarga con otro nombre de archivo, el Resolver no
+lo reconoce como "la misma app" y arranca de cero con ella.
+
+**Validado de verdad, con un cuidado importante que apareció al
+probarlo**: la primera versión esperaba a que el usuario cerrara la
+aplicación para recién ahí guardar si "había funcionado" — un error
+real, porque una app con ventana se queda abierta horas y el registro
+nunca llegaba a tiempo. Se corrigió para que la decisión se tome a los
+pocos segundos de lanzar el proceso (¿sigue vivo? ¿no se cayó de
+entrada por una dependencia faltante?), sin esperar a que el usuario
+termine de usarla. Con la corrección, se probó de punta a punta contra
+una pantalla virtual: el Bloc de notas de Windows (un `.exe` real,
+extraído de la propia instalación de Wine, no un mock) se abrió a
+través del Resolver, la ventana apareció, y el archivo de caché quedó
+escrito con `{"blocdenotas.exe": {"engine": "wine", "status": "ok",
+...}}` — antes incluso de que la ventana terminara de aparecer.
 
 ### Honestidad sobre los límites
 
@@ -538,7 +585,63 @@ de programas puntuales antes de instalarlos.
   principalmente para Antü Pro.
 - Una **"Antü Store" propia** que unifique apt + Flatpak + AppImage +
   instaladores de Wine en una sola interfaz — la pieza más ambiciosa de
-  toda la fusión, ver `docs/ROADMAP.md`.
+  toda la fusión, ver `docs/ROADMAP.md`. `antu-resolver` ya sabe
+  distinguir `.deb`/`.flatpakref` además de `.exe`/`.msi`; falta la
+  interfaz gráfica que lo use como backend.
+- **ANTU Home** (idea de Sofi): que "Documentos"/"Descargas"/etc. sean
+  conceptualmente las mismas carpetas para cualquier app, sin importar
+  si corre nativa o por Wine. **Ya es así hoy** para todo lo que corre
+  por Wine — es un comportamiento nativo de cómo Wine mapea
+  `C:\Users\...\Documents` a la carpeta real de Linux (confirmado en la
+  sección anterior con la prueba de escritura/lectura cruzada), no algo
+  que haya que construir. Si en algún momento se suma una VM (ver
+  "Windows Core" más abajo), ahí sí habría que replicarlo con
+  `virtiofs` (carpetas compartidas de QEMU).
+- **ANTU Device Bridge** (idea de Sofi): compartir dispositivos
+  (portapapeles, impresora, audio) entre apps nativas y de Windows.
+  Para todo lo que corre por Wine, **tampoco hace falta construirlo**:
+  el portapapeles ya es compartido con el resto del escritorio (Wine
+  usa el portapapeles de X11 directo), y la impresión ya sale por CUPS
+  igual que cualquier app Linux. Donde sí habría trabajo real es si se
+  suma una VM: ahí cada dispositivo (USB, webcam, GPU) necesita su
+  propio mecanismo de passthrough en QEMU, caso por caso.
+- **ANTU Windows Core** (idea de Sofi): para el software que ni Wine ni
+  Proton logren correr, una máquina virtual de Windows tan integrada
+  que se sienta invisible (sin ver el escritorio de Windows, solo la
+  ventana de la app). Es una idea real y con antecedentes (es lo que
+  hacen VMware Fusion/Parallels con su "modo Unity/Coherence" en Mac) —
+  pero con dos límites que no son de ingeniería, sino de fondo:
+  - **Necesita que el usuario aporte su propia licencia e ISO de
+    Windows.** Ninguna distro puede empaquetar o regalar Windows por
+    dentro sin pagarle una licencia a Microsoft por cada instalación;
+    esto no se resuelve con más código. Antü podría, como mucho,
+    automatizar la creación de esa VM *a partir de* una licencia que el
+    usuario ya tiene, nunca proveerla.
+  - **Mostrar *solo* la ventana de la app** (no el escritorio
+    completo), con aceleración de GPU, es un problema de ingeniería
+    serio: la técnica más conocida para esto (FreeRDP RemoteApp)
+    necesita que el lado Windows sea Windows Server/RDS, algo que
+    Windows 10/11 Home o Pro normal no ofrecen de fábrica. Y la GPU
+    acelerada dentro de una VM en general necesita **dos placas de
+    video** (una para el equipo anfitrión, otra dedicada a la VM) —
+    la mayoría del hardware con una sola GPU no lo puede aprovechar
+    del todo. Mostrar la VM completa en una ventana normal (sin el
+    modo "invisible") sí es simple y anda desde el día uno con
+    `virt-manager`/`virtual-machine-viewer`; la parte "invisible" queda
+    como objetivo de largo plazo, no como algo prometido.
+- **ANTU Link** (idea de Sofi): una app complementaria para Windows que
+  sincronice carpetas/preferencias, para que alguien que hoy usa
+  Windows y después prueba Antü encuentre sus archivos de entrada. En
+  vez de programar un sincronizador desde cero, tiene más sentido armarlo
+  sobre **Syncthing** (software libre, multiplataforma, ya maduro) y
+  ponerle la cara de Antü encima — ahorra meses de bugs de sincronización
+  ya resueltos por otros.
+- **Perfiles de compatibilidad comunitarios** (idea de Sofi): antes de
+  construir una base de datos propia (que necesita una comunidad de
+  usuarios que hoy no existe), tiene más sentido que `antu-resolver`
+  consulte más adelante bases ya existentes y probadas como [WineHQ
+  AppDB](https://appdb.winehq.org) o [ProtonDB](https://www.protondb.com)
+  antes de "adivinar" con una app nueva.
 
 ## Flujo de build
 
