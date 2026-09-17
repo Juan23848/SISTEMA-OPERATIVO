@@ -1,0 +1,11 @@
+# Wine: corre programas de Windows (.exe/.msi) directo sobre Linux, sin
+# emular una PC ni necesitar Windows instalado. Legacy ya es i386, así
+# que no hace falta habilitar multiarch como en Standard/Pro.
+wine
+wine-binfmt
+winetricks
+
+# Trae update-desktop-database, que usa hooks/0500-wine-desktop-db para
+# registrar la asociación de .exe/.msi (ver includes.chroot/usr/share/
+# applications/). Ya viene con XFCE, se deja explícito por las dudas.
+desktop-file-utils

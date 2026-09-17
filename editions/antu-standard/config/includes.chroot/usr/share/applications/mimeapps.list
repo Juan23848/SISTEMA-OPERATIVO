@@ -1,0 +1,4 @@
+[Default Applications]
+application/x-ms-dos-executable=antu-wine-exe.desktop
+application/x-msdownload=antu-wine-exe.desktop
+application/x-msi=antu-wine-msi.desktop

@@ -418,6 +418,128 @@ No se pudo probar contra hardware real (wifi/bluetooth/impresora físicos
 no existen en este entorno de desarrollo) — igual que Plasma, queda
 pendiente de validar en una máquina real.
 
+## Fusión funcional: correr programas de Windows (Wine)
+
+Todo lo de la sección anterior es compatibilidad de *archivos y
+protocolos*. Esto es distinto: que un `.exe` de Windows **corra**
+directo en Antü, con doble clic, como en Windows. Es la pieza más
+"WinLux" del proyecto — no un Linux con estética de Windows, sino un
+sistema que de verdad ejecuta software de los dos mundos.
+
+### Cómo funciona (no es una VM ni un emulador)
+
+Wine no simula un procesador (eso sería un emulador, mucho más lento)
+ni corre una copia de Windows de fondo (eso sería una máquina virtual,
+necesita licencia y el doble de RAM/disco). Wine es una **capa de
+compatibilidad**: cuando un `.exe` le pide algo al sistema operativo
+(abrir una ventana, escribir un archivo), Wine traduce ese pedido en
+tiempo real al equivalente de Linux. El programa corre directo sobre el
+procesador real, a velocidad casi nativa, sin Windows instalado en
+ningún lado.
+
+**Validado de verdad en este entorno de desarrollo** (no solo se
+instaló el paquete, se probó el motor funcionando):
+
+1. Se instaló `wine64` y se levantó una pantalla virtual (`Xvfb`).
+2. Se corrió `wine notepad.exe` — el Bloc de notas de Windows (una
+   reimplementación de Wine, no el binario real de Microsoft, pero usa
+   el mismo motor de ventanas/eventos que cualquier `.exe` real) abrió
+   su ventana ("Untitled - Notepad") contra la pantalla virtual. Se
+   confirmó con una captura real, igual que se hizo con XFCE/Cinnamon.
+3. Se probó el puente de archivos: se escribió un archivo desde el lado
+   Windows (`wine cmd /c "echo ... > C:\...\Desktop\prueba.txt"`) y se
+   leyó ese mismo archivo desde el lado Linux (`cat`) — confirma que
+   "Documentos"/"Escritorio" de una app de Windows corriendo en Wine
+   apunta a las carpetas reales del usuario, no a una copia aislada.
+
+### Qué se instala
+
+- **Legacy** (ya es i386): `wine` (resuelve solo a `wine32`, no hace
+  falta nada extra), `wine-binfmt`, `winetricks`.
+- **Standard/Pro** (amd64): acá la mayoría del software de Windows viejo
+  es de **32 bits**, y por defecto amd64 con Wine solo trae soporte de
+  64 bits. Para el de 32 bits hace falta habilitar la arquitectura i386
+  como arquitectura secundaria (`dpkg --add-architecture i386`) **antes**
+  de instalar cualquier paquete — si se hiciera después, ya sería tarde
+  (apt ya habría resuelto las dependencias sin saber que i386 iba a
+  existir). Por eso este es el primer hook que corre en todo el build:
+  `hooks/0050-multiarch-i386.chroot_early`. La extensión `.chroot_early`
+  (no `.hook.chroot` como el resto) es la que le indica a `live-build`
+  que lo ejecute *antes* de instalar los `package-lists`, algo que se
+  confirmó leyendo el propio código fuente de `live-build` instalado en
+  este entorno (`lb_chroot`: `chroot_early_hooks` corre antes de
+  `chroot_package-lists`; los `.hook.chroot`/`.chroot` normales, como
+  el resto de los hooks del proyecto, corren después). Con eso ya
+  instalado, se agrega `wine64` + `wine32:i386` + `wine-binfmt` +
+  `winetricks` (`winetricks` automatiza instalar las dependencias que
+  piden muchos instaladores de Windows: .NET, Visual C++ Redistributable,
+  componentes de DirectX).
+
+### La parte "mágica": doble clic en un `.exe`
+
+Que Wine esté instalado no alcanza — si el usuario tiene que abrir una
+terminal y escribir `wine programa.exe`, no es una fusión, es una
+opción para expertos. Antü asocia los tipos de archivo de Windows con
+Wine de fábrica (`includes.chroot/usr/share/applications/`):
+
+- `antu-wine-exe.desktop` → `wine %f` (abre cualquier `.exe`).
+- `antu-wine-msi.desktop` → `wine msiexec /i %f` (instala cualquier
+  `.msi`, el formato de instalador estándar de Windows).
+- `mimeapps.list` los declara como aplicación **por defecto** para
+  `application/x-ms-dos-executable`, `application/x-msdownload` (los
+  dos nombres que usa el estándar freedesktop para "ejecutable de
+  Windows") y `application/x-msi`.
+
+**Validado de verdad**: se armó un archivo con el encabezado real de un
+ejecutable de Windows (los bytes `MZ` con los que arranca todo `.exe`),
+y se confirmó con las mismas herramientas que usa cualquier gestor de
+archivos (Nemo/Thunar/Dolphin comparten este mecanismo, es del
+estándar freedesktop, no algo de una sola app):
+
+```
+$ xdg-mime query filetype prueba.exe
+application/x-msdownload
+$ xdg-mime query default application/x-msdownload
+antu-wine-exe.desktop
+```
+
+Es decir: el sistema reconoce el `.exe` por su contenido real (no por
+la extensión del nombre) y ya sabe que se abre con Wine — sin que el
+usuario toque nada. Como los archivos de `includes.chroot` se copian
+directo al sistema de archivos (no pasan por `apt`), no disparan solos
+el aviso que actualiza la caché de aplicaciones; por eso
+`hooks/0500-wine-desktop-db.hook.chroot` corre `update-desktop-database`
+explícitamente después de copiarlos.
+
+### Honestidad sobre los límites
+
+Wine reimplementa a mano miles de funciones de la API de Windows —no es
+magia perfecta—. Funciona muy bien para utilidades, software de oficina
+viejo, muchos juegos no muy exigentes. Puede fallar con: protecciones
+anti-piratería agresivas, drivers en modo kernel, hardware con dongle
+USB propietario. No hay forma de saber de antemano si un `.exe`
+puntual va a andar sin probarlo — es la naturaleza de reimplementar una
+API ajena, no un defecto de esta integración. [WineHQ AppDB](https://appdb.winehq.org)
+es la referencia de la comunidad para consultar compatibilidad conocida
+de programas puntuales antes de instalarlos.
+
+### Lo que queda para más adelante
+
+- **Bottles**: una interfaz gráfica sobre Wine (crea un "prefijo"
+  aislado por app, con su propio instalador visual) mucho más amigable
+  que usar Wine pelado. Se distribuye como Flatpak — como Flathub ya
+  está configurado (ver sección de compatibilidad más arriba), instalarlo
+  va a ser un clic desde la tienda de apps, no hace falta bakearlo en la
+  ISO. No se intentó automatizar su instalación *durante* el build
+  porque necesitaría acceso a internet real a Flathub en el momento de
+  compilar, algo que no se puede probar en este entorno (mismo motivo
+  por el que no se compiló una ISO completa todavía).
+- **Proton/Steam** para juegos (ver `docs/ROADMAP.md`), pensado
+  principalmente para Antü Pro.
+- Una **"Antü Store" propia** que unifique apt + Flatpak + AppImage +
+  instaladores de Wine en una sola interfaz — la pieza más ambiciosa de
+  toda la fusión, ver `docs/ROADMAP.md`.
+
 ## Flujo de build
 
 ```

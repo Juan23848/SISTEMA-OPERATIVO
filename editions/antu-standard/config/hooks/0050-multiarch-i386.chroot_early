@@ -1,0 +1,16 @@
+#!/bin/sh
+# Habilita la arquitectura i386 (32 bits) antes de instalar cualquier
+# paquete, para que Wine pueda traer el soporte de 32 bits (wine32).
+# Muchísimo software de Windows viejo es de 32 bits; sin esto Wine
+# corre igual pero solo puede ejecutar programas de 64 bits.
+#
+# Importante: el sufijo del archivo es ".chroot_early" (no
+# ".hook.chroot" como el resto de los hooks del proyecto). live-build
+# ejecuta los ".chroot_early" ANTES de instalar los package-lists, y los
+# ".hook.chroot"/".chroot" normales DESPUÉS. Si esto se hiciera en un
+# hook normal, ya sería tarde: apt ya habría resuelto qué instalar sin
+# saber que existía la arquitectura i386.
+set -e
+
+dpkg --add-architecture i386
+apt-get update

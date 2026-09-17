@@ -1,0 +1,15 @@
+# Wine: corre programas de Windows (.exe/.msi) directo sobre Linux, sin
+# emular una PC ni necesitar Windows instalado. wine32:i386 necesita la
+# arquitectura i386 habilitada antes de instalar (ver
+# hooks/0050-multiarch-i386.chroot_early) para poder correr también los
+# .exe de 32 bits, muy comunes en software viejo.
+wine64
+wine32:i386
+wine-binfmt
+winetricks
+
+# Trae update-desktop-database, que usa hooks/0500-wine-desktop-db para
+# registrar la asociación de .exe/.msi (ver includes.chroot/usr/share/
+# applications/). Ya viene con Cinnamon/Plasma, se deja explícito por
+# las dudas.
+desktop-file-utils

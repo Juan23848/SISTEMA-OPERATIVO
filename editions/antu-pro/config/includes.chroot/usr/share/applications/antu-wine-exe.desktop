@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Ejecutar con Wine
+Comment=Abre programas de Windows (.exe) sobre Antü
+Exec=wine %f
+Type=Application
+Terminal=false
+NoDisplay=true
+MimeType=application/x-ms-dos-executable;application/x-msdownload;
+Categories=System;

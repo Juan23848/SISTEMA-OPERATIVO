@@ -22,7 +22,10 @@ tema de sistema real — ver Fase 0.5. Además ya tienen la **capa de
 compatibilidad para migrar desde Windows**: montaje automático de
 pendrives/discos externos (NTFS/exFAT/FAT32), Flatpak+Flathub, soporte
 de AppImage, LibreOffice con fuentes compatibles con Office, y
-wifi/bluetooth/impresoras — ver Fase 0.6.
+wifi/bluetooth/impresoras — ver Fase 0.6. Y ya arrancó la **fusión
+funcional** (no solo visual) entre Windows y Linux: Wine integrado para
+correr `.exe`/`.msi` con doble clic, validado con el motor corriendo de
+verdad contra una pantalla virtual — ver Fase 0.7.
 
 ## Fase 0 — Scaffold (completa)
 
@@ -107,8 +110,51 @@ perdió funcionalidad. Aplica a las 3 ediciones (`compat.list.chroot` y
       desde el navegador y LibreOffice respectivamente. Queda pendiente,
       si se quiere, armar un acceso directo de escritorio que abra
       claude.ai "como app".
-- [ ] Wine (compatibilidad con `.exe` de Windows viejos) — no pedido
-      todavía, evaluar si se agrega como paquete opcional.
+## Fase 0.7 — Fusión funcional (WinLux de verdad)
+
+Criterio del proyecto, dicho por Juan desde el arranque: Antü no es
+"Linux con logo de Antü" — es una fusión real de Windows y Linux, no
+solo visual. Esta fase es donde eso se hace ingeniería concreta, sin
+apuro (plazo: el año que viene).
+
+- [x] **Wine**: correr `.exe`/`.msi` de Windows directo, con doble
+      clic, integrado al sistema (no como "opción avanzada" en una
+      terminal). Multiarch i386 en Standard/Pro (necesario para el
+      software de 32 bits, la mayoría del software viejo) vía
+      `hooks/0050-multiarch-i386.chroot_early` — tiene que correr antes
+      de instalar paquetes, no después. Asociación de tipo de archivo
+      (`.exe`→`wine`, `.msi`→`wine msiexec /i`) validada de verdad:
+      un archivo con el encabezado real de un ejecutable de Windows se
+      reconoce solo y el sistema resuelve que se abre con Wine, sin
+      configurar nada (`xdg-mime query default` lo confirma). También
+      se probó el motor completo: Wine corriendo una app de Windows con
+      ventana real contra una pantalla virtual, más el puente de
+      archivos Windows↔Linux funcionando (escribir desde el lado
+      Windows, leer desde el lado Linux). Ver `docs/ARCHITECTURE.md`,
+      sección "Fusión funcional: correr programas de Windows (Wine)".
+- [ ] **Bottles**: interfaz gráfica sobre Wine (un "prefijo" aislado por
+      app, instalador visual) — mucho más amigable que Wine pelado.
+      Se instala como Flatpak desde la tienda de apps que ya está
+      configurada (Fase 0.6); no se bakea en la ISO porque necesitaría
+      internet real a Flathub durante el build, algo no probado en este
+      entorno.
+- [ ] **Red mixta con PCs Windows (Samba)**: ver el ícono "Red" (Fase
+      0.5) poblado con las PCs Windows de la misma red, copiar archivos
+      para los dos lados sin configurar nada. `samba` + `cifs-utils` +
+      `winbind`. No arrancado todavía.
+- [ ] **Gaming (Proton/Steam)**: que la biblioteca de Steam con juegos
+      de Windows funcione, pensado sobre todo para Antü Pro (hardware
+      potente). No arrancado todavía.
+- [ ] **.NET nativo** (`dotnet-runtime`, sin pasar por Wine) para
+      software moderno hecho en .NET Core/5+, que corre nativo en
+      Linux sin necesitar ningún traductor. No arrancado todavía.
+- [ ] **Antü Store propia**: una única app (no la Store genérica de
+      cada DE) que unifique apt + Flatpak + AppImage + instaladores de
+      Wine en una sola interfaz — "instalar" sin que el usuario sepa ni
+      le importe qué mecanismo hay detrás. Es la pieza más ambiciosa de
+      toda la fusión (desarrollo de una aplicación propia, no solo
+      configuración) — dejarla para cuando el resto de esta fase esté
+      maduro. No arrancado todavía.
 
 ## Fase 1 — Antü Standard (MVP)
 

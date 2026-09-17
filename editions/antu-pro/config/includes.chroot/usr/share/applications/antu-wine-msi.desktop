@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Instalar con Wine
+Comment=Instala paquetes de Windows (.msi) sobre Antü
+Exec=wine msiexec /i %f
+Type=Application
+Terminal=false
+NoDisplay=true
+MimeType=application/x-msi;
+Categories=System;

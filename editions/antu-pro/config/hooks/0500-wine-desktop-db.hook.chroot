@@ -1,0 +1,12 @@
+#!/bin/sh
+# Registra la asociación de .exe/.msi con Wine (usr/share/applications/
+# antu-wine-*.desktop + mimeapps.list) en la base de datos de
+# escritorio. Los archivos de includes.chroot se copian directo al
+# sistema de archivos (no pasan por apt), así que no disparan el
+# trigger automático de desktop-file-utils como sí pasa al instalar un
+# paquete. Sin este paso, el doble clic en un .exe no encuentra el
+# handler hasta el primer reinicio o hasta que algo más dispare el
+# trigger por su cuenta.
+set -e
+
+update-desktop-database /usr/share/applications
