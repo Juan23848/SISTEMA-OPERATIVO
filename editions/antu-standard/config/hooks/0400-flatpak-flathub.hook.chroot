@@ -1,0 +1,12 @@
+#!/bin/sh
+# Agrega Flathub como repositorio de Flatpak por defecto, para que
+# instalar una app moderna que no está empaquetada para Debian sea tan
+# simple como "buscar e instalar", sin configurar nada a mano.
+#
+# Esto solo registra la URL del repositorio (no descarga nada durante el
+# build): la sincronización real del catálogo pasa la primera vez que el
+# usuario abre la tienda de apps o corre `flatpak update`, ya con
+# internet disponible en la máquina final.
+set -e
+
+flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo

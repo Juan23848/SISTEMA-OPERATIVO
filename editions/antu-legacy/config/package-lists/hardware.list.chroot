@@ -1,0 +1,24 @@
+# Hardware "enchufar y usar": wifi, bluetooth e impresoras sin tener que
+# buscar un driver aparte, el problema más común migrando desde Windows.
+# Set liviano acorde al hardware de la era XP (no la lista completa
+# "-all" de drivers de impresora, que pesa bastante más).
+
+# Firmware no libre de los chipsets de wifi/bluetooth más comunes.
+firmware-realtek
+firmware-iwlwifi
+firmware-atheros
+firmware-brcm80211
+firmware-misc-nonfree
+
+# Bluetooth (mouse/teclado/auriculares inalámbricos).
+bluez
+blueman
+
+# Impresoras: soporte genérico + las dos familias de drivers más
+# comunes en impresoras hogareñas (HP y las que usan Gutenprint).
+# Avahi permite además detectar impresoras de red/AirPrint solas.
+cups
+cups-filters
+printer-driver-gutenprint
+printer-driver-hpcups
+avahi-daemon

@@ -18,7 +18,11 @@ en el camino (ver `docs/ARCHITECTURE.md` y las capturas en
 `docs/screenshots/`). Pro (KDE Plasma) todavía no se pudo probar así.
 Las 3 ediciones también tienen **español (Argentina) como idioma por
 defecto** y un **set de íconos propios** (tema `Antu`) instalado como
-tema de sistema real — ver Fase 0.5.
+tema de sistema real — ver Fase 0.5. Además ya tienen la **capa de
+compatibilidad para migrar desde Windows**: montaje automático de
+pendrives/discos externos (NTFS/exFAT/FAT32), Flatpak+Flathub, soporte
+de AppImage, LibreOffice con fuentes compatibles con Office, y
+wifi/bluetooth/impresoras — ver Fase 0.6.
 
 ## Fase 0 — Scaffold (completa)
 
@@ -69,6 +73,43 @@ pegado". Aplica a las 3 ediciones por igual.
       (configuración, terminal, etc.), que por ahora usan la base
       genérica heredada (`hicolor`).
 
+## Fase 0.6 — Compatibilidad veniendo de Windows
+
+Criterio del proyecto: alguien que usaba Windows migra sin sentir que
+perdió funcionalidad. Aplica a las 3 ediciones (`compat.list.chroot` y
+`hardware.list.chroot` nuevos, ver `docs/ARCHITECTURE.md` sección
+"Compatibilidad: veniendo de Windows").
+
+- [x] **Pendrives/discos externos**: montaje automático (`udisks2` +
+      `gvfs` + `policykit-1`) con lectura/escritura NTFS (`ntfs-3g`),
+      exFAT (`exfatprogs`) y FAT32 (`dosfstools`). Validado con
+      imágenes de disco de prueba: el ciclo completo montar → escribir →
+      leer → desmontar se confirmó de punta a punta para NTFS. FAT32 y
+      exFAT no se pudieron probar en este entorno de desarrollo porque
+      su kernel recortado no trae los módulos `vfat`/`exfat` (el kernel
+      real de Debian sí los trae) — validar en una máquina/VM real.
+- [x] **Apps fuera de los repos de Debian**: Flatpak + repositorio de
+      Flathub agregado de fábrica, con tienda gráfica (GNOME Software en
+      Standard, Discover en Pro) y soporte de AppImage (`libfuse2`) en
+      las 3.
+- [x] **Ofimática**: LibreOffice (ya estaba en Standard/Pro) + fuentes
+      métricamente compatibles con Arial/Calibri/Cambria/Times New Roman
+      (`fonts-liberation2`, `fonts-crosextra-carlito`,
+      `fonts-crosextra-caladea`), para que un `.docx` de Word no se vea
+      corrido al abrirlo.
+- [x] **Wifi/bluetooth/impresoras**: firmware no libre de los chipsets
+      más comunes, `bluez`+`blueman`, y `cups` con drivers + `avahi` para
+      detectar impresoras de red solas. No se pudo probar contra
+      hardware real (no hay wifi/bluetooth/impresora físicos en este
+      entorno) — pendiente de validar en una máquina real.
+- [ ] **Claude y Microsoft Office no tienen versión nativa para Linux**
+      (aclarado en `docs/ARCHITECTURE.md`): el camino real es claude.ai
+      desde el navegador y LibreOffice respectivamente. Queda pendiente,
+      si se quiere, armar un acceso directo de escritorio que abra
+      claude.ai "como app".
+- [ ] Wine (compatibilidad con `.exe` de Windows viejos) — no pedido
+      todavía, evaluar si se agrega como paquete opcional.
+
 ## Fase 1 — Antü Standard (MVP)
 
 Se prioriza esta edición porque cubre el público más amplio (uso
@@ -94,9 +135,11 @@ doméstico/oficina).
       `docs/ARCHITECTURE.md`. Falta que el logo de la barra también lo
       abra (hoy abre el menú nativo de Cinnamon).
 - [ ] Panel de ajustes rápidos (red, volumen, brillo) desde la barra.
-- [ ] Tema visual propio (iconos, cursores, colores, GTK theme oscuro).
-- [ ] Paquetería base: navegador, ofimática, reproductor multimedia,
-      gestor de archivos.
+- [ ] Tema visual propio (cursores, colores, GTK theme oscuro — los
+      íconos ya están, ver Fase 0.5).
+- [x] Paquetería base: navegador (Firefox), ofimática (LibreOffice +
+      fuentes compatibles con Office), reproductor multimedia (VLC),
+      gestor de archivos (Nemo, viene con Cinnamon). Ver Fase 0.6.
 - [ ] Probar en hardware real (no solo QEMU).
 
 ## Fase 2 — Antü Legacy

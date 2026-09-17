@@ -1,0 +1,21 @@
+# Hardware "enchufar y usar": wifi, bluetooth e impresoras sin tener que
+# buscar un driver aparte, el problema más común migrando desde Windows.
+
+# Firmware no libre de los chipsets de wifi/bluetooth más comunes.
+firmware-realtek
+firmware-iwlwifi
+firmware-atheros
+firmware-brcm80211
+firmware-misc-nonfree
+
+# Bluetooth (mouse/teclado/auriculares inalámbricos).
+bluez
+blueman
+
+# Impresoras: máxima cobertura de drivers (hardware más nuevo, el
+# tamaño extra no es un problema como en Legacy). Avahi detecta
+# impresoras de red/AirPrint solas, sin configurar la IP a mano.
+cups
+cups-filters
+printer-driver-all
+avahi-daemon

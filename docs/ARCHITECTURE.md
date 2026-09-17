@@ -318,6 +318,106 @@ tenga su propio ícono en el tema activo, algo fuera del alcance de
 - Efectos visuales (blur, animaciones) en las ediciones con más recursos
   (Pro primero, después Standard). Legacy se mantiene siempre simple.
 
+## Compatibilidad: veniendo de Windows
+
+Objetivo explícito: alguien que usaba Windows tiene que poder migrar a
+Antü sin sentir que perdió funcionalidad. Esto no es un tema visual —
+son paquetes y configuración concreta, en las 3 ediciones
+(`package-lists/compat.list.chroot` y `hardware.list.chroot`).
+
+### Dos aclaraciones importantes (para no vender humo)
+
+- **No existe una app de escritorio de Claude para Linux** (Anthropic
+  solo publica binarios para Mac/Windows). El camino real y sin parches
+  es usar **claude.ai desde el navegador** — misma cuenta, mismo
+  historial, funciona perfecto. Se puede armar un acceso directo que lo
+  abra "como app" (misma técnica que "Instalar como aplicación" de
+  Chrome/Edge), pero eso es un acceso directo al sitio, no una app
+  nativa instalada.
+- **Microsoft Office tampoco existe para Linux.** El equivalente real es
+  **LibreOffice** (ya instalado en Standard y Pro): abre y guarda
+  `.docx`/`.xlsx`/`.pptx` de forma nativa. Para que un documento hecho en
+  Word no se vea "corrido" al abrirlo acá, hace falta además que las
+  fuentes que usó (Arial, Calibri, Times New Roman, Cambria) tengan un
+  reemplazo con el mismo ancho de letra — ver más abajo.
+
+### Pendrives y discos externos (montaje automático)
+
+`udisks2` + `gvfs`/`gvfs-backends` + `policykit-1` son la base por la
+que XFCE (Thunar), Cinnamon (Nemo) y Plasma (Dolphin) detectan un
+dispositivo nuevo y lo montan solos, sin que el usuario configure nada.
+A eso se le suma soporte de lectura/escritura para los 3 formatos que un
+pendrive o disco externo puede traer si se usó antes en Windows:
+
+- **NTFS** → `ntfs-3g` (controlador en espacio de usuario vía FUSE).
+- **exFAT** (típico en pendrives y tarjetas SD modernas) → `exfatprogs`
+  + el driver `exfat` del kernel de Linux (incluido de fábrica en el
+  kernel que trae Debian).
+- **FAT32** → `dosfstools` + el driver `vfat` del kernel.
+
+**Validado de verdad, no solo instalado**: se armaron 3 imágenes de
+disco de prueba (formateadas FAT32, exFAT y NTFS con las mismas
+herramientas que se instalan acá) y se probó montarlas como si fueran un
+pendrive recién enchufado. El montaje NTFS vía `ntfs-3g` (que no
+depende de un módulo del kernel, corre entero en espacio de usuario) se
+probó de punta a punta: montar, escribir un archivo, leerlo, desmontar —
+funcionó igual que en un sistema real. El montaje de FAT32/exFAT no se
+pudo completar en este entorno de desarrollo porque el kernel del
+sandbox donde se corre este proyecto no trae compilados los módulos
+`vfat`/`exfat` (es un contenedor recortado, no una instalación real de
+Debian) — **no es una limitación de la configuración de Antü**: el
+kernel que trae Debian de fábrica sí incluye esos módulos, y es el mismo
+mecanismo (`mount -t vfat`/`mount -t exfat`) que ya se confirmó
+funcionando para NTFS. Queda para validar en una máquina/VM real, igual
+que Plasma (ver más abajo).
+
+### Apps que no vienen empaquetadas para Debian
+
+Para que "quiero instalar tal programa" no dependa de que ese programa
+tenga paquete `.deb`, las 3 ediciones traen:
+
+- **Flatpak**, con el repositorio de **Flathub** ya agregado de fábrica
+  (`hooks/0400-flatpak-flathub.hook.chroot`) — miles de apps modernas se
+  empaquetan ahí. Standard suma **GNOME Software** y Pro **Discover**
+  (la tienda nativa de Plasma) con el backend de Flatpak, para instalar
+  con una interfaz gráfica tipo "tienda de apps". Legacy se queda solo
+  con la línea de comandos (`flatpak install ...`), para no cargar
+  hardware de la era XP con una tienda gráfica pesada.
+- **Soporte de AppImage** (`libfuse2`): un `.AppImage` descargado
+  funciona con solo marcarlo ejecutable y hacerle doble clic, como un
+  `.exe` portable en Windows — no necesita instalación.
+
+### Ofimática: que un documento de Word no se vea roto
+
+Además de LibreOffice, las 3 ediciones instalan fuentes **métricamente
+compatibles** con las de Office: `fonts-liberation2` (sustituto de
+Arial/Times New Roman/Courier New) y `fonts-crosextra-carlito`/
+`fonts-crosextra-caladea` (sustitutos de Calibri/Cambria, las fuentes
+por defecto de Word/Excel desde 2007). "Métricamente compatible" quiere
+decir que cada letra ocupa el mismo ancho que la original: un documento
+hecho en Word con esas fuentes mantiene los saltos de línea y de página
+al abrirlo acá, aunque la tipografía use un dibujo distinto (no son
+copias pixel a pixel de las fuentes de Microsoft, que son privativas).
+
+### Hardware: wifi, bluetooth e impresoras
+
+`hardware.list.chroot` (existía solo en Pro; ahora está en las 3, con
+Legacy usando un set más liviano) agrega:
+
+- Firmware no libre de los chipsets de wifi/bluetooth más comunes
+  (`firmware-realtek`, `firmware-iwlwifi`, `firmware-atheros`,
+  `firmware-brcm80211`) — la causa más común de "no me detecta el wifi"
+  en una instalación de Linux nueva.
+- `bluez` + `blueman` para emparejar mouse/teclado/auriculares
+  inalámbricos desde una interfaz gráfica.
+- `cups` + drivers de impresora (`printer-driver-all` en Standard/Pro;
+  un set más chico de Gutenprint/HP en Legacy) + `avahi-daemon`, que
+  detecta impresoras de red/AirPrint solas, sin cargar una IP a mano.
+
+No se pudo probar contra hardware real (wifi/bluetooth/impresora físicos
+no existen en este entorno de desarrollo) — igual que Plasma, queda
+pendiente de validar en una máquina real.
+
 ## Flujo de build
 
 ```

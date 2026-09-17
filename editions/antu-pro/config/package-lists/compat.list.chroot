@@ -1,0 +1,31 @@
+# Compatibilidad "enchufar y usar": que un pendrive o disco externo,
+# venga formateado como venga (FAT32/exFAT/NTFS, típico si se usó antes
+# en Windows), monte solo al conectarlo, sin configurar nada a mano.
+udisks2
+gvfs
+gvfs-backends
+policykit-1
+ntfs-3g
+exfatprogs
+dosfstools
+
+# Flatpak: instalar apps modernas empaquetadas fuera de los repos de
+# Debian (Flathub) con un clic. Discover es la "tienda de apps" nativa
+# de Plasma; el backend de flatpak le permite listar e instalar desde
+# Flathub. El remote se agrega en un hook de build.
+flatpak
+plasma-discover
+plasma-discover-backend-flatpak
+
+# AppImage: que un .AppImage descargado ande con solo darle doble clic
+# y marcarlo ejecutable, como un .exe portable en Windows.
+libfuse2
+
+# Fuentes métricamente compatibles con las de Office (Arial, Times New
+# Roman, Courier New, Calibri, Cambria). Sin esto, abrir en LibreOffice
+# un .docx/.xlsx hecho en Windows sustituye esas fuentes por otras de
+# ancho distinto y el documento se ve corrido/roto aunque el contenido
+# esté intacto.
+fonts-liberation2
+fonts-crosextra-carlito
+fonts-crosextra-caladea

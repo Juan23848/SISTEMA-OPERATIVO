@@ -1,0 +1,33 @@
+# Compatibilidad "enchufar y usar": que un pendrive o disco externo,
+# venga formateado como venga (FAT32/exFAT/NTFS, típico si se usó antes
+# en Windows), monte solo al conectarlo, sin configurar nada a mano.
+udisks2
+gvfs
+gvfs-backends
+policykit-1
+ntfs-3g
+exfatprogs
+dosfstools
+
+# Notificación/automontaje de Thunar (XFCE) al insertar un dispositivo.
+# Es un Recommends de xfce4, pero se deja explícito para no depender de
+# que la instalación de recomendados esté activada.
+thunar-volman
+
+# Flatpak (sin tienda gráfica: en hardware de la era XP no vale la pena
+# el consumo de una app tipo GNOME Software). Sirve igual por línea de
+# comandos o si el usuario instala un cliente liviano después. El
+# remote de Flathub se agrega en un hook de build.
+flatpak
+
+# AppImage: que un .AppImage descargado ande con solo darle doble clic
+# y marcarlo ejecutable, como un .exe portable en Windows.
+libfuse2
+
+# Fuentes métricamente compatibles con las de Office (Arial, Times New
+# Roman, Courier New, Calibri, Cambria). Sin esto, abrir un .docx/.xlsx
+# hecho en Windows sustituye esas fuentes por otras de ancho distinto y
+# el documento se ve corrido/roto aunque el contenido esté intacto.
+fonts-liberation2
+fonts-crosextra-carlito
+fonts-crosextra-caladea
