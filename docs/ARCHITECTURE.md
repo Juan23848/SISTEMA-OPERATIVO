@@ -216,7 +216,7 @@ dos cosas resueltas a mano, funcionó de punta a punta.
 Antü busca despegarse de Linux/Windows también en el idioma: en vez de
 dejar el sistema en inglés (lo habitual en la mayoría de las distros),
 **español (Argentina) es el idioma por defecto** de las 3 ediciones,
-configurado vía `hooks/0300-locale-es.hook.chroot` (genera y activa el
+configurado vía `hooks/normal/0300-locale-es.hook.chroot` (genera y activa el
 locale `es_AR.UTF-8` durante el build).
 
 Esto traduce automáticamente casi todos los menús, categorías y textos
@@ -234,6 +234,32 @@ paquete empaquetado — variará de programa a programa, y conviene
 reconfirmarlo en Debian real (esto se probó en un entorno de desarrollo
 basado en Ubuntu, que maneja los paquetes de idioma de forma distinta a
 Debian).
+
+### El hook alcanza para el sistema instalado, no para la sesión live
+
+Encontrado en una revisión externa (Codex), confirmado contra el código
+fuente oficial de `live-config` de Debian bookworm (`11.0.3+nmu1`): el
+hook `0300-locale-es` deja `es_AR.UTF-8` como idioma del sistema **ya
+instalado en disco**, pero la primera sesión que arranca directo desde
+la ISO (antes de instalar nada) no la arma ese sistema de archivos — la
+arma `live-config`, en cada arranque, a partir de los parámetros que
+recibe el kernel al bootear. Su componente `0050-locales` usa
+`en_US.UTF-8` por defecto si no se le indica nada por ese lado, y
+**sobrescribe** `/etc/default/locale` — sin importar lo que haya quedado
+configurado durante el build. Es un caso puntual de algo más general:
+todo lo que dependa de qué arma `live-config` en el primer arranque no
+se resuelve solo con hooks de build, porque `live-config` no mira lo que
+hay en el filesystem, mira los parámetros de arranque.
+
+Se corrigió agregando `--bootappend-live "locales=es_AR.UTF-8
+keyboard-layouts=latam"` a `lb config` en las 3 ediciones (`auto/config`)
+— el parámetro de arranque que `live-config` sí respeta. De paso se fijó
+también el teclado (`latam`, el layout de Argentina), ya que el locale
+por sí solo no determina la distribución de teclado. No se pudo probar
+arrancando una ISO real en este entorno (Windows, sin acceso a
+`live-build`/QEMU con la imagen construida) — queda pendiente confirmar
+con `locale`, `/etc/default/locale` y `/proc/cmdline` en un arranque
+real antes de dar el idioma de la sesión live por resuelto del todo.
 
 ## Íconos propios
 
@@ -415,7 +441,7 @@ Para que "quiero instalar tal programa" no dependa de que ese programa
 tenga paquete `.deb`, las 3 ediciones traen:
 
 - **Flatpak**, con el repositorio de **Flathub** ya agregado de fábrica
-  (`hooks/0400-flatpak-flathub.hook.chroot`) — miles de apps modernas se
+  (`hooks/normal/0400-flatpak-flathub.hook.chroot`) — miles de apps modernas se
   empaquetan ahí. Standard suma **GNOME Software** y Pro **Discover**
   (la tienda nativa de Plasma) con el backend de Flatpak, para instalar
   con una interfaz gráfica tipo "tienda de apps". Legacy se queda solo
@@ -559,7 +585,7 @@ la extensión del nombre) y ya sabe que se abre con Antü — sin que el
 usuario toque nada. Como los archivos de `includes.chroot` se copian
 directo al sistema de archivos (no pasan por `apt`), no disparan solos
 el aviso que actualiza la caché de aplicaciones; por eso
-`hooks/0500-wine-desktop-db.hook.chroot` corre `update-desktop-database`
+`hooks/normal/0500-wine-desktop-db.hook.chroot` corre `update-desktop-database`
 explícitamente después de copiarlos.
 
 ### Antü Resolver: el cerebro que decide cómo abrir cada archivo
@@ -630,6 +656,19 @@ También se blindó la lectura de la caché contra un archivo corrupto con
 JSON válido pero de forma equivocada (por ejemplo `[]` en vez de un
 objeto, o una entrada puntual como `{"app.exe:0": [1]}`), que antes
 rompía con `AttributeError` al primer uso.
+
+**Un hueco en esa misma protección, de una tercera revisión externa
+(Codex)**: la validación cubría la *lectura* (`run_wine` descartaba una
+entrada que no fuera un diccionario al consultarla) pero no la
+*escritura*. `update_cache_entry` vuelve a leer la caché fresca dentro
+de su transacción (a propósito, para no pisar cambios de otro proceso —
+ver más arriba), y ese segundo lugar hacía `cache.get(key, {})` sobre el
+valor viejo sin validar su tipo: con una entrada como `{"app:0": [1]}`,
+intentar `{**[1], ...}` rompía con `TypeError: 'list' object is not a
+mapping`. Se corrigió validando también ahí. Probado con los 4 casos que
+pidió la revisión (entrada lista, `null`, cadena, y una sana de
+control): las tres corruptas quedan reparadas como diccionarios válidos
+después de `run_wine`, sin romper, y la entrada sana no se toca.
 
 **Validado de verdad, con un cuidado importante que apareció al
 probarlo por primera vez**: la versión original del chequeo de 3

@@ -122,13 +122,20 @@ Criterio del proyecto: que Antü se sienta propio, no "Linux con logo
 pegado". Aplica a las 3 ediciones por igual.
 
 - [x] **Español (Argentina) como idioma por defecto** de las 3 ediciones
-      (`hooks/0300-locale-es.hook.chroot`, genera y activa
+      (`hooks/normal/0300-locale-es.hook.chroot`, genera y activa
       `es_AR.UTF-8`). Validado con una sesión XFCE real: los nombres y
       categorías de las aplicaciones se traducen correctamente. La
       cobertura de los textos propios de cada herramienta (botones,
       títulos de ventana) depende de la traducción que traiga cada
       paquete — confirmar en Debian real (se probó en un entorno de
-      desarrollo basado en Ubuntu). Ver `docs/ARCHITECTURE.md`.
+      desarrollo basado en Ubuntu). **Corregido tras una tercera revisión
+      externa (Codex)**: ese hook alcanza para el sistema ya instalado,
+      pero no para la sesión live que arranca directo desde la ISO —
+      esa la arma `live-config` en cada arranque a partir de parámetros
+      de arranque, no del filesystem, y por defecto usa inglés. Se
+      agregó `--bootappend-live "locales=es_AR.UTF-8
+      keyboard-layouts=latam"` en `auto/config` de las 3 ediciones. Ver
+      `docs/ARCHITECTURE.md`.
 - [x] **Set de íconos propios** (tema `Antu`, skeuomórfico, lenguaje
       visual de Antü: vidrio/metal azul + arco de luz cian), instalado
       como tema freedesktop real (`shared/branding/icons/antu-icons/`,
@@ -227,7 +234,12 @@ apuro (plazo: el año que viene).
       había llegado a ninguna edición** (las copias empaquetadas seguían
       con el código viejo) y una entrada de caché puntual con forma
       inválida también podía romper — ambos corregidos, el primero de
-      raíz (ver Fase 0). Ver `docs/ARCHITECTURE.md`, sección "Antü
+      raíz (ver Fase 0). **Una tercera revisión encontró que esa
+      protección cubría la lectura pero no la escritura**: guardar una
+      actualización sobre una entrada corrupta rompía con `TypeError`.
+      Corregido y probado con los 4 casos pedidos (entrada lista, nula,
+      cadena y una sana de control) — las corruptas quedan reparadas, la
+      sana no se toca. Ver `docs/ARCHITECTURE.md`, sección "Antü
       Resolver".
 - [x] **ANTU Home** (idea de Sofi: que los documentos sean "los mismos"
       para cualquier app, sea nativa o de Windows): ya está lograda para

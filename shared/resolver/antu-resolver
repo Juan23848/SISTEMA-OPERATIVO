@@ -97,7 +97,17 @@ def update_cache_entry(key, **fields):
     archivo bajo lock (no el diccionario que se haya cargado antes en
     la función que llama), para no pisar cambios de otro proceso."""
     with _cache_transaction() as cache:
-        cache[key] = {**cache.get(key, {}), **fields, "last_used": int(time.time())}
+        # La validación de _read_cache_unlocked cubre que el archivo
+        # ENTERO no sea un objeto — no que cada entrada puntual lo sea.
+        # Una caché como {"app:0": [1]} pasa esa validación (el nivel
+        # superior sí es un dict) pero rompía acá con
+        # "'list' object is not a mapping" al hacer cache.get(key, {})
+        # sobre un valor que no es un dict. Encontrado en una tercera
+        # revisión externa (Codex), reproducido con el código real.
+        previous = cache.get(key)
+        if not isinstance(previous, dict):
+            previous = {}
+        cache[key] = {**previous, **fields, "last_used": int(time.time())}
 
 
 def app_key(path):

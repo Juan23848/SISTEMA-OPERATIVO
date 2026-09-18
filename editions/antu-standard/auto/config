@@ -1,6 +1,17 @@
 #!/bin/sh
 # Configuración de live-build para Antü Standard.
 # Pensada para uso doméstico/oficina en hardware equivalente a Windows 7+.
+#
+# --bootappend-live con locales=/keyboard-layouts=: el hook
+# 0300-locale-es (que genera es_AR.UTF-8 y lo deja como LANG del
+# sistema) alcanza para el sistema YA INSTALADO, pero no para la sesión
+# live que arranca directo desde la ISO. Esa primera sesión la arma
+# live-config en cada arranque, a partir de parámetros de arranque (no
+# de lo que haya en el filesystem) — sin "locales=" acá, su componente
+# 0050-locales usa en_US.UTF-8 por defecto y pisa /etc/default/locale al
+# bootear, sin importar lo que haya quedado configurado durante el
+# build. Encontrado en una revisión externa (Codex), confirmado contra
+# el código fuente oficial de live-config de Debian bookworm.
 set -e
 
 lb config noauto \
@@ -10,6 +21,7 @@ lb config noauto \
     --binary-images "iso-hybrid" \
     --archive-areas "main contrib non-free non-free-firmware" \
     --debian-installer "live" \
+    --bootappend-live "locales=es_AR.UTF-8 keyboard-layouts=latam" \
     --iso-application "Antu Standard" \
     --iso-volume "ANTU_STANDARD" \
     --iso-publisher "Antu OS Project" \
