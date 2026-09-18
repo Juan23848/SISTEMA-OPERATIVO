@@ -1,0 +1,23 @@
+#!/bin/sh
+# Confirma que Wine de 32 bits realmente quedó instalado, en vez de dar
+# por sentado que anduvo.
+#
+# No hace falta ningún hook para HABILITAR la arquitectura i386: eso ya
+# lo resuelve live-build solo. Antes de instalar los package-lists, lee
+# las entradas con formato "paquete:arquitectura" (acá, wine32:i386),
+# corre "dpkg --add-architecture" dentro del chroot y actualiza apt —
+# todo antes de instalar nada. Es un mecanismo real de live-build,
+# confirmado leyendo el código fuente oficial de los tarballs de Debian
+# bookworm (1:20230502) y trixie (1:20250505+deb13u1):
+# functions/packagelists.sh (Discover_package_architectures) +
+# scripts/build/chroot_package-lists + chroot_install-packages.
+#
+# Una versión anterior de este proyecto tenía un hook
+# ".chroot_early" para intentar habilitar i386 "a mano" — no hacía
+# falta, y ese sufijo ni siquiera existe en las versiones de live-build
+# examinadas. Se sacó. Lo que sí vale la pena confirmar es que el
+# mecanismo automático realmente funcionó, no asumirlo:
+set -eu
+
+dpkg --print-foreign-architectures | grep -qx i386
+test "$(dpkg-query -W -f='${Status}' wine32:i386)" = 'install ok installed'

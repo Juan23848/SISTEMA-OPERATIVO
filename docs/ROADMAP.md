@@ -93,12 +93,15 @@ verdad contra una pantalla virtual — ver Fase 0.7.
       esa subcarpeta en las 3 ediciones, y se agregó una advertencia en
       `docs/BUILD.md` para compilar en Debian real (no Ubuntu) y
       confirmar la versión con `dpkg-query -W live-build` antes de dar
-      un build por bueno. Sigue sin confirmarse el mecanismo real para
-      habilitar i386 antes de instalar paquetes (el sufijo
-      `.chroot_early` que usa `hooks/0050-multiarch-i386.chroot_early`
-      no aparece en ninguno de los dos tarballs oficiales) — no se
-      concluye que vaya a fallar, pero tampoco se da por bueno: queda
-      como validación pendiente para la primera ISO real.
+      un build por bueno. **Aclarado en una consulta posterior, misma
+      revisión**: el mecanismo para habilitar i386 antes de instalar
+      paquetes no necesitaba ningún hook — `live-build` ya lo hace solo
+      al detectar el formato `paquete:arquitectura` (`wine32:i386`) en
+      un package-list, confirmado leyendo `functions/packagelists.sh` +
+      `chroot_install-packages` de los mismos tarballs oficiales. Se
+      sacó el hook `.chroot_early` (no hacía falta) y se agregó uno
+      normal que confirma, después de instalar, que i386 y
+      `wine32:i386` quedaron realmente instalados.
 - [x] **Bug crítico #6, de la misma revisión**: los 3 bugs corregidos
       del Resolver (ver Fase 0.7) nunca habían llegado a ninguna
       edición — se había arreglado `shared/resolver/antu-resolver` pero
@@ -183,9 +186,13 @@ apuro (plazo: el año que viene).
 - [x] **Wine**: correr `.exe`/`.msi` de Windows directo, con doble
       clic, integrado al sistema (no como "opción avanzada" en una
       terminal). Multiarch i386 en Standard/Pro (necesario para el
-      software de 32 bits, la mayoría del software viejo) vía
-      `hooks/0050-multiarch-i386.chroot_early` — tiene que correr antes
-      de instalar paquetes, no después. Asociación de tipo de archivo
+      software de 32 bits, la mayoría del software viejo) resuelto solo
+      por `live-build` al detectar `wine32:i386` en el package-list —
+      sin ningún hook propio (una versión anterior tuvo uno, de más,
+      sacado tras confirmar el mecanismo real leyendo el código fuente
+      oficial). `hooks/normal/0070-verify-wine32.hook.chroot` confirma
+      después de instalar que quedó realmente habilitado. Asociación de
+      tipo de archivo
       (`.exe`→`wine`, `.msi`→`wine msiexec /i`) validada de verdad:
       un archivo con el encabezado real de un ejecutable de Windows se
       reconoce solo y el sistema resuelve que se abre con Wine, sin

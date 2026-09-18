@@ -47,14 +47,21 @@ dpkg-query -W live-build
 Debería empezar con `1:` (línea de versiones de Debian), no con `3.0~`
 (línea de Ubuntu).
 
-**Sigue sin confirmarse el mecanismo para habilitar la arquitectura i386
-antes de instalar paquetes** (necesario para Wine de 32 bits en
-Standard/Pro, ver `hooks/0050-multiarch-i386.chroot_early`): ese sufijo
-`.chroot_early` no aparece en ninguno de los dos tarballs oficiales
-examinados. Esto no confirma que vaya a fallar —no se probó el mecanismo
-real que sí exista en esas versiones—, pero tampoco se puede dar por
-bueno todavía. Confirmarlo en un build real es parte de la validación
-pendiente antes de la primera ISO.
+**Ya resuelto (y era más simple de lo que parecía)**: el mecanismo para
+habilitar la arquitectura i386 antes de instalar paquetes (necesario
+para Wine de 32 bits en Standard/Pro) no necesita ningún hook propio.
+Leyendo el código fuente de esos mismos tarballs se confirmó que
+`live-build` ya lo resuelve solo: cuando una entrada de un package-list
+tiene el formato `paquete:arquitectura` (como `wine32:i386`, que
+Standard/Pro ya tenían), lo detecta antes de instalar nada, habilita esa
+arquitectura y actualiza `apt`. El hook `.chroot_early` que este
+proyecto tuvo para esto (que ni siquiera existe como mecanismo en esas
+versiones) se sacó. Queda un hook normal
+(`hooks/normal/0070-verify-wine32.hook.chroot`) que confirma, después de
+instalar los paquetes, que i386 y `wine32:i386` realmente quedaron
+instalados — la presencia del paquete no garantiza que Wine vaya a
+correr cualquier `.exe` de 32 bits sin problemas, pero al menos confirma
+que el mecanismo de habilitación funcionó.
 
 ## Compilar una edición
 

@@ -1,8 +1,17 @@
 # Wine: corre programas de Windows (.exe/.msi) directo sobre Linux, sin
-# emular una PC ni necesitar Windows instalado. wine32:i386 necesita la
-# arquitectura i386 habilitada antes de instalar (ver
-# hooks/0050-multiarch-i386.chroot_early) para poder correr también los
-# .exe de 32 bits, muy comunes en software viejo.
+# emular una PC ni necesitar Windows instalado. wine32:i386 (formato
+# "paquete:arquitectura") es lo que permite correr también los .exe de
+# 32 bits, muy comunes en software viejo. No hace falta ningún hook
+# para habilitar la arquitectura i386 aparte: live-build reconoce solo
+# el sufijo ":arquitectura" en un package-list y, antes de instalar
+# nada, corre "dpkg --add-architecture" dentro del chroot y actualiza
+# apt — mecanismo real, confirmado leyendo el código fuente oficial de
+# live-build de Debian bookworm/trixie (functions/packagelists.sh +
+# scripts/build/chroot_package-lists + chroot_install-packages). Una
+# versión anterior de este proyecto tenía un hook aparte para esto
+# ("a mano") que no hacía falta — se sacó. Ver
+# hooks/normal/0070-verify-wine32.hook.chroot para la comprobación de
+# que esto realmente terminó instalado.
 wine64
 wine32:i386
 wine-binfmt

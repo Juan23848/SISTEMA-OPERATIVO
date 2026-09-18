@@ -496,22 +496,30 @@ instaló el paquete, se probó el motor funcionando):
   falta nada extra), `wine-binfmt`, `winetricks`.
 - **Standard/Pro** (amd64): acá la mayoría del software de Windows viejo
   es de **32 bits**, y por defecto amd64 con Wine solo trae soporte de
-  64 bits. Para el de 32 bits hace falta habilitar la arquitectura i386
-  como arquitectura secundaria (`dpkg --add-architecture i386`) **antes**
-  de instalar cualquier paquete — si se hiciera después, ya sería tarde
-  (apt ya habría resuelto las dependencias sin saber que i386 iba a
-  existir). Por eso este es el primer hook que corre en todo el build:
-  `hooks/0050-multiarch-i386.chroot_early`. La extensión `.chroot_early`
-  (no `.hook.chroot` como el resto) es la que le indica a `live-build`
-  que lo ejecute *antes* de instalar los `package-lists`, algo que se
-  confirmó leyendo el propio código fuente de `live-build` instalado en
-  este entorno (`lb_chroot`: `chroot_early_hooks` corre antes de
-  `chroot_package-lists`; los `.hook.chroot`/`.chroot` normales, como
-  el resto de los hooks del proyecto, corren después). Con eso ya
-  instalado, se agrega `wine64` + `wine32:i386` + `wine-binfmt` +
-  `winetricks` (`winetricks` automatiza instalar las dependencias que
-  piden muchos instaladores de Windows: .NET, Visual C++ Redistributable,
-  componentes de DirectX).
+  64 bits. Para el de 32 bits hace falta la arquitectura i386 como
+  arquitectura secundaria, habilitada **antes** de instalar cualquier
+  paquete (si se hiciera después, ya sería tarde: apt habría resuelto
+  las dependencias sin saber que i386 iba a existir). **No hace falta
+  ningún hook para esto** — es un mecanismo propio de `live-build`, no
+  algo que haya que orquestar a mano: cuando una entrada de un
+  package-list tiene el formato `paquete:arquitectura` (acá,
+  `wine32:i386`), `live-build` la detecta (`Discover_package_architectures`
+  en `functions/packagelists.sh`), guarda las arquitecturas distintas a
+  la principal, y antes de instalar nada corre `dpkg --add-architecture`
+  dentro del chroot y actualiza `apt` (`chroot_install-packages`).
+  Confirmado leyendo el código fuente oficial de `live-build` de Debian
+  bookworm (`1:20230502`) y trixie (`1:20250505+deb13u1`) — la misma
+  revisión externa que antes había señalado, con razón, que un hook
+  `.chroot_early` que este proyecto tuvo para esto no existía en esas
+  versiones. No hacía falta: `wine32:i386` en el package-list alcanza
+  por sí solo. Con eso, se agrega `wine64` + `wine32:i386` +
+  `wine-binfmt` + `winetricks` (que automatiza instalar las dependencias
+  que piden muchos instaladores de Windows: .NET, Visual C++
+  Redistributable, componentes de DirectX).
+  `hooks/normal/0070-verify-wine32.hook.chroot` confirma, después de
+  instalar los paquetes, que i386 quedó habilitada y `wine32:i386`
+  terminó instalado de verdad — no alcanza con confiar en el mecanismo,
+  hay que comprobar que corrió bien.
 
 ### La parte "mágica": doble clic en un `.exe`
 
