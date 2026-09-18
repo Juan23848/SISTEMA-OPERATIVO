@@ -44,6 +44,19 @@ fi
 echo "==> Instalando branding compartido"
 "$REPO_ROOT/shared/scripts/install-branding.sh" "$CONFIG_DIR"
 
+echo "==> Instalando Antü Resolver"
+# Copiado automático desde la fuente única (shared/resolver/), nunca a
+# mano: tener una copia propia por edición en el repo fue exactamente lo
+# que causó que dos rondas de correcciones al Resolver nunca llegaran a
+# ninguna ISO real (encontrado en una revisión externa, Codex) — se
+# corrigieron los bugs en shared/resolver/antu-resolver pero las 3
+# copias empaquetadas seguían con el código viejo, sin que nada lo
+# avisara. Ahora las copias ya ni se versionan (ver .gitignore): se
+# generan en cada build a partir de la única fuente real.
+RESOLVER_DEST="$CONFIG_DIR/includes.chroot/usr/bin"
+mkdir -p "$RESOLVER_DEST"
+install -m 0755 "$REPO_ROOT/shared/resolver/antu-resolver" "$RESOLVER_DEST/antu-resolver"
+
 echo "==> Compilando $EDITION"
 # live-build espera correr desde el directorio que tiene a auto/ y
 # config/ como hermanos (auto/config genera/actualiza config/ en base

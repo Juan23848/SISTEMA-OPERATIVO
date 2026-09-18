@@ -8,7 +8,15 @@ configuración de `live-build` de las 3 **ya fue probada y corre sin
 errores** hasta el punto de descargar paquetes de Debian. Una revisión
 externa (Codex) encontró que, pese a eso, la estructura de carpetas tenía
 un bug real que hacía que `live-build` nunca leyera nuestras
-personalizaciones (ver Fase 0, bug #4) — ya corregido y revalidado. Las 3 ediciones
+personalizaciones (ver Fase 0, bug #4) — ya corregido y revalidado. Una
+**segunda revisión externa**, ya sobre esa corrección, encontró además
+que la ubicación de los hooks seguía sin coincidir con la que usa el
+`live-build` real de Debian bookworm/trixie (confirmado bajando ambos
+tarballs oficiales) y, más grave, que **las 3 ediciones seguían
+empaquetando la versión vieja del Resolver** — se había corregido la
+fuente pero nunca las copias que realmente se instalan. Ambos, junto con
+otros 3 hallazgos menores, ya corregidos y revalidados (ver Fase 0 y
+Fase 0.7 para el detalle). Las 3 ediciones
 también tienen ya un **shell de escritorio propio** (barra superior +
 dock, con la identidad de Antü, ver `docs/ARCHITECTURE.md`) y Standard
 suma un **lanzador con buscador** (rofi). **Todavía no se compiló ninguna
@@ -75,11 +83,35 @@ verdad contra una pantalla virtual — ver Fase 0.7.
       sesiones de escritorio reales (Legacy/Standard) se armaron a mano
       replicando la configuración en este entorno, no extrayéndola de un
       build real, así que esas sí siguen siendo válidas.
+- [x] **Bug crítico #5, de una segunda revisión externa**: la ubicación
+      de los hooks (`config/hooks/*.chroot`, confirmada contra un
+      `live-build` instalado en este entorno) **no coincide con la que
+      usa el `live-build` real de Debian bookworm/trixie** — confirmado
+      bajando y leyendo los dos tarballs fuente oficiales, que esta vez
+      sí se pudieron obtener. Esas versiones buscan
+      `config/hooks/normal/*.chroot`. Se corrigió moviendo los hooks a
+      esa subcarpeta en las 3 ediciones, y se agregó una advertencia en
+      `docs/BUILD.md` para compilar en Debian real (no Ubuntu) y
+      confirmar la versión con `dpkg-query -W live-build` antes de dar
+      un build por bueno. Sigue sin confirmarse el mecanismo real para
+      habilitar i386 antes de instalar paquetes (el sufijo
+      `.chroot_early` que usa `hooks/0050-multiarch-i386.chroot_early`
+      no aparece en ninguno de los dos tarballs oficiales) — no se
+      concluye que vaya a fallar, pero tampoco se da por bueno: queda
+      como validación pendiente para la primera ISO real.
+- [x] **Bug crítico #6, de la misma revisión**: los 3 bugs corregidos
+      del Resolver (ver Fase 0.7) nunca habían llegado a ninguna
+      edición — se había arreglado `shared/resolver/antu-resolver` pero
+      las 3 copias empaquetadas en `includes.chroot/usr/bin/` seguían
+      con el código viejo (confirmado comparando hashes). Corregido de
+      raíz: esas copias dejaron de versionarse y ahora `scripts/build.sh`
+      las genera en cada build desde la única fuente real, igual que ya
+      pasa con el branding.
 - [ ] Primera compilación **completa** de una ISO (Standard), en una
       máquina con acceso real a los mirrors de Debian — ahora con el
-      bug de rutas ya corregido, es la prueba que falta para confirmar
-      que package-lists/hooks/includes.chroot se aplican de punta a
-      punta en una imagen real.
+      bug de rutas, el de ubicación de hooks y el de sincronización del
+      Resolver ya corregidos, es la prueba que falta para confirmar que
+      todo se aplica de punta a punta en una imagen real.
 
 ## Fase 0.5 — Identidad propia (despegarse de Linux/Windows)
 
@@ -184,7 +216,12 @@ apuro (plazo: el año que viene).
       corrupta con forma equivocada, y la identidad de cada app en la
       caché pasó a ser nombre+tamaño (no solo el nombre, que hacía
       colisionar instaladores distintos con el mismo nombre típico como
-      "setup.exe"). Ver `docs/ARCHITECTURE.md`, sección "Antü Resolver".
+      "setup.exe"). **Una segunda revisión encontró que nada de esto
+      había llegado a ninguna edición** (las copias empaquetadas seguían
+      con el código viejo) y una entrada de caché puntual con forma
+      inválida también podía romper — ambos corregidos, el primero de
+      raíz (ver Fase 0). Ver `docs/ARCHITECTURE.md`, sección "Antü
+      Resolver".
 - [x] **ANTU Home** (idea de Sofi: que los documentos sean "los mismos"
       para cualquier app, sea nativa o de Windows): ya está lograda para
       todo lo que corre por Wine, gratis, sin construir nada — es cómo
@@ -218,8 +255,14 @@ apuro (plazo: el año que viene).
       (`sudo antu-compartir-configurar` la habilita en un paso). Validado
       con protocolo SMB real en los dos sentidos: el acceso de invitado
       queda rechazado (`NT_STATUS_ACCESS_DENIED`) y una cuenta real sube
-      y baja archivos sin problema. Ver `docs/ARCHITECTURE.md`, sección
-      "Red mixta con PCs Windows (Samba)".
+      y baja archivos sin problema. **Una segunda revisión señaló que
+      dos cuentas autorizadas no necesariamente podían colaborar**
+      (archivos quedando del grupo primario de quien los creó, no del
+      grupo compartido) — corregido con `force group` y validado
+      creando dos usuarios reales con grupos distintos: A crea, B
+      sobrescribe y agrega contenido nuevo sin error de permisos. Ver
+      `docs/ARCHITECTURE.md`, sección "Red mixta con PCs Windows
+      (Samba)".
 - [ ] **Gaming (Proton/Steam)**: que la biblioteca de Steam con juegos
       de Windows funcione, pensado sobre todo para Antü Pro (hardware
       potente). No arrancado todavía.
@@ -308,8 +351,13 @@ doméstico/oficina).
       usuario elegía otro wallpaper a mano, se lo volvía a pisar en el
       siguiente login. Corregido con un centinela por usuario y
       confirmado con una prueba real (elegir otro fondo → reiniciar
-      sesión → el cambio se mantiene). Ver `docs/ARCHITECTURE.md` y la
-      captura real en `docs/screenshots/antu-legacy-desktop.png`.
+      sesión → el cambio se mantiene). **Una segunda revisión encontró
+      un 4to bug**: ese centinela se creaba siempre, incluso si XFCE
+      tardaba demasiado y no se llegaba a aplicar nada — corregido para
+      que solo se marque "hecho" tras confirmar de verdad que se aplicó,
+      probado con los dos casos (con y sin `xfdesktop` a tiempo). Ver
+      `docs/ARCHITECTURE.md` y la captura real en
+      `docs/screenshots/antu-legacy-desktop.png`.
 - [x] Desactivar composición/efectos: la documentación lo decía pero no
       existía el archivo que lo aplicaba de verdad (`xfwm4.xml`,
       `use_compositing=false`) — falta explícita señalada en la misma

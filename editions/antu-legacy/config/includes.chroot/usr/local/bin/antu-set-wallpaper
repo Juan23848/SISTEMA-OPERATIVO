@@ -20,6 +20,16 @@
 #    que el usuario hubiera elegido a mano — quedaba imposible cambiarlo
 #    de forma permanente. Por eso ahora se aplica una única vez por
 #    usuario, marcado con un archivo centinela.
+# 4. (Encontrado en una segunda revisión externa, Codex) La primera
+#    versión de este fix creaba el centinela SIEMPRE, incluso si XFCE
+#    tardaba más que la espera de 20×0.5s y "$PATHS" quedaba vacío, o si
+#    las escrituras a xfconf fallaban — en ese caso el wallpaper de Antü
+#    nunca se llegaba a aplicar, pero el script igual marcaba "ya hecho"
+#    y no lo volvía a intentar en el siguiente inicio de sesión. Es
+#    justo el escenario más probable en el hardware lento al que apunta
+#    Legacy. Por eso ahora el centinela solo se crea después de
+#    confirmar de verdad que al menos una propiedad quedó con el valor
+#    de Antü — no simplemente después de "haber corrido los comandos".
 #
 # Por eso este script pregunta a xfconf qué monitores y escritorios
 # existen de verdad, y aplica el wallpaper a todas las combinaciones —
@@ -47,10 +57,21 @@ while [ "$i" -lt 20 ]; do
     sleep 0.5
 done
 
+# Si XFCE nunca llegó a crear estas propiedades (hardware muy lento),
+# no hay nada para aplicar todavía. Salir SIN crear el centinela: el
+# próximo inicio de sesión tiene que volver a intentarlo.
+[ -z "$PATHS" ] && exit 0
+
+APPLIED=0
 for p in $PATHS; do
     xfconf-query -c xfce4-desktop -p "$p" -s "$WALLPAPER" 2>/dev/null
     style_path=$(printf '%s' "$p" | sed 's#/last-image$#/image-style#')
     xfconf-query -c xfce4-desktop -p "$style_path" -s 5 -t int --create 2>/dev/null
+    # Confirmar de verdad, releyendo el valor, en vez de asumir que
+    # "correr el comando" quiere decir que se aplicó.
+    if [ "$(xfconf-query -c xfce4-desktop -p "$p" 2>/dev/null)" = "$WALLPAPER" ]; then
+        APPLIED=1
+    fi
 done
 
 # xfdesktop arranca en paralelo con este script y puede haber dibujado
@@ -58,5 +79,10 @@ done
 # valores de arriba. No redibuja solo: hay que pedírselo.
 xfdesktop --reload 2>/dev/null
 
-mkdir -p "$(dirname "$MARKER")"
-touch "$MARKER"
+# Solo se marca "hecho" si de verdad se confirmó al menos una propiedad
+# aplicada — si xfconf-query falló en todas, el próximo inicio de
+# sesión reintenta en vez de quedar pegado sin wallpaper para siempre.
+if [ "$APPLIED" -eq 1 ]; then
+    mkdir -p "$(dirname "$MARKER")"
+    touch "$MARKER"
+fi

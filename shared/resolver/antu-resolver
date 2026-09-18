@@ -156,6 +156,13 @@ def is_appimage(path, mimetype):
 def run_wine(path, key, msi=False):
     engine = "wine-msi" if msi else "wine"
     known = load_cache().get(key)
+    # No alcanza con que el archivo entero sea un dict (ya filtrado en
+    # _read_cache_unlocked): una entrada PUNTUAL corrupta, ej.
+    # {"app.exe:0": [1]} en vez de un objeto, también rompe con
+    # AttributeError al hacer known.get(...) — encontrado en una
+    # segunda revisión externa (Codex).
+    if not isinstance(known, dict):
+        known = None
     if known and known.get("engine") == engine and known.get("status") == "failed":
         # Ya sabemos que a esta app no le fue bien con Wine. Por ahora
         # es el único motor disponible, así que se avisa en vez de

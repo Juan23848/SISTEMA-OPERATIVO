@@ -155,7 +155,20 @@ Limitación conocida y aceptada: un monitor agregado después de ese
 primer inicio no recibe el wallpaper de Antü automáticamente (se
 prioriza no romper una personalización ya hecha).
 
-**Dos arreglos menores más de la misma revisión**: `/etc/lsb-release`
+**Cuarto bug, de una revisión externa posterior (Codex)**: esa primera
+corrección creaba el centinela **siempre**, incluso si XFCE tardaba más
+que los 20 intentos de medio segundo esperando o si las escrituras a
+`xfconf` fallaban — en ese caso no se aplicaba ningún wallpaper, pero el
+script igual marcaba "ya hecho" y no lo volvía a intentar nunca más.
+Justo el escenario más probable en el hardware lento al que apunta
+Legacy. Se corrigió para que el centinela solo se cree después de
+releer y confirmar que al menos una propiedad quedó con el valor de
+Antü — no simplemente después de haber corrido los comandos. Probado
+con los dos casos reales: con `xfdesktop` corriendo (aplica y marca) y
+sin `xfdesktop` corriendo, simulando el timeout (no aplica nada y **no**
+marca, para reintentar en el siguiente inicio de sesión).
+
+**Dos arreglos menores más de la primera revisión**: `/etc/lsb-release`
 se generaba copiando `/etc/os-release` tal cual, pero son formatos de
 claves distintos (`DISTRIB_*` contra `NAME=`/`VERSION=`/`ID=`) — la
 copia no generaba ninguna clave real, y algún programa viejo que solo
@@ -607,7 +620,8 @@ código**:
 
 También se blindó la lectura de la caché contra un archivo corrupto con
 JSON válido pero de forma equivocada (por ejemplo `[]` en vez de un
-objeto), que antes rompía con `AttributeError` al primer uso.
+objeto, o una entrada puntual como `{"app.exe:0": [1]}`), que antes
+rompía con `AttributeError` al primer uso.
 
 **Validado de verdad, con un cuidado importante que apareció al
 probarlo por primera vez**: la versión original del chequeo de 3
@@ -616,6 +630,31 @@ Bloc de notas de Windows (un `.exe` real, extraído de la propia
 instalación de Wine, no un mock) se abrió a través del Resolver, la
 ventana apareció, y el archivo de caché quedó escrito correctamente
 antes incluso de que la ventana terminara de aparecer.
+
+### El bug más tonto: arreglar el código no alcanza si no llega a la ISO
+
+Una **segunda revisión externa** (Codex, sobre el commit que ya tenía
+todo lo de arriba corregido) encontró algo vergonzoso: los 3 bugs del
+Resolver de la sección anterior sí estaban arreglados en
+`shared/resolver/antu-resolver`, pero **las 3 ediciones seguían
+empaquetando la copia vieja** en
+`includes.chroot/usr/bin/antu-resolver` — un archivo separado, versionado
+aparte, que nadie había vuelto a copiar después de corregir el original.
+Confirmado con hashes: el archivo compartido y las 3 copias empaquetadas
+tenían contenido distinto. Cualquier ISO compilada hasta ese commit
+habría instalado el Resolver con los bugs ya "corregidos" en el papel.
+
+La causa de fondo no era solo "olvidarse de copiar" — es que la
+copia manual es un proceso que se puede volver a olvidar. La solución
+no fue copiar una vez más a mano, sino sacarle la posibilidad de
+desincronizarse: las copias por edición **dejaron de versionarse**
+(agregadas a `.gitignore`) y ahora `scripts/build.sh` las genera en cada
+build directo desde la única fuente real, igual que ya se hacía con el
+branding. Ver `docs/BUILD.md`.
+
+Ojo con esto al revisar el resto del proyecto: cualquier otro archivo
+que se haya copiado "a mano" alguna vez a `includes.chroot/` de las 3
+ediciones tiene el mismo riesgo si su origen se vuelve a tocar.
 
 ### Red mixta con PCs Windows (Samba)
 
@@ -673,6 +712,26 @@ El acceso de invitado queda rechazado de verdad (no solo en la
 configuración escrita), y una cuenta con la contraseña de Samba
 configurada sube/baja archivos sin problema — el mismo camino que
 recorrería un archivo copiado desde el Explorador de Windows.
+
+**Segundo hallazgo, de una revisión externa posterior (Codex)**: que dos
+cuentas puedan *conectarse* no significa que puedan *colaborar*. Sin
+nada más, un archivo creado por el usuario A queda con el grupo
+**primario** de A (no necesariamente `antu-compartido`) — las máscaras
+de permisos (`create mask`/`directory mask`) limitan qué tan abiertos
+son los permisos, pero no deciden de qué grupo termina siendo dueño el
+archivo. El usuario B, aunque también pertenezca a `antu-compartido`,
+podía terminar sin permiso real para modificar lo que creó A. Se agregó
+`force group = antu-compartido`, que fuerza ese grupo en todo lo que se
+crea en la carpeta sin importar quién lo haga.
+
+**Validado con dos cuentas reales, no una inferencia sobre el papel**:
+se crearon dos usuarios de prueba con grupos primarios distintos
+(`antu-user-a`, `antu-user-b`), A creó una carpeta y un archivo por SMB,
+y B pudo *sobrescribir* ese archivo y crear uno nuevo dentro de la
+carpeta de A sin ningún error de permisos — con ambos archivos quedando
+del grupo `antu-compartido` en el filesystem real, sin importar quién
+los creó. Se reconfirmó también que el invitado sigue rechazado con
+este cambio.
 
 ### Honestidad sobre los límites
 

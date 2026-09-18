@@ -6,6 +6,11 @@ editions/*/build/
 editions/*/config/includes.chroot/usr/share/backgrounds/antu/
 editions/*/config/includes.chroot/usr/share/pixmaps/antu/
 editions/*/config/includes.chroot/usr/share/icons/Antu/
+# Antü Resolver: copiado por scripts/build.sh desde la única fuente real
+# (shared/resolver/antu-resolver). Tener una copia propia versionada acá
+# fue justo el bug que hizo que dos rondas de correcciones al Resolver
+# nunca llegaran a ninguna ISO (encontrado en una revisión externa).
+editions/*/config/includes.chroot/usr/bin/antu-resolver
 
 # auto/ y config/ tienen que ser HERMANOS (ambos hijos directos de
 # editions/<edicion>/) para que live-build encuentre de verdad nuestros
