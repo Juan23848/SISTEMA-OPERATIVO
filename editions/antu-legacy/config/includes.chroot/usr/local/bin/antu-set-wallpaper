@@ -1,8 +1,9 @@
 #!/bin/sh
-# Aplica el wallpaper de Antü al iniciar sesión en XFCE.
+# Aplica el wallpaper de Antü al iniciar sesión en XFCE, UNA SOLA VEZ
+# por usuario.
 #
-# Por qué existe (dos problemas reales, encontrados probando de verdad
-# con una sesión XFCE en una pantalla virtual, no evidentes a mano):
+# Por qué existe (problemas reales, encontrados probando de verdad con
+# una sesión XFCE en una pantalla virtual, no evidentes a mano):
 #
 # 1. xfce4-desktop nombra la propiedad del wallpaper según el monitor
 #    que detecta en cada máquina (ej. "monitor0", "monitorVGA-1",
@@ -14,10 +15,25 @@
 #    "workspace0" no alcanza: si la sesión arranca en otro escritorio (u
 #    el usuario cambia de escritorio), vuelve a aparecer el wallpaper
 #    por defecto de Debian/Xubuntu.
+# 3. (Encontrado en una revisión externa, Codex) Corriendo esto en TODOS
+#    los inicios de sesión, sin condición, el script pisaba el wallpaper
+#    que el usuario hubiera elegido a mano — quedaba imposible cambiarlo
+#    de forma permanente. Por eso ahora se aplica una única vez por
+#    usuario, marcado con un archivo centinela.
 #
 # Por eso este script pregunta a xfconf qué monitores y escritorios
-# existen de verdad, y aplica el wallpaper a todas las combinaciones.
+# existen de verdad, y aplica el wallpaper a todas las combinaciones —
+# pero solo la primera vez que corre para ese usuario.
 WALLPAPER="/usr/share/backgrounds/antu/wallpaper.png"
+MARKER="$HOME/.config/antu/.wallpaper-set-once"
+
+# Ya se aplicó antes para este usuario: no tocar nada, para no pisar un
+# cambio que haya hecho a mano después del primer inicio de sesión.
+# Limitación conocida: un monitor agregado después de esta primera vez
+# no recibe el wallpaper de Antü automáticamente (el usuario lo puede
+# poner a mano) — se prioriza no romper una personalización ya hecha
+# por sobre cubrir ese caso más raro.
+[ -e "$MARKER" ] && exit 0
 
 # xfdesktop crea sus propiedades de monitor/escritorio al arrancar, en
 # paralelo con este script (ambos son autostarts) — esperar un poco si
@@ -41,3 +57,6 @@ done
 # el wallpaper por defecto ANTES de que termináramos de escribir los
 # valores de arriba. No redibuja solo: hay que pedírselo.
 xfdesktop --reload 2>/dev/null
+
+mkdir -p "$(dirname "$MARKER")"
+touch "$MARKER"

@@ -43,7 +43,10 @@ El script:
    Para usar el wallpaper "día" en vez del de "noche", corré ese script a
    mano con `day` como segundo parámetro antes de compilar (por ejemplo:
    `shared/scripts/install-branding.sh editions/antu-pro/config day`).
-2. Entra a `editions/<edicion>/config/`.
+2. Entra a `editions/<edicion>/` (la raíz de la edición, **no**
+   `editions/<edicion>/config/`: `live-build` necesita correr desde el
+   directorio que tiene a `auto/` y `config/` como hermanos — ver la
+   sección de estructura más abajo para el porqué exacto).
 3. Corre `lb clean` para asegurar un build limpio.
 4. Corre `lb build`, que descarga paquetes y arma la imagen.
 5. Deja la ISO resultante en `editions/<edicion>/build/`.
@@ -62,25 +65,48 @@ live sin necesidad de instalar en hardware real.
 
 ## Estructura de la configuración de `live-build`
 
-Cada edición sigue la estructura estándar que genera `lb config`:
+Cada edición sigue la estructura estándar de un proyecto de `live-build`:
+`auto/` y `config/` como **hermanos**, ambos hijos directos de la raíz de
+la edición:
 
 ```
-editions/<edicion>/config/
-├── auto/               # Scripts auto/config y auto/build (parámetros de lb config)
-├── package-lists/      # Listas .list.chroot con los paquetes a instalar
-├── includes.chroot/    # Archivos que se copian tal cual dentro del sistema final
-└── hooks/              # Scripts que corren durante el build (chroot y binary hooks)
+editions/<edicion>/
+├── auto/                    # Scripts auto/config, auto/build, auto/clean (parámetros de lb config)
+└── config/
+    ├── package-lists/       # Listas .list.chroot con los paquetes a instalar
+    ├── includes.chroot/     # Archivos que se copian tal cual dentro del sistema final
+    └── hooks/                # Scripts que corren durante el build (chroot y binary hooks)
 ```
+
+**Por qué importa el orden exacto**: `live-build` se invoca desde la raíz
+de la edición (el directorio que contiene `auto/`), y sus scripts internos
+(`lb_chroot_package-lists`, `lb_chroot_hooks`, `lb_chroot_includes`) leen
+`config/package-lists/*.list.chroot`, `config/hooks/*.chroot` y
+`config/includes.chroot/` como rutas relativas a ese directorio — no a
+`config/` mismo. Si `auto/` quedara *adentro* de `config/` (como pasó en
+una versión anterior de este proyecto) y se corriera `lb build` desde ahí
+adentro, `lb config` crearía un `config/config/` vacío al lado de nuestros
+`package-lists/`, `hooks/` e `includes.chroot/` reales, y el build
+terminaría instalando solo lo mínimo de Debian — sin Cinnamon/XFCE/Plasma,
+sin Wine, sin el Resolver, sin branding — sin ningún error visible que lo
+avise. Se confirmó este comportamiento corriendo `lb config` de verdad
+contra ambas estructuras (la rota y la corregida) y comparando qué
+directorios terminaba leyendo cada una.
 
 El branding (wallpapers, temas, iconos) se copia dentro de
 `includes.chroot/` para terminar en las rutas correspondientes del sistema
 de archivos final (por ejemplo `/usr/share/backgrounds/`).
+
+`lb config` genera además, dentro de `config/`, varios directorios propios
+(`archives/`, `binary*/`, `bootstrap/`, `chroot/`, etc.) y, en la raíz de
+la edición, `.build/` y `local/` — todos ignorados en `.gitignore`, no son
+contenido de Antü.
 
 ## Limpieza
 
 Para borrar los artefactos de un build y empezar de cero:
 
 ```bash
-cd editions/<edicion>/config
+cd editions/<edicion>
 sudo lb clean --purge
 ```

@@ -12,4 +12,14 @@ ID_LIKE=debian
 HOME_URL="https://github.com/Juan23848/SISTEMA-OPERATIVO"
 EOF
 
-cp /etc/os-release /etc/lsb-release 2>/dev/null || true
+# /etc/lsb-release usa un formato de claves distinto al de os-release
+# (DISTRIB_* en vez de NAME=/VERSION=/ID=) — copiar el archivo tal cual
+# no genera esas claves, y algunos programas viejos que solo miran
+# lsb-release quedan sin detectar nada. Encontrado en una revisión
+# externa (Codex) y confirmado leyendo el formato real de lsb-release.
+cat > /etc/lsb-release <<'EOF'
+DISTRIB_ID=Antu
+DISTRIB_RELEASE=Standard
+DISTRIB_CODENAME=bookworm
+DISTRIB_DESCRIPTION="Antü Standard"
+EOF

@@ -25,8 +25,8 @@ fi
 EDITION_DIR="$REPO_ROOT/editions/$EDITION"
 CONFIG_DIR="$EDITION_DIR/config"
 
-if [[ ! -d "$CONFIG_DIR" ]]; then
-    echo "No se encontró la configuración en $CONFIG_DIR"
+if [[ ! -d "$EDITION_DIR/auto" || ! -d "$CONFIG_DIR" ]]; then
+    echo "No se encontró la configuración en $EDITION_DIR"
     exit 1
 fi
 
@@ -45,7 +45,13 @@ echo "==> Instalando branding compartido"
 "$REPO_ROOT/shared/scripts/install-branding.sh" "$CONFIG_DIR"
 
 echo "==> Compilando $EDITION"
-cd "$CONFIG_DIR"
+# live-build espera correr desde el directorio que tiene a auto/ y
+# config/ como hermanos (auto/config genera/actualiza config/ en base
+# a esa ubicación). Si se entrara a config/ directamente, "lb config"
+# crearía un config/config/ vacío al lado de nuestros package-lists/
+# hooks/includes.chroot reales, y live-build jamás los encontraría —
+# bug real que tuvo el proyecto hasta que se detectó y corrigió acá.
+cd "$EDITION_DIR"
 
 ./auto/clean
 ./auto/config

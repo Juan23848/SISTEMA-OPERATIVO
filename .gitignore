@@ -6,12 +6,38 @@ editions/*/build/
 editions/*/config/includes.chroot/usr/share/backgrounds/antu/
 editions/*/config/includes.chroot/usr/share/pixmaps/antu/
 editions/*/config/includes.chroot/usr/share/icons/Antu/
-editions/*/config/config/
-editions/*/config/.build/
-editions/*/config/cache/
-editions/*/config/chroot/
+
+# auto/ y config/ tienen que ser HERMANOS (ambos hijos directos de
+# editions/<edicion>/) para que live-build encuentre de verdad nuestros
+# package-lists/hooks/includes.chroot dentro de config/ — si auto/
+# quedara adentro de config/, "lb config" (corrido desde config/)
+# crearía un config/config/ vacío al lado nuestro y jamás leería nada
+# de lo que escribimos (bug real que tuvo el proyecto, corregido).
+# Lo que sigue son los archivos/carpetas que "lb config"/"lb build"
+# generan solos dentro de esa estructura — no son contenido nuestro.
+editions/*/.build/
+editions/*/local/
+editions/*/cache/
+editions/*/chroot/
+editions/*/config/archives/
 editions/*/config/binary/
-editions/*/config/local/
+editions/*/config/binary_debian-installer/
+editions/*/config/binary_grub/
+editions/*/config/binary_rootfs/
+editions/*/config/binary_syslinux/
+editions/*/config/bootstrap/
+editions/*/config/chroot/
+editions/*/config/chroot_apt/
+editions/*/config/common/
+editions/*/config/includes/
+editions/*/config/includes.binary/
+editions/*/config/includes.binary_debian-installer/
+editions/*/config/packages/
+editions/*/config/packages.binary/
+editions/*/config/packages.chroot/
+editions/*/config/preseed/
+editions/*/config/source/
+editions/*/config/templates/
 *.iso
 *.img
 *.log

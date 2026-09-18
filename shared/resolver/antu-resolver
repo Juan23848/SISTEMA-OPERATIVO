@@ -15,6 +15,8 @@ Lutris o Bottles para juegos/apps de Windows, aplicado acá a cualquier
 formato.
 """
 
+import contextlib
+import fcntl
 import json
 import os
 import shutil
@@ -27,6 +29,7 @@ CACHE_DIR = os.path.join(
     "antu",
 )
 CACHE_FILE = os.path.join(CACHE_DIR, "resolver-profiles.json")
+LOCK_FILE = os.path.join(CACHE_DIR, "resolver-profiles.lock")
 
 
 def notify(message):
@@ -45,27 +48,75 @@ def notify(message):
             pass
 
 
-def load_cache():
+def _read_cache_unlocked():
     try:
         with open(CACHE_FILE, encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
+    # Si el archivo tiene JSON válido pero no es un objeto (ej. quedó en
+    # "[]" por una corrupción externa), tratarlo como caché vacía en vez
+    # de romper más adelante con AttributeError al hacer cache.get(...).
+    return data if isinstance(data, dict) else {}
 
 
-def save_cache(cache):
+def load_cache():
+    """Lectura suelta, sin lock: alcanza para decisiones de solo lectura
+    (como el aviso de "ya falló antes"), donde una foto levemente vieja
+    de la caché no es un problema. Las actualizaciones reales pasan por
+    update_cache(), que sí toma el lock."""
+    return _read_cache_unlocked()
+
+
+@contextlib.contextmanager
+def _cache_transaction():
+    """Ciclo leer-modificar-escribir atómico, con lock exclusivo sobre
+    todo el archivo. Sin esto, dos antu-resolver corriendo al mismo
+    tiempo (ej. dos instaladores abiertos juntos) pueden pisarse: los
+    dos leen la caché vieja, cada uno escribe su cambio por separado, y
+    el que escribe segundo borra la actualización del primero. El lock
+    se toma solo durante la lectura+escritura (milisegundos), nunca
+    mientras la app queda abierta, para no bloquear otros lanzamientos.
+    """
     os.makedirs(CACHE_DIR, exist_ok=True)
-    with open(CACHE_FILE, "w", encoding="utf-8") as f:
-        json.dump(cache, f, indent=2, ensure_ascii=False, sort_keys=True)
+    with open(LOCK_FILE, "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            cache = _read_cache_unlocked()
+            yield cache
+            tmp_path = CACHE_FILE + ".tmp"
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                json.dump(cache, f, indent=2, ensure_ascii=False, sort_keys=True)
+            os.replace(tmp_path, CACHE_FILE)
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
+def update_cache_entry(key, **fields):
+    """Actualiza una entrada de la caché de forma atómica: relee el
+    archivo bajo lock (no el diccionario que se haya cargado antes en
+    la función que llama), para no pisar cambios de otro proceso."""
+    with _cache_transaction() as cache:
+        cache[key] = {**cache.get(key, {}), **fields, "last_used": int(time.time())}
 
 
 def app_key(path):
-    """Identificador de la app para la caché. Se usa el nombre de
-    archivo, no un hash del contenido: el objetivo es reconocer "este
-    programa" entre distintas descargas/versiones, no un archivo
-    puntual. Limitación conocida: si el instalador cambia de nombre,
-    el resolver no lo reconoce y vuelve a probar desde cero."""
-    return os.path.basename(path).lower()
+    """Identificador de la app para la caché: nombre de archivo + tamaño
+    en bytes, no un hash del contenido completo (costoso para
+    instaladores grandes) ni solo el nombre (dos instaladores distintos
+    llamados igual, ej. dos "setup.exe" de programas distintos,
+    terminarían compartiendo el mismo resultado de compatibilidad, lo
+    cual es peor que no tener caché). El tamaño no es una identidad
+    perfecta —dos versiones distintas del mismo tamaño exacto seguirían
+    colisionando—, pero es información gratis (ya se necesita abrir el
+    archivo) y baja mucho la chance de choque real. Limitación que
+    persiste: si el mismo instalador se descarga de nuevo con otro
+    nombre de archivo, el Resolver no lo reconoce y prueba desde cero."""
+    try:
+        size = os.path.getsize(path)
+    except OSError:
+        size = 0
+    return f"{os.path.basename(path).lower()}:{size}"
 
 
 def detect_mimetype(path):
@@ -102,9 +153,9 @@ def is_appimage(path, mimetype):
     return mimetype in {"application/x-iso9660-appimage", "application/vnd.appimage"}
 
 
-def run_wine(path, cache, key, msi=False):
+def run_wine(path, key, msi=False):
     engine = "wine-msi" if msi else "wine"
-    known = cache.get(key)
+    known = load_cache().get(key)
     if known and known.get("engine") == engine and known.get("status") == "failed":
         # Ya sabemos que a esta app no le fue bien con Wine. Por ahora
         # es el único motor disponible, así que se avisa en vez de
@@ -128,23 +179,32 @@ def run_wine(path, cache, key, msi=False):
         return 1
 
     time.sleep(3)
-    ok = proc.poll() is None or proc.returncode == 0
+    started_ok = proc.poll() is None or proc.returncode == 0
 
-    cache[key] = {
-        "engine": engine,
-        "status": "ok" if ok else "failed",
-        "last_used": int(time.time()),
-    }
-    save_cache(cache)
-
-    if not ok:
+    if not started_ok:
+        # Se cayó de entrada (DLL faltante, excepción al iniciar) — esto
+        # sí es una señal confiable de que el lanzamiento falló.
+        update_cache_entry(key, engine=engine, status="failed")
         notify(f"'{os.path.basename(path)}' no pudo abrirse con Wine.")
         return proc.returncode
 
-    # El lanzamiento fue bien: ahora sí se espera a que el usuario
-    # cierre la app, para que antu-resolver no corte el proceso al
-    # terminar (el .desktop que lo invoca no debe volver antes).
-    return proc.wait()
+    # "started", no "ok": que el proceso siga vivo a los 3 segundos dice
+    # que el lanzamiento anduvo, no que toda la app sea utilizable —
+    # distinción que importa para lo que sigue.
+    update_cache_entry(key, engine=engine, status="started")
+
+    # Ahora sí se espera a que el usuario cierre la app, para que
+    # antu-resolver no corte el proceso al terminar. Guardar el código
+    # de salida como dato ("exited"), sin reinterpretarlo como
+    # "failed": muchas apps de Windows devuelven códigos distintos de 0
+    # al cerrarse normal bajo Wine, así que un exit code no es prueba
+    # de que algo salió mal. La versión anterior sí tenía un bug real
+    # acá (encontrado en una revisión externa y confirmado simulando el
+    # escenario): guardaba "ok" en el primer chequeo y nunca lo
+    # actualizaba, aunque el proceso terminara cayéndose después.
+    exit_code = proc.wait()
+    update_cache_entry(key, engine=engine, status="exited", exit_code=exit_code)
+    return exit_code
 
 
 def run_appimage(path):
@@ -174,14 +234,21 @@ def resolve(path):
         print(f"antu-resolver: no existe el archivo '{path}'", file=sys.stderr)
         return 1
 
+    # Normalizar a ruta absoluta ACA, antes de despachar a cualquier
+    # motor: una ruta relativa como "paquete.deb" deja de significar lo
+    # mismo si pkexec (o cualquier otro paso intermedio) corre con un
+    # directorio de trabajo distinto al de quien invocó al Resolver —
+    # bug real encontrado en una revisión externa (Codex), afectaba a
+    # install_deb() y podía afectar a AppImage/Wine de la misma manera.
+    path = os.path.abspath(path)
+
     mimetype = detect_mimetype(path)
-    cache = load_cache()
     key = app_key(path)
 
     if mimetype in WINE_MIMETYPES:
-        return run_wine(path, cache, key, msi=False)
+        return run_wine(path, key, msi=False)
     if mimetype in MSI_MIMETYPES:
-        return run_wine(path, cache, key, msi=True)
+        return run_wine(path, key, msi=True)
     if is_appimage(path, mimetype):
         return run_appimage(path)
     if mimetype in DEB_MIMETYPES or path.lower().endswith(".deb"):
@@ -193,9 +260,9 @@ def resolve(path):
     # pasar con un .exe/.msi corrupto o con una extensión rara).
     ext = os.path.splitext(path)[1].lower()
     if ext == ".exe":
-        return run_wine(path, cache, key, msi=False)
+        return run_wine(path, key, msi=False)
     if ext == ".msi":
-        return run_wine(path, cache, key, msi=True)
+        return run_wine(path, key, msi=True)
 
     notify(f"Antü no reconoce el formato de '{os.path.basename(path)}'.")
     print(f"antu-resolver: formato no reconocido (mimetype={mimetype!r})", file=sys.stderr)

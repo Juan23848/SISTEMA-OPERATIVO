@@ -5,7 +5,10 @@
 Existe el scaffold de las 3 ediciones (estructura de configuración de
 `live-build`, listas de paquetes iniciales, branding real) y la
 configuración de `live-build` de las 3 **ya fue probada y corre sin
-errores** hasta el punto de descargar paquetes de Debian. Las 3 ediciones
+errores** hasta el punto de descargar paquetes de Debian. Una revisión
+externa (Codex) encontró que, pese a eso, la estructura de carpetas tenía
+un bug real que hacía que `live-build` nunca leyera nuestras
+personalizaciones (ver Fase 0, bug #4) — ya corregido y revalidado. Las 3 ediciones
 también tienen ya un **shell de escritorio propio** (barra superior +
 dock, con la identidad de Antü, ver `docs/ARCHITECTURE.md`) y Standard
 suma un **lanzador con buscador** (rofi). **Todavía no se compiló ninguna
@@ -48,8 +51,35 @@ verdad contra una pantalla virtual — ver Fase 0.7.
          pero `live-build` solo soporta **una arquitectura por
          configuración**. Se dejó en `i386` (compatible con hardware de
          32 y 64 bits).
+- [x] **Bug crítico #4, encontrado en una revisión externa (Codex) y
+      confirmado corriendo `lb config` de verdad**: `auto/` estaba
+      anidado *adentro* de `config/` (`editions/<edicion>/config/auto/`)
+      en vez de ser su hermano. Como `build.sh` entraba a `config/` antes
+      de correr `./auto/config`, `live-build` terminaba buscando
+      `config/package-lists`, `config/hooks` y `config/includes.chroot`
+      **relativos a esa carpeta** — es decir, dentro de un
+      `config/config/` que nunca existió con contenido real. El build
+      anterior "corría sin errores" (los 3 bugs de arriba sí estaban
+      resueltos) pero **nunca había incorporado ninguna de nuestras
+      personalizaciones**: ni Cinnamon/XFCE/Plasma vía package-lists, ni
+      Wine, ni el Resolver, ni Samba, ni el branding — todo hubiera
+      terminado en un Debian base genérico, sin ningún aviso de error.
+      Se corrigió moviendo `auto/` un nivel arriba (hermano de `config/`,
+      la estructura estándar de `live-build`) y se validó de nuevo
+      corriendo `lb config` contra ambas estructuras para confirmar la
+      diferencia con evidencia real, no solo lectura de código. Ver
+      `docs/BUILD.md`, sección "Estructura de la configuración de
+      `live-build`". **Esto también significa que ninguna validación
+      previa de este roadmap que dependiera de un build real (más allá
+      de "no tira error") puede darse por buena sin repetirla** — las
+      sesiones de escritorio reales (Legacy/Standard) se armaron a mano
+      replicando la configuración en este entorno, no extrayéndola de un
+      build real, así que esas sí siguen siendo válidas.
 - [ ] Primera compilación **completa** de una ISO (Standard), en una
-      máquina con acceso real a los mirrors de Debian.
+      máquina con acceso real a los mirrors de Debian — ahora con el
+      bug de rutas ya corregido, es la prueba que falta para confirmar
+      que package-lists/hooks/includes.chroot se aplican de punta a
+      punta en una imagen real.
 
 ## Fase 0.5 — Identidad propia (despegarse de Linux/Windows)
 
@@ -143,12 +173,18 @@ apuro (plazo: el año que viene).
       no solo como concepto. Los `.desktop` de asociación de `.exe`/
       `.msi` ahora llaman al Resolver, no a Wine directo — de cara al
       usuario dice "Abrir con Antü", no "Abrir con Wine". Validado de
-      punta a punta contra una pantalla virtual, con un bug real
-      encontrado y corregido en el camino (la primera versión esperaba
-      a que el usuario cerrara la app para recién ahí guardar si
-      "había andado" — se corrigió para decidirlo a los pocos segundos
-      de abrir el proceso). Ver `docs/ARCHITECTURE.md`, sección "Antü
-      Resolver".
+      punta a punta contra una pantalla virtual. Una revisión externa
+      (Codex) encontró 3 bugs reales más, los tres corregidos y
+      confirmados con pruebas: el estado quedaba pegado en "éxito"
+      después de un fallo tardío (ahora usa 3 estados:
+      failed/started/exited), una condición de carrera podía perder
+      actualizaciones con dos lanzamientos simultáneos (ahora con lock
+      exclusivo), y las rutas relativas se pasaban mal a `apt` (ahora se
+      normalizan a absolutas). También se blindó contra una caché
+      corrupta con forma equivocada, y la identidad de cada app en la
+      caché pasó a ser nombre+tamaño (no solo el nombre, que hacía
+      colisionar instaladores distintos con el mismo nombre típico como
+      "setup.exe"). Ver `docs/ARCHITECTURE.md`, sección "Antü Resolver".
 - [x] **ANTU Home** (idea de Sofi: que los documentos sean "los mismos"
       para cualquier app, sea nativa o de Windows): ya está lograda para
       todo lo que corre por Wine, gratis, sin construir nada — es cómo
@@ -173,16 +209,17 @@ apuro (plazo: el año que viene).
       ahora tiene algo real detrás. `samba` + `smbclient` + `cifs-utils`
       + `wsdd` (para que Windows 10/11 vea a Antü en la red con el
       mecanismo de descubrimiento moderno, no el NetBIOS viejo) en las
-      3 ediciones, con una carpeta compartida de acceso libre
-      (`/srv/antu-compartido`, sin pedir usuario/contraseña) lista de
-      fábrica. Compartir la carpeta personal de cada usuario con su
-      propia contraseña queda para más adelante — no se puede resolver
-      en el momento de compilar la ISO porque el usuario todavía no
-      existe. Validado con protocolo SMB real: se subió y bajó un
-      archivo con `smbclient` contra un `smbd` corrido en este entorno,
-      confirmando que el archivo llega de verdad al filesystem y vuelve
-      sin corromperse. Ver `docs/ARCHITECTURE.md`, sección "Red mixta
-      con PCs Windows (Samba)".
+      3 ediciones, con una carpeta compartida (`/srv/antu-compartido`)
+      lista de fábrica. **Corregido tras una revisión externa (Codex)**:
+      la primera versión daba acceso de invitado con permisos `0777` —
+      Windows 10/11 actualizado restringe ese acceso por política (puede
+      directamente no dejar conectarse) y era además una escritura
+      anónima demasiado abierta. Ahora la carpeta requiere una cuenta
+      (`sudo antu-compartir-configurar` la habilita en un paso). Validado
+      con protocolo SMB real en los dos sentidos: el acceso de invitado
+      queda rechazado (`NT_STATUS_ACCESS_DENIED`) y una cuenta real sube
+      y baja archivos sin problema. Ver `docs/ARCHITECTURE.md`, sección
+      "Red mixta con PCs Windows (Samba)".
 - [ ] **Gaming (Proton/Steam)**: que la biblioteca de Steam con juegos
       de Windows funcione, pensado sobre todo para Antü Pro (hardware
       potente). No arrancado todavía.
@@ -266,9 +303,18 @@ doméstico/oficina).
       estático) y XFCE tiene 4 escritorios virtuales con wallpaper
       independiente cada uno. Solución: `usr/local/bin/antu-set-wallpaper`
       + autostart, que detecta los nombres reales en vez de adivinarlos.
-      Ver `docs/ARCHITECTURE.md` y la captura real en
-      `docs/screenshots/antu-legacy-desktop.png`.
-- [ ] Reducir el set de paquetes y desactivar composición/efectos.
+      **Una revisión externa (Codex) encontró un 3er bug** en ese mismo
+      script: corría en todos los inicios de sesión, así que si el
+      usuario elegía otro wallpaper a mano, se lo volvía a pisar en el
+      siguiente login. Corregido con un centinela por usuario y
+      confirmado con una prueba real (elegir otro fondo → reiniciar
+      sesión → el cambio se mantiene). Ver `docs/ARCHITECTURE.md` y la
+      captura real en `docs/screenshots/antu-legacy-desktop.png`.
+- [x] Desactivar composición/efectos: la documentación lo decía pero no
+      existía el archivo que lo aplicaba de verdad (`xfwm4.xml`,
+      `use_compositing=false`) — falta explícita señalada en la misma
+      revisión externa, ya corregida.
+- [ ] Reducir el set de paquetes.
 - [ ] Validar arranque y uso fluido en hardware con ≤2GB RAM.
 
 ## Fase 3 — Antü Pro

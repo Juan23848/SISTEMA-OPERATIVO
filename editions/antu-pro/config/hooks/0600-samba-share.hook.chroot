@@ -1,9 +1,13 @@
 #!/bin/sh
-# La carpeta compartida (/srv/antu-compartido, ver includes.chroot y
-# etc/samba/smb.conf) necesita permisos abiertos para que el acceso de
-# invitado de Samba pueda escribir en ella. includes.chroot copia el
-# archivo .gitkeep con los permisos por defecto, no los 0777 que
-# necesita una carpeta de acceso libre.
+# Prepara la carpeta compartida (/srv/antu-compartido, ver
+# includes.chroot y etc/samba/smb.conf) y el grupo que controla quién
+# puede usarla. El acceso es por cuenta, no de invitado (ver el
+# encabezado de smb.conf para el porqué) — por eso el grupo empieza sin
+# nadie adentro: recién se suma un usuario cuando corre
+# antu-compartir-configurar, ya con el sistema instalado y un usuario
+# real creado.
 set -e
 
-chmod 0777 /srv/antu-compartido
+groupadd -f antu-compartido
+chgrp antu-compartido /srv/antu-compartido
+chmod 0770 /srv/antu-compartido

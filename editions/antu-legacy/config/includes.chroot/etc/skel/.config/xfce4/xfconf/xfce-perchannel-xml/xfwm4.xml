@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Compositor de XFCE desactivado por defecto en Legacy: hardware de la
+  era XP no siempre tiene una GPU confiable para composición (sombras,
+  transparencias, animaciones), y activarlo puede volver la sesión
+  notablemente más lenta o directamente trabar el arranque en video
+  genérico/VESA. La documentación del proyecto decía esto desde el
+  principio, pero faltaba el archivo que efectivamente lo aplica —
+  encontrado en una revisión externa (Codex): sin este archivo, XFCE
+  usa el valor por defecto del paquete, no necesariamente desactivado.
+-->
+<channel name="xfwm4" version="1.0">
+  <property name="general" type="empty">
+    <property name="use_compositing" type="bool" value="false"/>
+  </property>
+</channel>

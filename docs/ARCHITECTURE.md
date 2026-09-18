@@ -140,6 +140,31 @@ ya muestra el wallpaper y el logo de Antü correctamente:
 
 ![Escritorio de Antü Legacy](screenshots/antu-legacy-desktop.png)
 
+**Tercer bug, encontrado en una revisión externa (Codex) y ya
+corregido**: el script no distinguía "primer inicio de sesión" de
+"inicios siguientes" — corría en todos, así que si el usuario elegía
+otro wallpaper a mano, en el próximo inicio de sesión `antu-set-wallpaper`
+se lo volvía a pisar con el de Antü, sin que hubiera forma de dejarlo
+cambiado. Se corrigió con un archivo centinela
+(`~/.config/antu/.wallpaper-set-once`): el script aplica el wallpaper de
+Antü una única vez por usuario y después no vuelve a tocar la
+configuración. Probado de punta a punta contra una sesión XFCE real:
+primer inicio → aplica Antü; el usuario cambia el fondo a mano; segundo
+inicio (simulado) → el cambio del usuario se mantiene intacto.
+Limitación conocida y aceptada: un monitor agregado después de ese
+primer inicio no recibe el wallpaper de Antü automáticamente (se
+prioriza no romper una personalización ya hecha).
+
+**Dos arreglos menores más de la misma revisión**: `/etc/lsb-release`
+se generaba copiando `/etc/os-release` tal cual, pero son formatos de
+claves distintos (`DISTRIB_*` contra `NAME=`/`VERSION=`/`ID=`) — la
+copia no generaba ninguna clave real, y algún programa viejo que solo
+mira `lsb-release` quedaba sin poder identificar el sistema. Se corrigió
+escribiendo el archivo con sus claves propias. Y la documentación decía
+"compositor desactivado por defecto" en Legacy sin que existiera ningún
+archivo que lo aplicara de verdad — se agregó
+`xfwm4.xml`(`use_compositing=false`) para que la afirmación sea cierta.
+
 ### Standard: también probado con una sesión Cinnamon real
 
 Le fue igual de bien que a Legacy. Se levantó `cinnamon` de verdad (no
@@ -537,26 +562,60 @@ ediciones). Recibe un archivo y decide:
 - `.flatpakref` → se instala con `flatpak install`.
 
 Cada vez que abre un `.exe`/`.msi` por primera vez, guarda el resultado
-en `~/.local/share/antu/resolver-profiles.json` (motor usado, si
-funcionó, cuándo) usando el nombre del archivo como identificador de la
-app — así la segunda vez ya sabe qué esperar, sin volver a "adivinar".
-Es una limitación conocida y aceptada de esta primera versión: si el
-mismo programa se descarga con otro nombre de archivo, el Resolver no
-lo reconoce como "la misma app" y arranca de cero con ella.
+en `~/.local/share/antu/resolver-profiles.json` (motor usado, estado,
+cuándo) usando **nombre de archivo + tamaño en bytes** como identificador
+de la app — no solo el nombre. Corregido tras una revisión externa
+(Codex): usar solo el nombre hacía que dos instaladores distintos con el
+mismo nombre típico (dos `setup.exe` de programas totalmente distintos)
+compartieran el mismo resultado de compatibilidad, algo peor que no
+tener caché. El tamaño no es una identidad perfecta, pero es información
+gratis y baja mucho la chance de choque real. Limitación que persiste:
+si el mismo instalador se descarga de nuevo con otro nombre de archivo,
+el Resolver no lo reconoce y arranca de cero con él.
+
+**Tres bugs reales encontrados en una revisión externa (Codex) y
+corregidos, cada uno confirmado con una prueba, no solo releyendo el
+código**:
+
+1. **El estado quedaba pegado en "éxito" después de un fallo tardío.**
+   La versión anterior marcaba `status: ok` si el proceso seguía vivo a
+   los 3 segundos, pero nunca volvía a actualizarlo — si la app se
+   caía recién a los 5 minutos, la caché seguía diciendo que todo
+   estaba bien. Se corrigió con un modelo de 3 estados en vez de un
+   veredicto binario: `failed` (se cayó de entrada), `started` (sigue
+   vivo, no implica que sea utilizable) y `exited` (terminó, con el
+   código de salida real guardado como dato — sin reinterpretarlo como
+   "falló", porque muchas apps de Windows devuelven códigos distintos
+   de 0 al cerrarse normal bajo Wine). Probado con un doble de proceso
+   controlado (vivo al chequeo inicial, sale con código 7 más tarde):
+   la caché terminó en `exited`/`exit_code: 7`, no pegada en `ok`.
+2. **Condición de carrera en la caché.** Dos lanzamientos al mismo
+   tiempo leían el archivo, cada uno escribía su cambio por separado, y
+   el segundo en escribir podía borrar la actualización del primero.
+   Se corrigió con un lock exclusivo (`fcntl.flock`) sobre todo el
+   ciclo leer-modificar-escribir, tomado solo por los milisegundos que
+   dura esa operación (nunca mientras la app queda abierta, para no
+   bloquear otros lanzamientos). Probado con 50 hilos actualizando la
+   caché al mismo tiempo: las 50 entradas sobrevivieron.
+3. **Rutas relativas mal pasadas a `apt`.** `antu-resolver install
+   paquete.deb` pasaba la ruta tal cual a `apt-get install` vía
+   `pkexec` — si `pkexec` (o cualquier paso intermedio) corre con un
+   directorio de trabajo distinto, esa ruta relativa deja de apuntar al
+   archivo correcto. Se corrigió normalizando a ruta absoluta al
+   principio de `resolve()`, antes de despachar a cualquier motor
+   (cubre también AppImage y Wine, no solo `.deb`).
+
+También se blindó la lectura de la caché contra un archivo corrupto con
+JSON válido pero de forma equivocada (por ejemplo `[]` en vez de un
+objeto), que antes rompía con `AttributeError` al primer uso.
 
 **Validado de verdad, con un cuidado importante que apareció al
-probarlo**: la primera versión esperaba a que el usuario cerrara la
-aplicación para recién ahí guardar si "había funcionado" — un error
-real, porque una app con ventana se queda abierta horas y el registro
-nunca llegaba a tiempo. Se corrigió para que la decisión se tome a los
-pocos segundos de lanzar el proceso (¿sigue vivo? ¿no se cayó de
-entrada por una dependencia faltante?), sin esperar a que el usuario
-termine de usarla. Con la corrección, se probó de punta a punta contra
-una pantalla virtual: el Bloc de notas de Windows (un `.exe` real,
-extraído de la propia instalación de Wine, no un mock) se abrió a
-través del Resolver, la ventana apareció, y el archivo de caché quedó
-escrito con `{"blocdenotas.exe": {"engine": "wine", "status": "ok",
-...}}` — antes incluso de que la ventana terminara de aparecer.
+probarlo por primera vez**: la versión original del chequeo de 3
+segundos se probó de punta a punta contra una pantalla virtual: el
+Bloc de notas de Windows (un `.exe` real, extraído de la propia
+instalación de Wine, no un mock) se abrió a través del Resolver, la
+ventana apareció, y el archivo de caché quedó escrito correctamente
+antes incluso de que la ventana terminara de aparecer.
 
 ### Red mixta con PCs Windows (Samba)
 
@@ -574,30 +633,46 @@ PC con Windows nuevo puede directamente no ver a Antü en su lista de
 Red.
 
 Antü trae de fábrica una carpeta compartida (`/srv/antu-compartido`,
-visible como `\\antu-hostname\Compartido` desde Windows) con **acceso
-de invitado** — sin pedir usuario ni contraseña. Es una decisión
-deliberada para la primera versión: compartir la carpeta personal de
-cada usuario (la opción `[homes]` de Samba) sería más privado, pero
-Samba necesita su propia contraseña, separada de la contraseña de
-Linux (`smbpasswd`) — y esa contraseña no se puede configurar en el
-momento de compilar la ISO porque el usuario todavía no existe (se crea
-recién en la instalación). Queda documentado como mejora futura, no
-como algo que se pueda resolver en el build.
+visible como `\\antu-hostname\Compartido` desde Windows), pero **con
+acceso por cuenta, no de invitado**. La primera versión de esto usaba
+`guest ok = yes` con permisos `0777` — se corrigió tras una revisión
+externa (Codex) que señaló dos problemas reales, confirmados después
+contra la documentación de Microsoft y con una prueba real (ver abajo):
 
-**Validado de verdad, protocolo real**: se armó la configuración
-(`etc/samba/smb.conf`), se corrió `smbd` (sin `systemd`, igual que se
-hizo con `udisks2` en la sección de compatibilidad) y se probó un ciclo
-completo con `smbclient`, el cliente SMB de línea de comandos:
+1. **Windows 10/11 actualizado restringe el acceso de invitado por
+   política** desde hace varios años — un share de invitado puede
+   directamente no dejar conectarse desde una PC Windows moderna, sin
+   que el usuario entienda por qué, a menos que reactive esa política a
+   mano (algo que no tiene sentido pedirle).
+2. Escritura anónima con permisos `0777` significa que cualquiera con
+   acceso a esa red —no solo el usuario de la PC— puede modificar el
+   contenido compartido.
+
+Ahora la carpeta pertenece a un grupo (`antu-compartido`) y Samba pide
+usuario/contraseña. Como con la contraseña de Samba pasa lo mismo que
+con `[homes]` (es propia, separada de la de Linux, y no se puede crear
+en el momento de compilar la ISO porque el usuario todavía no existe),
+se agregó `antu-compartir-configurar`: un comando (`sudo
+antu-compartir-configurar`) que en un solo paso suma al usuario al
+grupo y le pide configurar esa contraseña.
+
+**Validado de verdad, protocolo real, en los dos sentidos**: se armó la
+configuración (`etc/samba/smb.conf`), se corrió `smbd` (sin `systemd`,
+igual que se hizo con `udisks2` en la sección de compatibilidad), y se
+probaron ambos caminos con `smbclient`:
 
 ```
-$ smbclient //localhost/Compartido -N -c "put prueba.txt prueba.txt"
-putting file prueba.txt as \prueba.txt (32.2 kb/s)
+$ smbclient //localhost/Compartido -N -c "ls"          # invitado
+tree connect failed: NT_STATUS_ACCESS_DENIED
+
+$ smbclient //localhost/Compartido -U usuario%clave -c "put prueba.txt prueba.txt"
+putting file prueba.txt as \prueba.txt (2.9 kb/s)       # cuenta real: funciona
 ```
 
-El archivo subido por el protocolo SMB apareció de verdad en
-`/srv/antu-compartido/` del lado del sistema de archivos, y se pudo
-volver a bajar por SMB sin corromperse — el mismo camino que recorrería
-un archivo copiado desde el Explorador de Windows.
+El acceso de invitado queda rechazado de verdad (no solo en la
+configuración escrita), y una cuenta con la contraseña de Samba
+configurada sube/baja archivos sin problema — el mismo camino que
+recorrería un archivo copiado desde el Explorador de Windows.
 
 ### Honestidad sobre los límites
 
@@ -697,9 +772,17 @@ de programas puntuales antes de instalarlos.
 ## Flujo de build
 
 ```
-editions/<edicion>/config/   →  lb config (auto-generado por live-build)
+editions/<edicion>/auto/     →  lb config (genera/actualiza editions/<edicion>/config/)
+editions/<edicion>/config/   →  package-lists/, hooks/, includes.chroot/ (nuestro) + metadata de live-build
                               →  lb build
                               →  editions/<edicion>/build/*.iso
 ```
+
+`auto/` y `config/` tienen que ser hermanos (ambos hijos directos de
+`editions/<edicion>/`) — ver `docs/BUILD.md`, sección "Estructura de la
+configuración de `live-build`", para el porqué exacto (un error real de
+este proyecto, ya corregido, tenía `auto/` anidado adentro de `config/`,
+lo que hacía que `live-build` nunca encontrara nuestros
+package-lists/hooks/includes.chroot).
 
 Ver [`BUILD.md`](BUILD.md) para el detalle paso a paso.
