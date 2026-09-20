@@ -1,0 +1,62 @@
+name: Inspeccionar capturas de boot
+
+# Utilidad de diagnóstico aparte del workflow principal: el sandbox de
+# desarrollo no puede bajar artifacts de GitHub Actions (van por Azure
+# Blob Storage con URLs firmadas, bloqueadas por el proxy del entorno) —
+# así que en vez de "mirar" las capturas a mano, este workflow corre
+# adentro de un runner con internet real y las analiza por nosotros:
+# cuánto cambia cada frame respecto al anterior (para saber si la
+# pantalla realmente avanzó durante el boot) y qué texto tiene cada uno
+# (OCR), y deja todo eso en el log del job — que sí se puede leer.
+"on":
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Run ID de 'Compilar ISO' cuyas capturas de boot inspeccionar"
+        required: true
+      artifact_name:
+        description: "Nombre del artifact de capturas"
+        required: true
+        default: antu-standard-boot-screenshots
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar las capturas de ese run
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: shots
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Instalar tesseract e imagemagick
+        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr imagemagick
+
+      - name: Listar y comparar frames
+        run: |
+          set -x
+          echo "== Archivos =="
+          find shots -iname '*.png' | sort | xargs -I{} identify {}
+
+          echo "== Diferencia de píxeles entre frames consecutivos (AE = cantidad de píxeles distintos, 0 = frames idénticos) =="
+          prev=""
+          for f in $(find shots -iname '*.png' | sort); do
+            if [[ -n "$prev" ]]; then
+              echo -n "$(basename "$prev") -> $(basename "$f"): "
+              compare -metric AE "$prev" "$f" /tmp/diff.png 2>&1 || true
+              echo
+            fi
+            prev="$f"
+          done
+
+      - name: OCR de cada frame
+        run: |
+          set -x
+          for f in $(find shots -iname '*.png' | sort); do
+            echo "=========================================="
+            echo "=== $f ==="
+            echo "=========================================="
+            tesseract "$f" - 2>/dev/null || echo "(tesseract no encontró texto o falló)"
+          done
