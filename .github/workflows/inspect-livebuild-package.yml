@@ -16,53 +16,32 @@ jobs:
       - name: Instalar live-build real de Debian bookworm y volcar plantillas
         run: |
           docker run --rm debian:bookworm bash -c '
-            set -euo pipefail
+            set -x
             apt-get update -qq
             apt-get install -y -qq live-build >/dev/null
             dpkg-query -W live-build
 
             echo "=========================================="
-            echo "=== Archivos de plantillas isolinux ==="
+            echo "=== Todo lo que trae el paquete live-build (grep isolinux/syslinux/grub/binary) ==="
             echo "=========================================="
-            dpkg -L live-build | grep -i "bootloaders/isolinux"
+            dpkg -L live-build | grep -iE "isolinux|syslinux|grub|binary" || true
 
             echo "=========================================="
-            echo "=== isolinux/isolinux.cfg.in ==="
+            echo "=== Contenido completo de bootloaders/isolinux ==="
             echo "=========================================="
-            cat /usr/share/live/build/bootloaders/isolinux/isolinux.cfg.in 2>/dev/null || echo "(no existe)"
+            ls -la /usr/share/live/build/bootloaders/isolinux/ || true
+            echo "--- isolinux.cfg ---"
+            cat /usr/share/live/build/bootloaders/isolinux/isolinux.cfg || true
 
             echo "=========================================="
-            echo "=== isolinux/menu.cfg (o .in) ==="
+            echo "=== /usr/lib/live/build: todos los scripts que mencionan isolinux o binary ==="
             echo "=========================================="
-            cat /usr/share/live/build/bootloaders/isolinux/menu.cfg.in 2>/dev/null \
-              || cat /usr/share/live/build/bootloaders/isolinux/menu.cfg 2>/dev/null \
-              || echo "(no existe)"
+            ls -la /usr/lib/live/build/ | grep -iE "isolinux|binary" || true
+            ls /usr/lib/live/build/ || true
 
             echo "=========================================="
-            echo "=== isolinux/stdmenu.cfg ==="
+            echo "=== live-build (paquete live-build-doc si existe, o el binario lb) ==="
             echo "=========================================="
-            cat /usr/share/live/build/bootloaders/isolinux/stdmenu.cfg.in 2>/dev/null \
-              || cat /usr/share/live/build/bootloaders/isolinux/stdmenu.cfg 2>/dev/null \
-              || echo "(no existe)"
-
-            echo "=========================================="
-            echo "=== isolinux/live.cfg.in ==="
-            echo "=========================================="
-            cat /usr/share/live/build/bootloaders/isolinux/live.cfg.in 2>/dev/null || echo "(no existe)"
-
-            echo "=========================================="
-            echo "=== Mecanismo real de override (lb_binary_isolinux) ==="
-            echo "=========================================="
-            grep -n "config/bootloaders\|_LIVE_BASE\|cp -r\|cp -a" /usr/lib/live/build/lb_binary_isolinux | head -60
-
-            echo "=========================================="
-            echo "=== Splash: qué archivos de imagen usa ==="
-            echo "=========================================="
-            dpkg -L live-build | grep -iE "isolinux.*(png|svg)"
-            file /usr/share/live/build/bootloaders/isolinux/*.png 2>/dev/null || true
-
-            echo "=========================================="
-            echo "=== Mismo chequeo para grub-pc/grub-efi ==="
-            echo "=========================================="
-            dpkg -L live-build | grep -iE "bootloaders/grub" | head -40
+            which lb || true
+            ls -la /usr/bin/lb* /usr/sbin/lb* 2>/dev/null || true
           '
