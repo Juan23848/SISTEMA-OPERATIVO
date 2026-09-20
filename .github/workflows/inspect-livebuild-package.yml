@@ -19,29 +19,29 @@ jobs:
             set -x
             apt-get update -qq
             apt-get install -y -qq live-build >/dev/null
-            dpkg-query -W live-build
 
             echo "=========================================="
-            echo "=== Todo lo que trae el paquete live-build (grep isolinux/syslinux/grub/binary) ==="
+            echo "=== syslinux_common/menu.cfg ==="
             echo "=========================================="
-            dpkg -L live-build | grep -iE "isolinux|syslinux|grub|binary" || true
+            cat /usr/share/live/build/bootloaders/syslinux_common/menu.cfg
 
             echo "=========================================="
-            echo "=== Contenido completo de bootloaders/isolinux ==="
+            echo "=== syslinux_common/stdmenu.cfg ==="
             echo "=========================================="
-            ls -la /usr/share/live/build/bootloaders/isolinux/ || true
-            echo "--- isolinux.cfg ---"
-            cat /usr/share/live/build/bootloaders/isolinux/isolinux.cfg || true
+            cat /usr/share/live/build/bootloaders/syslinux_common/stdmenu.cfg
 
             echo "=========================================="
-            echo "=== /usr/lib/live/build: todos los scripts que mencionan isolinux o binary ==="
+            echo "=== syslinux_common/live.cfg.in ==="
             echo "=========================================="
-            ls -la /usr/lib/live/build/ | grep -iE "isolinux|binary" || true
-            ls /usr/lib/live/build/ || true
+            cat /usr/share/live/build/bootloaders/syslinux_common/live.cfg.in
 
             echo "=========================================="
-            echo "=== live-build (paquete live-build-doc si existe, o el binario lb) ==="
+            echo "=== syslinux_common/splash.svg (primeras 40 líneas) ==="
             echo "=========================================="
-            which lb || true
-            ls -la /usr/bin/lb* /usr/sbin/lb* 2>/dev/null || true
+            head -40 /usr/share/live/build/bootloaders/syslinux_common/splash.svg
+
+            echo "=========================================="
+            echo "=== binary_syslinux: overrides, splash, variables sustituidas ==="
+            echo "=========================================="
+            cat /usr/lib/live/build/binary_syslinux
           '
