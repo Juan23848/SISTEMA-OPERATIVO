@@ -20,13 +20,18 @@ Fase 0.7 para el detalle). Las 3 ediciones
 también tienen ya un **shell de escritorio propio** (barra superior +
 dock, con la identidad de Antü, ver `docs/ARCHITECTURE.md`) y Standard
 suma un **lanzador con buscador** (rofi). **Todavía no se compiló ninguna
-ISO completa**, porque eso requiere una máquina con acceso a internet a
-los mirrors de Debian (no disponible en el entorno donde se desarrolló
-este proyecto). Pese a eso, **Legacy y Standard sí se probaron con
-sesiones de escritorio reales** (XFCE y Cinnamon, contra una pantalla
-virtual) — no solo por sintaxis — y encontraron y corrigieron bugs reales
-en el camino (ver `docs/ARCHITECTURE.md` y las capturas en
-`docs/screenshots/`). Pro (KDE Plasma) todavía no se pudo probar así.
+ISO completa a propósito**: el criterio del proyecto es no sacar nada
+booteable hasta tener confianza en que el shell de las 3 ediciones
+funciona de verdad, así que primero se agotó la validación posible sin
+compilar — contra sesiones de escritorio reales en una pantalla virtual,
+no solo por sintaxis. **Las 3 ediciones ya pasaron por esa validación**
+(XFCE, Cinnamon y ahora también KDE Plasma) y encontraron y corrigieron
+bugs reales en el camino en las 3 (ver `docs/ARCHITECTURE.md` y las
+capturas en `docs/screenshots/`). Con eso ya no hay ninguna pieza del
+shell de escritorio sin probar de verdad — el próximo paso real hacia
+"primera versión booteable" es la primera compilación completa de una
+ISO (ver Fase 0, todavía pendiente por la limitación de red ya
+mencionada).
 Las 3 ediciones también tienen **español (Argentina) como idioma por
 defecto** y un **set de íconos propios** (tema `Antu`) instalado como
 tema de sistema real — ver Fase 0.5. Además ya tienen la **capa de
@@ -388,9 +393,12 @@ doméstico/oficina).
 
 - [x] Shell de escritorio propio vía un paquete "Look and Feel" de Plasma
       (`org.antu.desktop`): barra superior (lanzador, bandeja, reloj) +
-      dock inferior (icontasks). Es la pieza con más riesgo de las 3
-      (formato de Plasma más complejo) y la que más necesita probarse en
-      una sesión gráfica real antes de darla por buena.
+      dock inferior (icontasks). Era la pieza con más riesgo de las 3
+      (formato de Plasma más complejo) — **ya se probó con una sesión
+      Plasma real** (`kwin_x11` + `plasmashell` contra `Xvfb`), que
+      encontró y corrigió 2 bugs reales (ícono del lanzador ilegible y
+      bandeja mal ubicada). Ver `docs/ARCHITECTURE.md` y la captura en
+      `docs/screenshots/antu-pro-desktop.png`.
 - [ ] Efectos del dock (auto-hide, magnificación al pasar el mouse) y
       efectos visuales en general (blur, animaciones).
 - [ ] Entorno KDE Plasma con efectos completos.

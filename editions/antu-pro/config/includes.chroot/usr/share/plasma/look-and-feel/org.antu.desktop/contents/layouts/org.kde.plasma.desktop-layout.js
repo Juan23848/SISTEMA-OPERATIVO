@@ -6,11 +6,13 @@
 //   Los efectos extra (auto-hide, magnificación al pasar el mouse) quedan
 //   para una siguiente etapa (ver docs/ROADMAP.md).
 //
-// NOTA: esta capa de KDE Plasma no se pudo probar en una sesión gráfica
-// real (este proyecto se desarrolló sin entorno gráfico disponible). Usa
-// la API de scripting documentada de Plasma, pero antes de darla por
-// definitiva conviene bootear la ISO y confirmar que los paneles se arman
-// como se espera.
+// Probado con una sesión Plasma real (kwin_x11 + plasmashell contra Xvfb,
+// mismo mecanismo que ya se usó con Legacy/Standard) — ver
+// docs/ARCHITECTURE.md. Encontró y corrigió 2 bugs reales: el ícono del
+// lanzador usaba el logo completo (ícono + texto "ANTÜ"), ilegible a 22px
+// de panel; y sin un spacer explícito, la bandeja del sistema quedaba
+// pegada al lanzador (izquierda) en vez de junto al reloj (derecha), como
+// pide el diseño.
 
 var allDesktops = desktops();
 for (var i = 0; i < allDesktops.length; i++) {
@@ -25,8 +27,9 @@ topBar.height = 32;
 
 var launcher = topBar.addWidget("org.kde.plasma.kickoff");
 launcher.currentConfigGroup = ["General"];
-launcher.writeConfig("icon", "/usr/share/pixmaps/antu/antu-logo.png");
+launcher.writeConfig("icon", "start-here");
 
+topBar.addWidget("org.kde.plasma.panelspacer");
 topBar.addWidget("org.kde.plasma.systemtray");
 topBar.addWidget("org.kde.plasma.digitalclock");
 

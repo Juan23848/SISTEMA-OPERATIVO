@@ -308,14 +308,49 @@ Queda para una próxima sesión: cubrir el resto de los íconos de sistema
 esos quedan con la base genérica del tema heredado (`hicolor`) hasta ir
 reemplazándolos de a poco.
 
-### Pro: todavía sin sesión real
+### Pro: probado con una sesión Plasma real
 
-La pieza de Plasma sigue el formato y la API de scripting documentados de
-KDE, pero **no se pudo probar en una sesión gráfica real** — KWin (el
-compositor de Plasma) tiene requisitos más pesados que XFCE y Cinnamon, y
-no se llegó a levantar en el tiempo disponible. Queda pendiente la misma
-validación que ya le hizo bien a Legacy y Standard (ver
-`docs/ROADMAP.md`).
+Era la única de las 3 ediciones sin probar así — KWin (el compositor de
+Plasma) tiene requisitos más pesados que XFCE y Cinnamon. Se instaló
+`plasma-desktop` + `kwin-x11` de verdad y se levantó una sesión real
+(`kwin_x11` + `plasmashell`, con el `org.antu.desktop` aplicado tal cual
+queda en `/etc/xdg/kdeglobals` — `LookAndFeelPackage=org.antu.desktop` +
+`Theme=Antu`) contra `Xvfb`, mismo mecanismo que ya le había encontrado
+bugs reales a Legacy y Standard. Acá encontró dos más:
+
+1. **El ícono del lanzador (kickoff) se veía como una mancha ilegible.**
+   El script apuntaba a `shared/branding/logo.png` — el logotipo completo
+   ("A" + el texto "ANTÜ" debajo, pensado para el wallpaper o una pantalla
+   de bienvenida, con mucho margen alrededor). A los ~22px reales de un
+   ícono de panel, el texto se pierde y solo queda una mancha borrosa.
+   Corregido usando el ícono que el tema `Antu` ya traía preparado para
+   este uso exacto (`start-here`, la insignia circular con la "A" sola,
+   ver "Íconos propios" más arriba) — visible y reconocible al tamaño
+   real de panel.
+2. **La bandeja del sistema quedaba pegada al lanzador (izquierda) en vez
+   de al lado del reloj (derecha).** El diseño pide "lanzador a la
+   izquierda, bandeja y reloj juntos a la derecha", pero sin un spacer
+   explícito entre el lanzador y la bandeja, `Panel.addWidget` los
+   empaqueta a todos desde el borde izquierdo — dejaba un hueco enorme
+   vacío en el medio de la barra en vez de agrupar bandeja+reloj a la
+   derecha. Corregido agregando `org.kde.plasma.panelspacer` entre el
+   lanzador y la bandeja, el mismo mecanismo que usa el layout por
+   defecto real de Plasma para este propósito.
+
+Con los dos fixes, una sesión nueva ya arma la barra como se diseñó:
+
+![Escritorio de Antü Pro](screenshots/antu-pro-desktop.png)
+
+*Nota sobre cómo se probó:* igual que con Standard, este entorno de
+desarrollo puntual no tiene `systemd` como PID 1 ni bus D-Bus de sistema,
+así que algunos plugins de la bandeja (batería, `udisks2`) tiran errores
+de conexión a D-Bus — no relacionado con la configuración de Antü, no
+pasaría en una sesión real con systemd. El dock (`icontasks`) también
+renderizó bien, con las apps que hubiera instaladas en este entorno de
+prueba (no las de `antu-pro`, que no se instalaron completas para no
+hacer la prueba más pesada de lo necesario) — lo que importaba validar
+era el mecanismo (que el panel se arme, con el tamaño y la posición
+correctos), no qué apps aparecen ancladas.
 
 ### Lanzador de Antü (Standard)
 
