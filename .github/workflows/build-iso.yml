@@ -1,0 +1,86 @@
+name: Compilar ISO
+
+# Manual a propósito: compilar una ISO completa baja paquetes de Debian
+# de verdad y puede tardar bastante — no tiene sentido dispararlo en cada
+# push. Se dispara a mano desde la pestaña Actions (o vía API) cuando se
+# quiere confirmar que una edición realmente compila de punta a punta.
+"on":
+  workflow_dispatch:
+    inputs:
+      edition:
+        description: "Edición a compilar"
+        required: true
+        default: antu-standard
+        type: choice
+        options:
+          - antu-legacy
+          - antu-standard
+          - antu-pro
+
+concurrency:
+  group: build-iso-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      # Los runners de GitHub traen preinstalados varios SDKs/toolchains
+      # (.NET, Android, Haskell, etc.) que no usamos para nada acá y que
+      # dejan muy poco espacio libre por defecto — un build de live-build
+      # con un escritorio completo (Cinnamon/XFCE/Plasma + LibreOffice +
+      # Wine, etc.) necesita bastante más que eso. Se libera antes de
+      # arrancar en vez de esperar a quedarnos sin disco a mitad de build.
+      - name: Liberar espacio en disco
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL "$AGENT_TOOLSDIRECTORY" \
+            /usr/local/share/boost /usr/local/graalvm /usr/local/julia* \
+            2>/dev/null || true
+          docker image prune -af || true
+          df -h /
+
+      # docs/BUILD.md es explícito: hay que compilar con el live-build
+      # real de Debian bookworm, no con el de Ubuntu (buscan los hooks en
+      # rutas distintas — ver esa guía para el detalle). Los runners de
+      # GitHub son Ubuntu, así que el build corre adentro de un
+      # contenedor debian:bookworm. --privileged porque live-build hace
+      # chroot + bind-mounts de /dev, /proc, /sys para instalar paquetes
+      # dentro de la imagen que arma.
+      - name: Compilar ${{ inputs.edition }} en un contenedor Debian bookworm
+        run: |
+          docker run --rm --privileged \
+            -v "${{ github.workspace }}:/workspace" -w /workspace \
+            -e DEBIAN_FRONTEND=noninteractive \
+            debian:bookworm \
+            bash -c '
+              set -euo pipefail
+              echo "==> Versión de Debian dentro del contenedor:"
+              cat /etc/os-release
+              apt-get update
+              apt-get install -y live-build xorriso
+              dpkg-query -W live-build
+              ./scripts/build.sh "${{ inputs.edition }}"
+            '
+
+      - name: Ubicar la ISO generada
+        id: find_iso
+        run: |
+          ISO_PATH=$(find "editions/${{ inputs.edition }}/build" -iname '*.iso' | head -n1)
+          if [[ -z "$ISO_PATH" ]]; then
+            echo "No se encontró ninguna ISO en editions/${{ inputs.edition }}/build/"
+            exit 1
+          fi
+          echo "iso_path=$ISO_PATH" >> "$GITHUB_OUTPUT"
+          ls -lh "$ISO_PATH"
+
+      - name: Subir la ISO como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.edition }}-iso
+          path: ${{ steps.find_iso.outputs.iso_path }}
+          retention-days: 14

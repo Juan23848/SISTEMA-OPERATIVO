@@ -3,7 +3,26 @@
 Antü OS se compila con [`live-build`](https://manpages.debian.org/testing/live-build/lb.1.en.html),
 la herramienta oficial de Debian para construir imágenes live/instalables.
 
-## Requisitos
+## Compilar por CI (GitHub Actions), sin máquina propia
+
+Este repositorio tiene un workflow manual
+(`.github/workflows/build-iso.yml`, pestaña **Actions** → "Compilar ISO" →
+**Run workflow**, eligiendo la edición) que compila una ISO real usando los
+runners de GitHub — sirve para no depender de tener una máquina/VM propia
+con acceso a los mirrors de Debian. Corre el build de verdad **adentro de
+un contenedor `debian:bookworm`** (no directo en el runner, que es
+Ubuntu), por la misma razón de la advertencia de más abajo: usar el
+`live-build` real de Debian, no el de Ubuntu. Al terminar, deja la ISO
+como artifact del run (pestaña del run → **Artifacts**), descargable por
+14 días. Es intencionalmente manual (`workflow_dispatch`, no dispara en
+cada push): un build completo baja bastante de internet y tarda, no tiene
+sentido correrlo solo. Todavía no incluye una prueba de arranque
+automática (QEMU) — por ahora valida que la compilación termine sin
+errores, no que la ISO bootee.
+
+## Compilar a mano
+
+### Requisitos
 
 - Una máquina o VM con **Debian estable (bookworm)** — no Ubuntu. Ver la
   advertencia de abajo sobre por qué esto ahora es un requisito, no solo
