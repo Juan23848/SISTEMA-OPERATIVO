@@ -1,0 +1,61 @@
+name: Inspeccionar configuración de arranque de una ISO
+
+# El boot-test encontró que la ISO cae a un shell de emergencia de
+# initramfs ("No root device specified. Boot arguments must include a
+# root= parameter") — hay que ver qué línea de arranque (isolinux/grub)
+# quedó realmente grabada en la ISO para saber si falta "boot=live" o
+# algo más. Como el sandbox no puede bajar la ISO (proxy bloqueado),
+# este workflow la inspecciona en un runner con internet real y deja el
+# contenido en el log.
+"on":
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Run ID de 'Compilar ISO' del que reusar la ISO ya compilada"
+        required: true
+      iso_artifact_name:
+        description: "Nombre del artifact de la ISO"
+        required: true
+        default: antu-standard-iso
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar la ISO de ese run
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.iso_artifact_name }}
+          path: iso
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Instalar herramientas para leer la ISO
+        run: sudo apt-get update && sudo apt-get install -y genisoimage xorriso
+
+      - name: Listar el contenido de la ISO
+        run: |
+          set -x
+          ISO_PATH=$(find iso -iname '*.iso' | head -n1)
+          echo "== Listado completo (isoinfo) =="
+          isoinfo -R -l -i "$ISO_PATH" || true
+          echo "== Listado completo (xorriso) =="
+          xorriso -indev "$ISO_PATH" -find / 2>&1 || true
+
+      - name: Mostrar los archivos de configuración de arranque
+        run: |
+          set -x
+          ISO_PATH=$(find iso -iname '*.iso' | head -n1)
+          mkdir -p extracted
+          for f in isolinux/isolinux.cfg isolinux/live.cfg isolinux/txt.cfg boot/grub/grub.cfg; do
+            echo "=========================================="
+            echo "=== $f ==="
+            echo "=========================================="
+            isoinfo -R -x "/$f" -i "$ISO_PATH" 2>/dev/null || echo "(no existe o no se pudo leer $f)"
+          done
+
+      - name: Confirmar que el squashfs está donde live-boot lo espera
+        run: |
+          set -x
+          ISO_PATH=$(find iso -iname '*.iso' | head -n1)
+          isoinfo -R -l -i "$ISO_PATH" 2>/dev/null | grep -i squash || echo "(no se encontró ningún .squashfs en la ISO)"
