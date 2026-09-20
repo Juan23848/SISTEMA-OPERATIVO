@@ -255,11 +255,40 @@ Se corrigió agregando `--bootappend-live "locales=es_AR.UTF-8
 keyboard-layouts=latam"` a `lb config` en las 3 ediciones (`auto/config`)
 — el parámetro de arranque que `live-config` sí respeta. De paso se fijó
 también el teclado (`latam`, el layout de Argentina), ya que el locale
-por sí solo no determina la distribución de teclado. No se pudo probar
-arrancando una ISO real en este entorno (Windows, sin acceso a
-`live-build`/QEMU con la imagen construida) — queda pendiente confirmar
-con `locale`, `/etc/default/locale` y `/proc/cmdline` en un arranque
-real antes de dar el idioma de la sesión live por resuelto del todo.
+por sí solo no determina la distribución de teclado.
+
+### `--bootappend-live` reemplaza el append por defecto, no lo completa
+
+**Corrección importante sobre lo anterior**, encontrada compilando y
+arrancando por primera vez una ISO real (ver `docs/ROADMAP.md`, Fase 0):
+una revisión externa (Codex) había señalado en su momento que
+faltaba agregar `boot=live` a ese mismo `--bootappend-live`, pero en una
+revisión de esa corrección (ya en otra sesión de trabajo) se descartó
+por "redundante", con el argumento de que `live-build` ya deja
+`boot=live` fijo en la plantilla de `isolinux`/`grub` independientemente
+de `--bootappend-live` — verificado en ese momento contra un
+`live-build` de Ubuntu bastante viejo (`3.0~a57`) instalado en el
+entorno de desarrollo, no contra el real de Debian bookworm.
+
+**Eso era incorrecto para el `live-build` real (`20230502`, el que de
+verdad compila estas ISOs)**: inspeccionando el `isolinux.cfg`/`grub.cfg`
+de una ISO ya compilada, la entrada de arranque por defecto ("Live
+system") quedaba con `append locales=es_AR.UTF-8 keyboard-layouts=latam`
+— sin ningún `boot=live` — porque `--bootappend-live` **reemplaza entero**
+el `append`/`linux` de esa entrada, no le agrega texto a algo que ya
+esté. (Solo la entrada "fail-safe", que no se usa nunca, trae
+`boot=live components ...` hardcodeado aparte — de ahí la confusión.)
+Sin `boot=live`, el kernel no sabe que tiene que buscar el sistema live
+y cae a un shell de emergencia de `initramfs` pidiendo un `root=` que
+nunca se le indicó — confirmado arrancando la ISO real en QEMU (ver
+`docs/ROADMAP.md`, Fase 0, para el detalle completo de cómo se armó esa
+prueba).
+
+Corregido agregando `boot=live components` al principio de
+`--bootappend-live` en las 3 ediciones — exactamente lo que proponía el
+parche original de Codex. Pendiente de revalidar con una nueva ISO
+compilada desde este cambio (ver `docs/ROADMAP.md` para el estado
+actualizado de esa validación).
 
 ## Íconos propios
 

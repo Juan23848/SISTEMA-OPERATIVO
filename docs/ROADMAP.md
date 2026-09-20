@@ -19,19 +19,27 @@ otros 3 hallazgos menores, ya corregidos y revalidados (ver Fase 0 y
 Fase 0.7 para el detalle). Las 3 ediciones
 también tienen ya un **shell de escritorio propio** (barra superior +
 dock, con la identidad de Antü, ver `docs/ARCHITECTURE.md`) y Standard
-suma un **lanzador con buscador** (rofi). **Todavía no se compiló ninguna
-ISO completa a propósito**: el criterio del proyecto es no sacar nada
-booteable hasta tener confianza en que el shell de las 3 ediciones
-funciona de verdad, así que primero se agotó la validación posible sin
-compilar — contra sesiones de escritorio reales en una pantalla virtual,
-no solo por sintaxis. **Las 3 ediciones ya pasaron por esa validación**
-(XFCE, Cinnamon y ahora también KDE Plasma) y encontraron y corrigieron
-bugs reales en el camino en las 3 (ver `docs/ARCHITECTURE.md` y las
-capturas en `docs/screenshots/`). Con eso ya no hay ninguna pieza del
-shell de escritorio sin probar de verdad — el próximo paso real hacia
-"primera versión booteable" es la primera compilación completa de una
-ISO (ver Fase 0, todavía pendiente por la limitación de red ya
-mencionada).
+suma un **lanzador con buscador** (rofi). El criterio del proyecto
+siempre fue no sacar nada booteable hasta tener confianza en que el
+shell de las 3 ediciones funciona de verdad, así que primero se agotó
+la validación posible sin compilar — contra sesiones de escritorio
+reales en una pantalla virtual, no solo por sintaxis. **Las 3 ediciones
+ya pasaron por esa validación** (XFCE, Cinnamon y KDE Plasma) y
+encontraron y corrigieron bugs reales en el camino en las 3 (ver
+`docs/ARCHITECTURE.md` y las capturas en `docs/screenshots/`).
+
+Con eso resuelto, se dio el paso siguiente: **ya se compiló una ISO real
+de Antü Standard** (por CI de GitHub Actions, ver Fase 0 para el detalle
+— el sandbox de desarrollo no tiene acceso a los mirrors de Debian, pero
+los runners de GitHub sí) y se intentó arrancarla de verdad en QEMU. Esa
+primera prueba de arranque real **encontró un bug crítico** que ninguna
+revisión anterior (ni la de código, ni las sesiones virtuales del shell)
+podía haber encontrado: la ISO nunca llegaba a arrancar el sistema live
+por faltarle `boot=live` en la línea de arranque real — corregido en las
+3 ediciones (ver Fase 0 y `docs/ARCHITECTURE.md` para el detalle
+completo). **Pendiente**: volver a compilar y arrancar con ese fix ya
+aplicado para confirmar que la ISO llega a un escritorio real — recién
+ahí se cierra "primera versión booteable".
 Las 3 ediciones también tienen **español (Argentina) como idioma por
 defecto** y un **set de íconos propios** (tema `Antu`) instalado como
 tema de sistema real — ver Fase 0.5. Además ya tienen la **capa de
@@ -115,11 +123,49 @@ verdad contra una pantalla virtual — ver Fase 0.7.
       raíz: esas copias dejaron de versionarse y ahora `scripts/build.sh`
       las genera en cada build desde la única fuente real, igual que ya
       pasa con el branding.
-- [ ] Primera compilación **completa** de una ISO (Standard), en una
-      máquina con acceso real a los mirrors de Debian — ahora con el
-      bug de rutas, el de ubicación de hooks y el de sincronización del
-      Resolver ya corregidos, es la prueba que falta para confirmar que
-      todo se aplica de punta a punta en una imagen real.
+- [x] **Primera compilación completa de una ISO (Standard) y primer
+      arranque real, vía CI de GitHub Actions.** El sandbox de
+      desarrollo no tiene acceso a los mirrors de Debian, así que se
+      agregó `.github/workflows/build-iso.yml`: compila la edición
+      elegida adentro de un contenedor `debian:bookworm` real (los
+      runners de GitHub sí tienen internet), sube la ISO como artifact,
+      y un segundo job la arranca de verdad en QEMU sacando capturas de
+      pantalla del boot — mismo método (captura + inspección) que ya le
+      había encontrado bugs reales al shell de escritorio de las 3
+      ediciones. La primera compilación de Antü Standard terminó bien
+      (ISO real, ~2.9GB, sin errores) — confirma que la estructura de
+      `live-build` de este repo es válida de punta a punta contra el
+      `live-build` real de Debian bookworm (`20230502`), no solo contra
+      supuestos.
+      - El primer boot-test murió al instante: el runner tiene `/dev/kvm`
+        pero sin permiso de acceso (`Permission denied`) — corregido
+        abriendo el permiso a mano (`chmod 666`, runner descartable).
+      - El segundo intento (ya con KVM) sacó 20 capturas idénticas — vía
+        OCR (tampoco se pueden ver las capturas a simple vista desde el
+        sandbox, van por Azure Blob Storage, bloqueado por el proxy del
+        entorno) se confirmó que era el menú real de `isolinux`
+        ("Press ENTER to boot") esperando una tecla que nada le mandaba.
+        Corregido agregando un `sendkey ret` por el monitor de QEMU.
+      - **Con eso apareció el bug real y más importante**: la ISO cae a
+        un shell de emergencia de `initramfs` ("No root device
+        specified. Boot arguments must include a root= parameter") en
+        vez de arrancar. Inspeccionando el `isolinux.cfg`/`grub.cfg`
+        reales dentro de la ISO se confirmó la causa: `--bootappend-live`
+        **reemplaza** el `append`/`linux` de la entrada de arranque por
+        defecto en vez de agregarle texto, así que esa entrada quedaba
+        con `locales=es_AR.UTF-8 keyboard-layouts=latam` **sin ningún
+        `boot=live`** — el kernel nunca se entera de que tiene que
+        buscar el sistema live. Esto es justo lo que una revisión externa
+        (Codex) había señalado originalmente; se había descartado por
+        error en una revisión posterior (verificado en ese momento
+        contra un `live-build` de Ubuntu viejo instalado en el sandbox,
+        no contra el real de Debian). Corregido agregando
+        `boot=live components` al `--bootappend-live` de las 3 ediciones
+        (ver `docs/ARCHITECTURE.md`, sección "`--bootappend-live`
+        reemplaza el append por defecto, no lo completa", para el
+        detalle completo). **Pendiente**: volver a compilar y arrancar
+        con este fix para confirmar que la ISO realmente llega a un
+        escritorio.
 
 ## Fase 0.5 — Identidad propia (despegarse de Linux/Windows)
 

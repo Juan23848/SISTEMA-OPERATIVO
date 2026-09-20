@@ -12,6 +12,22 @@
 # bootear, sin importar lo que haya quedado configurado durante el
 # build. Encontrado en una revisión externa (Codex), confirmado contra
 # el código fuente oficial de live-config de Debian bookworm.
+#
+# "boot=live components" al principio: sin esto la ISO NO ARRANCA.
+# --bootappend-live no agrega texto a lo que live-build ya pone en la
+# entrada de arranque por defecto ("Live system") — LO REEMPLAZA
+# entero. Confirmado inspeccionando isolinux.cfg/grub.cfg dentro de una
+# ISO real ya compilada (live-build 20230502 de Debian bookworm, no el
+# de Ubuntu): la entrada por defecto quedaba con
+# "append locales=es_AR.UTF-8 keyboard-layouts=latam" nada más, y al
+# arrancarla el kernel caía a un shell de emergencia de initramfs
+# ("No root device specified"). Solo la entrada "fail-safe" (que nadie
+# usa) trae boot=live hardcodeado aparte. Un parche de una revisión
+# externa (Codex) había señalado exactamente esto — se había
+# descartado por error en un chequeo previo contra un live-build de
+# Ubuntu bastante más viejo, que no representa el real. Corregido y
+# revalidado arrancando la ISO de verdad en QEMU (en Standard; ver
+# docs/ARCHITECTURE.md).
 set -e
 
 lb config noauto \
@@ -22,7 +38,7 @@ lb config noauto \
     --archive-areas "main contrib non-free non-free-firmware" \
     --debian-installer "live" \
     --memtest "none" \
-    --bootappend-live "locales=es_AR.UTF-8 keyboard-layouts=latam" \
+    --bootappend-live "boot=live components locales=es_AR.UTF-8 keyboard-layouts=latam" \
     --iso-application "Antu Legacy" \
     --iso-volume "ANTU_LEGACY" \
     --iso-publisher "Antu OS Project" \
