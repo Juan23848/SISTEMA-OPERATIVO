@@ -13,33 +13,20 @@ jobs:
   inspect:
     runs-on: ubuntu-latest
     steps:
-      - name: Buscar de dónde sale el banner de texto del menú
+      - name: Confirmar mecanismo de hostname y ver splash.svg completo
         run: |
           docker run --rm debian:bookworm bash -c '
             set -x
             apt-get update -qq
-            apt-get install -y -qq live-build debian-cd apt-file >/dev/null 2>&1 || apt-get install -y -qq live-build >/dev/null
+            apt-get install -y -qq live-build >/dev/null
 
             echo "=========================================="
-            echo "=== grep -rl \"Built:\" en todo el filesystem (fuente real del banner) ==="
+            echo "=== chroot_hostname (mecanismo real para el hostname) ==="
             echo "=========================================="
-            grep -rl "Built:" /usr/share/live/build/ /usr/lib/live/build/ 2>/dev/null || echo "(no está en live-build)"
-            grep -rl "Built:" /usr/share/ /usr/lib/ --include="*.cfg*" --include="*.txt*" --include="*.in" 2>/dev/null | head -20
+            cat /usr/lib/live/build/chroot_hostname
 
             echo "=========================================="
-            echo "=== grep -rl \"live-boot:\" (otra parte distintiva del mismo banner) ==="
+            echo "=== splash.svg completo (para confirmar los <text> con @PROJECT@ etc.) ==="
             echo "=========================================="
-            grep -rl "live-boot:" / --include="*.cfg*" --include="*.txt*" --include="*.in" 2>/dev/null | grep -v "^/proc" | head -20
-
-            echo "=========================================="
-            echo "=== Contenido completo real de syslinux_common (por si dpkg -L no listaba todo) ==="
-            echo "=========================================="
-            find /usr/share/live/build/bootloaders/ -type f | sort
-            find /usr/share/live/build/bootloaders/ -type l -exec ls -la {} \;
-
-            echo "=========================================="
-            echo "=== Scripts binary_debian-installer / installer_* (por si el banner viene de ahí) ==="
-            echo "=========================================="
-            grep -l "Built:\|live-boot:" /usr/lib/live/build/installer* /usr/lib/live/build/binary_debian-installer 2>/dev/null || true
-            ls -la /usr/lib/live/build/ | grep -i install
+            cat /usr/share/live/build/bootloaders/syslinux_common/splash.svg
           '
