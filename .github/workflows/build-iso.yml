@@ -105,13 +105,20 @@ jobs:
       - name: Instalar QEMU
         run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 socat imagemagick
 
-      # Los runners hospedados por GitHub no siempre tienen /dev/kvm
-      # (depende del tipo de runner) — sin aceleración de hardware, el
-      # boot va a ser bastante más lento (emulación por software).
+      # Los runners hospedados por GitHub tienen /dev/kvm, pero el
+      # usuario "runner" no tiene permiso de acceso por defecto (queda en
+      # el grupo "kvm", con modo 660) — confirmado en el primer intento
+      # real: "Could not access KVM kernel module: Permission denied",
+      # QEMU se caía al instante, antes de sacar ninguna captura. Sin
+      # aceleración de hardware el boot sería muchísimo más lento
+      # (emulación por software), así que en vez de resignarse a eso se
+      # abre el permiso a mano — es un runner descartable, no hay nada
+      # que proteger.
       - name: Chequear soporte de KVM
         id: kvm
         run: |
           if [[ -e /dev/kvm ]]; then
+            sudo chmod 666 /dev/kvm
             echo "flag=-enable-kvm" >> "$GITHUB_OUTPUT"
             echo "Con aceleración KVM"
           else
