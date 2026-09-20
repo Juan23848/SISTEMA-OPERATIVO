@@ -126,7 +126,13 @@ jobs:
             echo "Sin KVM disponible: emulación por software, va a ser más lento"
           fi
 
-      - name: Arrancar la ISO y sacar capturas del boot
+      # Primer intento real (con KVM funcionando): las 20 capturas
+      # resultaron idénticas — el OCR reveló por qué: la ISO arranca
+      # bien y muestra el menú real de isolinux ("Press ENTER to boot"),
+      # pero nada le mandaba esa tecla, así que se quedaba ahí para
+      # siempre. Se agrega el sendkey para que el arranque avance de
+      # verdad más allá del menú.
+      - name: Arrancar la ISO, avanzar el menú y sacar capturas del boot
         run: |
           set -x
           ISO_PATH=$(find iso -iname '*.iso' | head -n1)
@@ -141,14 +147,20 @@ jobs:
           QEMU_PID=$!
 
           sleep 10
-          for i in $(seq 1 20); do
+          echo "screendump boot-shots/frame-00-menu.ppm" \
+            | socat - UNIX-CONNECT:/tmp/qmon.sock || true
+
+          sleep 2
+          echo "sendkey ret" | socat - UNIX-CONNECT:/tmp/qmon.sock || true
+
+          for i in $(seq 1 24); do
+            sleep 30
             echo "screendump boot-shots/frame-$(printf '%02d' "$i").ppm" \
               | socat - UNIX-CONNECT:/tmp/qmon.sock || true
             if ! kill -0 "$QEMU_PID" 2>/dev/null; then
               echo "QEMU ya no está corriendo (se cerró solo o crasheó) en el frame $i"
               break
             fi
-            sleep 30
           done
 
           kill "$QEMU_PID" 2>/dev/null || true

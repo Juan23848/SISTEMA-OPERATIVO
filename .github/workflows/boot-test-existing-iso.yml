@@ -1,0 +1,97 @@
+name: Probar arranque de una ISO ya compilada
+
+# Utilidad de iteración: probar el paso de arranque (QEMU + capturas) sin
+# tener que recompilar la ISO entera (~20 min) cada vez que se ajusta el
+# método de prueba. Reusa el artifact de una ISO ya subida por un run
+# anterior de "Compilar ISO", en vez de compilar una nueva.
+"on":
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Run ID de 'Compilar ISO' del que reusar la ISO ya compilada"
+        required: true
+      iso_artifact_name:
+        description: "Nombre del artifact de la ISO"
+        required: true
+        default: antu-standard-iso
+
+jobs:
+  boot-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Descargar la ISO de ese run
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.iso_artifact_name }}
+          path: iso
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Instalar QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 socat imagemagick
+
+      - name: Chequear soporte de KVM
+        id: kvm
+        run: |
+          if [[ -e /dev/kvm ]]; then
+            sudo chmod 666 /dev/kvm
+            echo "flag=-enable-kvm" >> "$GITHUB_OUTPUT"
+            echo "Con aceleración KVM"
+          else
+            echo "flag=" >> "$GITHUB_OUTPUT"
+            echo "Sin KVM disponible: emulación por software, va a ser más lento"
+          fi
+
+      # El primer intento (con KVM funcionando) demostró vía OCR que la
+      # ISO arranca bien y muestra el menú real de isolinux — pero se
+      # queda ahí para siempre, porque el menú pide "Press ENTER to boot"
+      # y nada le mandaba esa tecla. Se agrega el sendkey para que
+      # realmente avance y se pueda ver qué pasa después del menú.
+      - name: Arrancar la ISO, avanzar el menú y sacar capturas
+        run: |
+          set -x
+          ISO_PATH=$(find iso -iname '*.iso' | head -n1)
+          mkdir -p boot-shots
+          qemu-system-x86_64 \
+            -m 3072 -smp 2 \
+            ${{ steps.kvm.outputs.flag }} \
+            -cdrom "$ISO_PATH" -boot d \
+            -vga std -display none \
+            -monitor unix:/tmp/qmon.sock,server,nowait \
+            -no-reboot &
+          QEMU_PID=$!
+
+          sleep 10
+          echo "screendump boot-shots/frame-00-menu.ppm" \
+            | socat - UNIX-CONNECT:/tmp/qmon.sock || true
+
+          sleep 2
+          echo "sendkey ret" | socat - UNIX-CONNECT:/tmp/qmon.sock || true
+
+          for i in $(seq 1 24); do
+            sleep 30
+            echo "screendump boot-shots/frame-$(printf '%02d' "$i").ppm" \
+              | socat - UNIX-CONNECT:/tmp/qmon.sock || true
+            if ! kill -0 "$QEMU_PID" 2>/dev/null; then
+              echo "QEMU ya no está corriendo (se cerró solo o crasheó) en el frame $i"
+              break
+            fi
+          done
+
+          kill "$QEMU_PID" 2>/dev/null || true
+          wait "$QEMU_PID" 2>/dev/null || true
+
+          for f in boot-shots/*.ppm; do
+            [[ -e "$f" ]] || continue
+            convert "$f" "${f%.ppm}.png" && rm "$f"
+          done
+          ls -la boot-shots/
+
+      - name: Subir las capturas del boot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boot-screenshots-con-enter
+          path: boot-shots/
+          retention-days: 14
