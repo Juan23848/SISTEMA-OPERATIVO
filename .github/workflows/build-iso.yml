@@ -84,3 +84,79 @@ jobs:
           name: ${{ inputs.edition }}-iso
           path: ${{ steps.find_iso.outputs.iso_path }}
           retention-days: 14
+
+  # Compilar sin errores no prueba que la ISO arranque de verdad — son
+  # cosas distintas (ver docs/BUILD.md). Este job la bootea en QEMU de
+  # verdad y va sacando capturas de la pantalla mientras arranca, mismo
+  # método (captura real + inspección visual) que ya encontró bugs reales
+  # en las sesiones Xvfb de Legacy/Standard/Pro. Job aparte para poder
+  # reintentar solo esto sin tener que recompilar (~20 min) de nuevo.
+  boot-test:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Descargar la ISO compilada
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.edition }}-iso
+          path: iso
+
+      - name: Instalar QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 socat imagemagick
+
+      # Los runners hospedados por GitHub no siempre tienen /dev/kvm
+      # (depende del tipo de runner) — sin aceleración de hardware, el
+      # boot va a ser bastante más lento (emulación por software).
+      - name: Chequear soporte de KVM
+        id: kvm
+        run: |
+          if [[ -e /dev/kvm ]]; then
+            echo "flag=-enable-kvm" >> "$GITHUB_OUTPUT"
+            echo "Con aceleración KVM"
+          else
+            echo "flag=" >> "$GITHUB_OUTPUT"
+            echo "Sin KVM disponible: emulación por software, va a ser más lento"
+          fi
+
+      - name: Arrancar la ISO y sacar capturas del boot
+        run: |
+          set -x
+          ISO_PATH=$(find iso -iname '*.iso' | head -n1)
+          mkdir -p boot-shots
+          qemu-system-x86_64 \
+            -m 3072 -smp 2 \
+            ${{ steps.kvm.outputs.flag }} \
+            -cdrom "$ISO_PATH" -boot d \
+            -vga std -display none \
+            -monitor unix:/tmp/qmon.sock,server,nowait \
+            -no-reboot &
+          QEMU_PID=$!
+
+          sleep 10
+          for i in $(seq 1 20); do
+            echo "screendump boot-shots/frame-$(printf '%02d' "$i").ppm" \
+              | socat - UNIX-CONNECT:/tmp/qmon.sock || true
+            if ! kill -0 "$QEMU_PID" 2>/dev/null; then
+              echo "QEMU ya no está corriendo (se cerró solo o crasheó) en el frame $i"
+              break
+            fi
+            sleep 30
+          done
+
+          kill "$QEMU_PID" 2>/dev/null || true
+          wait "$QEMU_PID" 2>/dev/null || true
+
+          for f in boot-shots/*.ppm; do
+            [[ -e "$f" ]] || continue
+            convert "$f" "${f%.ppm}.png" && rm "$f"
+          done
+          ls -la boot-shots/
+
+      - name: Subir las capturas del boot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.edition }}-boot-screenshots
+          path: boot-shots/
+          retention-days: 14
