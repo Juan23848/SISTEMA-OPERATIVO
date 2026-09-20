@@ -13,35 +13,33 @@ jobs:
   inspect:
     runs-on: ubuntu-latest
     steps:
-      - name: Instalar live-build real de Debian bookworm y volcar plantillas
+      - name: Buscar de dónde sale el banner de texto del menú
         run: |
           docker run --rm debian:bookworm bash -c '
             set -x
             apt-get update -qq
-            apt-get install -y -qq live-build >/dev/null
+            apt-get install -y -qq live-build debian-cd apt-file >/dev/null 2>&1 || apt-get install -y -qq live-build >/dev/null
 
             echo "=========================================="
-            echo "=== syslinux_common/menu.cfg ==="
+            echo "=== grep -rl \"Built:\" en todo el filesystem (fuente real del banner) ==="
             echo "=========================================="
-            cat /usr/share/live/build/bootloaders/syslinux_common/menu.cfg
+            grep -rl "Built:" /usr/share/live/build/ /usr/lib/live/build/ 2>/dev/null || echo "(no está en live-build)"
+            grep -rl "Built:" /usr/share/ /usr/lib/ --include="*.cfg*" --include="*.txt*" --include="*.in" 2>/dev/null | head -20
 
             echo "=========================================="
-            echo "=== syslinux_common/stdmenu.cfg ==="
+            echo "=== grep -rl \"live-boot:\" (otra parte distintiva del mismo banner) ==="
             echo "=========================================="
-            cat /usr/share/live/build/bootloaders/syslinux_common/stdmenu.cfg
+            grep -rl "live-boot:" / --include="*.cfg*" --include="*.txt*" --include="*.in" 2>/dev/null | grep -v "^/proc" | head -20
 
             echo "=========================================="
-            echo "=== syslinux_common/live.cfg.in ==="
+            echo "=== Contenido completo real de syslinux_common (por si dpkg -L no listaba todo) ==="
             echo "=========================================="
-            cat /usr/share/live/build/bootloaders/syslinux_common/live.cfg.in
+            find /usr/share/live/build/bootloaders/ -type f | sort
+            find /usr/share/live/build/bootloaders/ -type l -exec ls -la {} \;
 
             echo "=========================================="
-            echo "=== syslinux_common/splash.svg (primeras 40 líneas) ==="
+            echo "=== Scripts binary_debian-installer / installer_* (por si el banner viene de ahí) ==="
             echo "=========================================="
-            head -40 /usr/share/live/build/bootloaders/syslinux_common/splash.svg
-
-            echo "=========================================="
-            echo "=== binary_syslinux: overrides, splash, variables sustituidas ==="
-            echo "=========================================="
-            cat /usr/lib/live/build/binary_syslinux
+            grep -l "Built:\|live-boot:" /usr/lib/live/build/installer* /usr/lib/live/build/binary_debian-installer 2>/dev/null || true
+            ls -la /usr/lib/live/build/ | grep -i install
           '
