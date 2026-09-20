@@ -1,0 +1,12 @@
+label live-@FLAVOUR@
+	menu label ^Antü Legacy (@FLAVOUR@)
+	menu default
+	linux @LINUX@
+	initrd @INITRD@
+	append @APPEND_LIVE@
+
+label live-@FLAVOUR@-failsafe
+	menu label Antü Legacy (@FLAVOUR@ fail-safe mode)
+	linux @LINUX@
+	initrd @INITRD@
+	append @APPEND_LIVE_FAILSAFE@

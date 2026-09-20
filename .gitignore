@@ -6,6 +6,12 @@ editions/*/build/
 editions/*/config/includes.chroot/usr/share/backgrounds/antu/
 editions/*/config/includes.chroot/usr/share/pixmaps/antu/
 editions/*/config/includes.chroot/usr/share/icons/Antu/
+# Mismo criterio para el splash del menú de arranque (isolinux/syslinux):
+# la fuente real es shared/branding/boot-splash*.png, no estos copias.
+# menu.cfg/live.cfg.in de la misma carpeta SÍ se versionan (son texto
+# propio de cada edición, no algo que install-branding.sh genere).
+editions/*/config/bootloaders/syslinux_common/splash.png
+editions/*/config/bootloaders/syslinux_common/splash800x600.png
 # Antü Resolver: copiado por scripts/build.sh desde la única fuente real
 # (shared/resolver/antu-resolver). Tener una copia propia versionada acá
 # fue justo el bug que hizo que dos rondas de correcciones al Resolver

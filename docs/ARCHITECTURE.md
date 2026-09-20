@@ -291,6 +291,95 @@ desde este cambio, Antü Standard arrancó de punta a punta hasta un
 escritorio Cinnamon real y sostenido (ver `docs/ROADMAP.md`, Fase 0,
 para la evidencia completa).
 
+### El menú de arranque (isolinux/grub) mostraba "Debian GNU/Linux", no Antü
+
+**Encontrado por el usuario**, mirando con atención las capturas de
+pantalla del primer arranque exitoso (ver sección anterior y
+`docs/ROADMAP.md`, Fase 0): la ISO arrancaba de verdad hasta un
+escritorio Cinnamon funcional, pero el menú de isolinux previo a eso
+decía "Debian GNU/Linux" — logo de Debian, título del menú y banner de
+versiones incluidos — sin ninguna marca de Antü. Todo lo que se había
+personalizado hasta ese punto (wallpaper, íconos, Resolver, Plasma)
+vive dentro del sistema de archivos final (`includes.chroot`), que el
+menú de arranque nunca llega a montar: es la primera pantalla que ve
+cualquiera que arranque el pendrive, y quedaba completamente ajena a
+la identidad de Antü.
+
+**Investigación** (5 rondas contra el `live-build` real de Debian
+bookworm `1:20230502` corriendo en un contenedor `debian:bookworm` en
+CI — no contra el de Ubuntu del sandbox, para no repetir el error de
+la sección anterior; ver `.github/workflows/inspect-livebuild-package.yml`):
+
+- El script `binary_syslinux` (no `binary_isolinux`: ese nombre cubre
+  isolinux, syslinux, pxelinux y extlinux) es el que arma el menú de
+  arranque. Copia sus plantillas por defecto desde
+  `/usr/share/live/build/bootloaders/syslinux_common/` (compartidas:
+  `menu.cfg`, `stdmenu.cfg`, `live.cfg.in`, `splash.svg`,
+  `install_*.cfg`, `memtest.cfg`, `utilities.cfg`) y desde
+  `/usr/share/live/build/bootloaders/isolinux/` (específicas de
+  isolinux).
+- Antes de copiar esos defaults, el script busca overrides del lado
+  del usuario en `config/bootloaders/syslinux_common/` y
+  `config/bootloaders/isolinux/` (dentro del `config/` de cada
+  edición) y los usa en su lugar con `cp -af` si existen — este es el
+  mecanismo real (y ya soportado, sin ningún cambio necesario del lado
+  de `scripts/build.sh`) para reemplazar el menú.
+- El título "Debian GNU/Linux" que aparece en el menú **no sale de
+  ningún archivo de configuración**: está hardcodeado como
+  `_PROJECT="Debian GNU/Linux"` dentro del propio script
+  `binary_syslinux`, y no hay ninguna opción de `lb config` para
+  cambiarlo.
+- El banner de texto con nombre/versión/fecha que se ve renderizado
+  arriba del menú (lo que en las capturas se leía como parte del
+  "look" de Debian) no es texto de la consola: son elementos
+  `<text>`/`<tspan>` dibujados **dentro del propio `splash.svg`**,
+  con placeholders (`@PROJECT@`, `@VERSION@`, `@DISTRIBUTION@`,
+  `@DATE@`, versiones de `live-build`/`live-boot`/etc.) que
+  `binary_syslinux` sustituye con `sed` y después rasteriza a PNG con
+  `rsvg-convert` (640×480 y 800×600) — pero **solo si existe un
+  `splash.svg` y no existe ya un `splash.png`/`splash800x600.png`** en
+  destino. Proveer directamente los PNG ya renderizados evita por
+  completo ese mecanismo de sustitución/rasterizado.
+- El hostname final del sistema (mostrado en algunos prompts/consolas,
+  no en el menú de arranque en sí) lo pone el script `chroot_hostname`:
+  en la fase `install` deja un `localhost.localdomain` temporal, y en
+  la fase `remove` (al finalizar) copia como hostname definitivo lo
+  que encuentre en `config/includes.chroot/etc/hostname` (o
+  `includes.chroot_before_packages/etc/hostname`) — el mismo mecanismo
+  de `includes.chroot` que ya se usaba para el resto del branding.
+
+**Corregido**:
+
+- `shared/branding/boot-splash.png` (640×480) y
+  `boot-splash800x600.png` (800×600): fondo azul oscuro (`#04060f`)
+  con el logo de Antü compuesto abajo a la derecha — misma paleta que
+  el resto del branding, generados con ImageMagick a partir de
+  `shared/branding/logo.png`.
+- `shared/scripts/install-branding.sh` ahora copia esos dos PNG a
+  `config/bootloaders/syslinux_common/{splash.png,splash800x600.png}`
+  de la edición, además de lo que ya instalaba.
+- `editions/*/config/bootloaders/syslinux_common/menu.cfg` y
+  `live.cfg.in` (uno por edición): copia exacta de las plantillas
+  reales de Debian, cambiando solo el texto visible ("Boot menu" →
+  "Antü Legacy/Standard/Pro", "Live system" → "Antü
+  Legacy/Standard/Pro (@FLAVOUR@)") — se conservan tabs reales y los
+  placeholders (`@FLAVOUR@`, `@LINUX@`, `@INITRD@`, `@APPEND_LIVE@`,
+  etc.) intactos, que es lo que `binary_syslinux` necesita para
+  completar el resto.
+- `editions/*/config/includes.chroot/etc/hostname`: un archivo de una
+  línea por edición (`antu-legacy`, `antu-standard`, `antu-pro`).
+- `.gitignore`: los `splash.png`/`splash800x600.png` generados por
+  `install-branding.sh` se ignoran igual que el resto del branding
+  copiado en build time — la fuente real es `shared/branding/`. Los
+  `menu.cfg`/`live.cfg.in` sí se versionan: son texto propio de cada
+  edición, no algo que el script genere.
+
+**Pendiente de confirmar con una ISO real**: compilar y arrancar de
+nuevo con este cambio y verificar por captura de pantalla + OCR que el
+menú ahora dice "Antü Standard" (no "Boot menu"/"Debian GNU/Linux") y
+que el splash cambió — mismo estándar de evidencia que el resto de
+esta sección (ver `docs/ROADMAP.md`, Fase 0, para el resultado).
+
 ## Íconos propios
 
 Antü tiene su **propio tema de íconos** (`Antu`) en vez de reusar el
