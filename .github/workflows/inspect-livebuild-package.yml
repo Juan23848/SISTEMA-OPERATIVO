@@ -1,0 +1,68 @@
+name: Inspeccionar paquete live-build (plantillas de arranque)
+
+# Utilidad de investigación puntual: antes de intentar personalizar el
+# menú/splash de isolinux-grub con la marca de Antü, hay que confirmar
+# contra el live-build REAL de Debian bookworm (no contra uno de Ubuntu
+# instalado en el sandbox de desarrollo — ya nos pasó factura una vez,
+# ver docs/ARCHITECTURE.md) qué plantillas usa y si respeta overrides en
+# config/bootloaders/<nombre>/.
+"on":
+  workflow_dispatch: {}
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Instalar live-build real de Debian bookworm y volcar plantillas
+        run: |
+          docker run --rm debian:bookworm bash -c '
+            set -euo pipefail
+            apt-get update -qq
+            apt-get install -y -qq live-build >/dev/null
+            dpkg-query -W live-build
+
+            echo "=========================================="
+            echo "=== Archivos de plantillas isolinux ==="
+            echo "=========================================="
+            dpkg -L live-build | grep -i "bootloaders/isolinux"
+
+            echo "=========================================="
+            echo "=== isolinux/isolinux.cfg.in ==="
+            echo "=========================================="
+            cat /usr/share/live/build/bootloaders/isolinux/isolinux.cfg.in 2>/dev/null || echo "(no existe)"
+
+            echo "=========================================="
+            echo "=== isolinux/menu.cfg (o .in) ==="
+            echo "=========================================="
+            cat /usr/share/live/build/bootloaders/isolinux/menu.cfg.in 2>/dev/null \
+              || cat /usr/share/live/build/bootloaders/isolinux/menu.cfg 2>/dev/null \
+              || echo "(no existe)"
+
+            echo "=========================================="
+            echo "=== isolinux/stdmenu.cfg ==="
+            echo "=========================================="
+            cat /usr/share/live/build/bootloaders/isolinux/stdmenu.cfg.in 2>/dev/null \
+              || cat /usr/share/live/build/bootloaders/isolinux/stdmenu.cfg 2>/dev/null \
+              || echo "(no existe)"
+
+            echo "=========================================="
+            echo "=== isolinux/live.cfg.in ==="
+            echo "=========================================="
+            cat /usr/share/live/build/bootloaders/isolinux/live.cfg.in 2>/dev/null || echo "(no existe)"
+
+            echo "=========================================="
+            echo "=== Mecanismo real de override (lb_binary_isolinux) ==="
+            echo "=========================================="
+            grep -n "config/bootloaders\|_LIVE_BASE\|cp -r\|cp -a" /usr/lib/live/build/lb_binary_isolinux | head -60
+
+            echo "=========================================="
+            echo "=== Splash: qué archivos de imagen usa ==="
+            echo "=========================================="
+            dpkg -L live-build | grep -iE "isolinux.*(png|svg)"
+            file /usr/share/live/build/bootloaders/isolinux/*.png 2>/dev/null || true
+
+            echo "=========================================="
+            echo "=== Mismo chequeo para grub-pc/grub-efi ==="
+            echo "=========================================="
+            dpkg -L live-build | grep -iE "bootloaders/grub" | head -40
+          '
