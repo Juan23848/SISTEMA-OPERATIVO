@@ -42,8 +42,15 @@ Standard ya arrancó de punta a punta hasta un escritorio Cinnamon real**
 — confirmado con evidencia concreta (ver Fase 0): un escritorio sostenido
 corriendo durante los ~13 minutos de la prueba, con el reloj de la barra
 de tareas actualizándose con normalidad y en español. **Primera versión
-de Antü que compila y arranca de verdad.** Falta repetir lo mismo para
-Legacy y Pro (mismo mecanismo, ya corregido en los 3 `auto/config`).
+de Antü que compila y arranca de verdad.** Mirando esas mismas capturas
+con atención, el usuario detectó que el **menú de arranque previo al
+escritorio seguía diciendo "Debian GNU/Linux"/"Boot menu"** — ya
+**corregido y revalidado con una nueva ISO**: el OCR del menú ahora lee
+"Antü Standard" (título y entradas) y "ANTU" (splash), sin ninguna
+mención a "Debian" en las 25 capturas de la corrida, y el escritorio
+muestra el hostname correcto (`antu-standard`) — ver Fase 0 para la
+evidencia completa. Falta repetir compilar+arrancar para Legacy y Pro
+(mismo mecanismo, ya corregido en los 3 `auto/config`).
 Las 3 ediciones también tienen **español (Argentina) como idioma por
 defecto** y un **set de íconos propios** (tema `Antu`) instalado como
 tema de sistema real — ver Fase 0.5. Además ya tienen la **capa de
@@ -188,6 +195,33 @@ verdad contra una pantalla virtual — ver Fase 0.7.
         ISO de Antü que compila y arranca de punta a punta.**
         Pendiente: repetir compilar+arrancar para Legacy y Pro (mismo
         mecanismo, ya corregido en los 3 `auto/config`).
+      - **El usuario detectó, mirando esas mismas capturas con atención,
+        que el menú de arranque previo al escritorio decía "Debian
+        GNU/Linux" y "Boot menu"** — sin ninguna marca de Antü, porque
+        todo lo personalizado hasta ese punto vivía dentro del sistema
+        de archivos final (`includes.chroot`), que el menú de arranque
+        nunca llega a montar. Investigado (5 rondas contra el
+        `live-build` real de Debian bookworm en CI, ver
+        `docs/ARCHITECTURE.md`, sección "El menú de arranque (isolinux/
+        grub) mostraba 'Debian GNU/Linux', no Antü") y corregido con
+        `menu.cfg`/`live.cfg.in` propios por edición, un splash con la
+        marca de Antü y un hostname propio por edición.
+      - **Confirmado con una nueva ISO compilada y arrancada**: el OCR
+        del frame del menú (antes de presionar Enter) lee "ant!
+        Standard" (título — la "ü" se lee como "!" por el acento, mismo
+        patrón en las 3 apariciones), "ant! standard (ami64 fai..."
+        (la entrada fail-safe), "ANTU" (el splash) y "Press ENTER to
+        boot or TAB to edit a menu entry" — **ninguna mención a
+        "Debian" ni "Boot menu" en ninguno de los 25 frames
+        capturados** (confirmado buscando esas cadenas en el OCR
+        completo de la corrida). El escritorio posterior muestra el
+        hostname correcto ("antu-standard") en la barra de tareas, con
+        el reloj avanzando con normalidad de las 18:05 a las 18:16 en
+        español ("dom"). Evidencia completa: run
+        [35526550853](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/35526550853)
+        (compilación + boot-test) e
+        [35529102422](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/35529102422)
+        (análisis OCR/pixel-diff).
 
 ## Fase 0.5 — Identidad propia (despegarse de Linux/Windows)
 
