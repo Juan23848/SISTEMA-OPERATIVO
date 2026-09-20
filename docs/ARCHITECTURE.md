@@ -286,9 +286,10 @@ prueba).
 
 Corregido agregando `boot=live components` al principio de
 `--bootappend-live` en las 3 ediciones — exactamente lo que proponía el
-parche original de Codex. Pendiente de revalidar con una nueva ISO
-compilada desde este cambio (ver `docs/ROADMAP.md` para el estado
-actualizado de esa validación).
+parche original de Codex. **Revalidado**: con una nueva ISO compilada
+desde este cambio, Antü Standard arrancó de punta a punta hasta un
+escritorio Cinnamon real y sostenido (ver `docs/ROADMAP.md`, Fase 0,
+para la evidencia completa).
 
 ## Íconos propios
 

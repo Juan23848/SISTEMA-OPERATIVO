@@ -31,15 +31,19 @@ encontraron y corrigieron bugs reales en el camino en las 3 (ver
 Con eso resuelto, se dio el paso siguiente: **ya se compiló una ISO real
 de Antü Standard** (por CI de GitHub Actions, ver Fase 0 para el detalle
 — el sandbox de desarrollo no tiene acceso a los mirrors de Debian, pero
-los runners de GitHub sí) y se intentó arrancarla de verdad en QEMU. Esa
-primera prueba de arranque real **encontró un bug crítico** que ninguna
-revisión anterior (ni la de código, ni las sesiones virtuales del shell)
-podía haber encontrado: la ISO nunca llegaba a arrancar el sistema live
-por faltarle `boot=live` en la línea de arranque real — corregido en las
-3 ediciones (ver Fase 0 y `docs/ARCHITECTURE.md` para el detalle
-completo). **Pendiente**: volver a compilar y arrancar con ese fix ya
-aplicado para confirmar que la ISO llega a un escritorio real — recién
-ahí se cierra "primera versión booteable".
+los runners de GitHub sí) y se arrancó de verdad en QEMU. La primera
+prueba de arranque real **encontró un bug crítico** que ninguna revisión
+anterior (ni la de código, ni las sesiones virtuales del shell) podía
+haber encontrado: la ISO nunca llegaba a arrancar el sistema live por
+faltarle `boot=live` en la línea de arranque real — corregido en las 3
+ediciones (ver Fase 0 y `docs/ARCHITECTURE.md` para el detalle
+completo). **Con el fix aplicado y una recompilación completa, Antü
+Standard ya arrancó de punta a punta hasta un escritorio Cinnamon real**
+— confirmado con evidencia concreta (ver Fase 0): un escritorio sostenido
+corriendo durante los ~13 minutos de la prueba, con el reloj de la barra
+de tareas actualizándose con normalidad y en español. **Primera versión
+de Antü que compila y arranca de verdad.** Falta repetir lo mismo para
+Legacy y Pro (mismo mecanismo, ya corregido en los 3 `auto/config`).
 Las 3 ediciones también tienen **español (Argentina) como idioma por
 defecto** y un **set de íconos propios** (tema `Antu`) instalado como
 tema de sistema real — ver Fase 0.5. Además ya tienen la **capa de
@@ -163,9 +167,27 @@ verdad contra una pantalla virtual — ver Fase 0.7.
         `boot=live components` al `--bootappend-live` de las 3 ediciones
         (ver `docs/ARCHITECTURE.md`, sección "`--bootappend-live`
         reemplaza el append por defecto, no lo completa", para el
-        detalle completo). **Pendiente**: volver a compilar y arrancar
-        con este fix para confirmar que la ISO realmente llega a un
-        escritorio.
+        detalle completo).
+      - **Confirmado con una recompilación completa**: con el fix
+        aplicado, Antü Standard compiló y arrancó de punta a punta hasta
+        un **escritorio Cinnamon real** — no solo pasó del menú, sino que
+        se sostuvo corriendo por los ~13 minutos completos de captura.
+        Evidencia concreta (vía OCR + diferencia de píxeles entre
+        capturas, mismo método indirecto que el resto de esta prueba):
+        el frame inmediatamente después de pasar el menú difiere en
+        ~33 mil píxeles del menú (la pantalla cambió del todo), el
+        siguiente difiere en ~1 millón de píxeles más (se terminó de
+        dibujar un escritorio completo), y de ahí en adelante los frames
+        alternan entre "0 píxeles distintos" y "~87 píxeles distintos"
+        durante el resto de la captura — el patrón exacto de un reloj de
+        barra de tareas actualizándose cada tanto en un escritorio
+        real e inactivo, no una pantalla trabada. El OCR de esos frames
+        además lee un reloj pasando de las 06:30 a las 06:41, con el día
+        abreviado en español ("dom", domingo) — confirma de paso que el
+        idioma también quedó bien aplicado en la sesión live. **Primera
+        ISO de Antü que compila y arranca de punta a punta.**
+        Pendiente: repetir compilar+arrancar para Legacy y Pro (mismo
+        mecanismo, ya corregido en los 3 `auto/config`).
 
 ## Fase 0.5 — Identidad propia (despegarse de Linux/Windows)
 
@@ -376,7 +398,10 @@ apuro (plazo: el año que viene).
 Se prioriza esta edición porque cubre el público más amplio (uso
 doméstico/oficina).
 
-- [ ] Compilar ISO booteable en modo live (sin instalar).
+- [x] Compilar ISO booteable en modo live (sin instalar). Confirmado
+      por CI (GitHub Actions): compila y arranca de verdad hasta un
+      escritorio Cinnamon real — ver Fase 0 para el detalle y la
+      evidencia.
 - [ ] Instalador funcional (usar `calamares` o el instalador de Debian).
 - [x] Shell de escritorio propio (barra superior: lanzador, bandeja,
       reloj) — ver `docs/ARCHITECTURE.md`, sección "Shell de escritorio".
