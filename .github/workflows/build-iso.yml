@@ -117,7 +117,19 @@ jobs:
       - name: Chequear soporte de KVM
         id: kvm
         run: |
-          if [[ -e /dev/kvm ]]; then
+          if [[ "${{ inputs.edition }}" == "antu-legacy" ]]; then
+            # Confirmado con evidencia real (ver docs/ROADMAP.md, Fase 0):
+            # el kernel de 32 bits de Legacy se cuelga muy temprano en el
+            # arranque bajo KVM en este entorno de CI (virtualización
+            # anidada de GitHub Actions sobre Hyper-V) -- no es un bug de
+            # Antü, es una inestabilidad específica de esta combinación.
+            # Con emulación por software arranca bien y de forma
+            # reproducible, así que se usa directo en vez de dejar que el
+            # chequeo automático de más abajo falle por una causa ajena
+            # al sistema.
+            echo "flag=" >> "$GITHUB_OUTPUT"
+            echo "KVM deshabilitado a propósito para Legacy (i386): inestabilidad de virtualización anidada confirmada en este entorno -- se usa emulación por software (TCG) para que el boot-test sea confiable."
+          elif [[ -e /dev/kvm ]]; then
             sudo chmod 666 /dev/kvm
             echo "flag=-enable-kvm" >> "$GITHUB_OUTPUT"
             echo "Con aceleración KVM"
