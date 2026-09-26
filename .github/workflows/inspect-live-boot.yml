@@ -1,0 +1,25 @@
+name: Inspeccionar live-boot (hang en "Loading, please wait...")
+
+"on":
+  workflow_dispatch: {}
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Buscar el origen del mensaje y qué hace después
+        run: |
+          docker run --rm debian:bookworm bash -c '
+            set -x
+            apt-get update -qq
+            apt-get install -y -qq live-boot >/dev/null
+
+            echo "=== grep del mensaje literal en los scripts de live-boot ==="
+            grep -rn "Loading, please wait" /usr/share/initramfs-tools/ /lib/live/ 2>/dev/null
+
+            echo "=== listado de scripts relevantes ==="
+            find /lib/live/boot -maxdepth 1 -iname "*.sh" | sort
+
+            echo "=== 9990-main.sh completo (si existe) ==="
+            cat /lib/live/boot/9990-main.sh 2>/dev/null
+          '
