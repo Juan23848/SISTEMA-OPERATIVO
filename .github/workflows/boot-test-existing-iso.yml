@@ -69,15 +69,35 @@ jobs:
           sleep 2
           echo "sendkey ret" | socat - UNIX-CONNECT:/tmp/qmon.sock || true
 
-          for i in $(seq 1 24); do
-            sleep 30
-            echo "screendump boot-shots/frame-$(printf '%02d' "$i").ppm" \
+          # Ronda rápida (cada 3s) justo después de apretar Enter: la vez
+          # anterior QEMU se cerró solo (exit 0, o sea que fue el propio
+          # kernel/initramfs el que disparó un reboot y -no-reboot cerró
+          # QEMU en vez de reiniciar) entre el segundo 0 y el 30 después
+          # del Enter, así que la captura de 30s en 30s se lo perdía
+          # entero. Esto busca agarrar la pantalla real del error.
+          QEMU_MURIO=0
+          for i in $(seq 1 15); do
+            sleep 3
+            echo "screendump boot-shots/frame-fast-$(printf '%02d' "$i").ppm" \
               | socat - UNIX-CONNECT:/tmp/qmon.sock || true
             if ! kill -0 "$QEMU_PID" 2>/dev/null; then
-              echo "QEMU ya no está corriendo (se cerró solo o crasheó) en el frame $i"
+              echo "QEMU ya no está corriendo (se cerró solo o crasheó) en el frame rápido $i"
+              QEMU_MURIO=1
               break
             fi
           done
+
+          if [[ "$QEMU_MURIO" -eq 0 ]]; then
+            for i in $(seq 1 24); do
+              sleep 30
+              echo "screendump boot-shots/frame-$(printf '%02d' "$i").ppm" \
+                | socat - UNIX-CONNECT:/tmp/qmon.sock || true
+              if ! kill -0 "$QEMU_PID" 2>/dev/null; then
+                echo "QEMU ya no está corriendo (se cerró solo o crasheó) en el frame $i"
+                break
+              fi
+            done
+          fi
 
           kill "$QEMU_PID" 2>/dev/null || true
           wait "$QEMU_PID" 2>/dev/null
