@@ -57,11 +57,20 @@ RESOLVER_DEST="$CONFIG_DIR/includes.chroot/usr/bin"
 mkdir -p "$RESOLVER_DEST"
 install -m 0755 "$REPO_ROOT/shared/resolver/antu-resolver" "$RESOLVER_DEST/antu-resolver"
 
-echo "==> Instalando asistentes de Office y Chrome"
+echo "==> Instalando asistente de Office"
 # Mismo criterio que el Resolver: fuente única en shared/scripts/,
 # nunca una copia versionada por edición.
 install -m 0755 "$REPO_ROOT/shared/scripts/instalar-office.sh" "$RESOLVER_DEST/antu-instalar-office"
-install -m 0755 "$REPO_ROOT/shared/scripts/instalar-chrome.sh" "$RESOLVER_DEST/antu-instalar-chrome"
+
+# Google Chrome no tiene versión de 32 bits desde hace años (requisito
+# oficial: Linux de 64 bits) — no tiene sentido copiar el asistente ni
+# el repo en Legacy (i386): el lanzador fallaría siempre, y encima con
+# un mensaje que culpa a la conexión en vez de a la arquitectura
+# (hallazgo real de una revisión externa). Standard y Pro son amd64.
+if [[ "$EDITION" != "antu-legacy" ]]; then
+    echo "==> Instalando asistente de Chrome"
+    install -m 0755 "$REPO_ROOT/shared/scripts/instalar-chrome.sh" "$RESOLVER_DEST/antu-instalar-chrome"
+fi
 
 echo "==> Compilando $EDITION"
 # live-build espera correr desde el directorio que tiene a auto/ y

@@ -40,7 +40,22 @@ notify "Preparando el entorno de Wine para Office. Puede tardar un par de minuto
 # instaladores y diálogos de Office.
 # gdiplus: dibujo 2D que usan las interfaces de instalación.
 # msxml6: varias rutinas de Office dependen de este parser XML.
-winetricks -q corefonts riched20 riched30 gdiplus msxml6 2>&1 | tail -n 20
+#
+# El log completo (no solo las últimas líneas) queda en un archivo
+# aparte para poder mostrarlo si algo falla — un pipe directo a "tail"
+# esconde el código de salida real de winetricks (hallazgo real de una
+# revisión externa, ChatGPT/Codex): si una descarga o una dependencia
+# fallaba, el asistente seguía igual pidiendo el instalador, sin avisar
+# nada.
+WINETRICKS_LOG="$(mktemp)"
+if ! winetricks -q corefonts riched20 riched30 gdiplus msxml6 >"$WINETRICKS_LOG" 2>&1; then
+    zenity --error --title="Antü" \
+        --text="No se pudo preparar Wine para Office (falló winetricks). Detalle:\n\n$(tail -n 20 "$WINETRICKS_LOG")" \
+        2>/dev/null
+    rm -f "$WINETRICKS_LOG"
+    exit 1
+fi
+rm -f "$WINETRICKS_LOG"
 
 INSTALADOR=$(zenity --file-selection \
     --title="Elegí tu instalador de Microsoft Office" \

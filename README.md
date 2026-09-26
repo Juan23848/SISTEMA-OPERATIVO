@@ -28,7 +28,8 @@ verdad, no cosmética:
 - **Cualquier `.exe`/`.msi`** corre con solo hacer doble clic (Wine real,
   sin necesitar Windows instalado), y Chromium viene de fábrica con el
   repositorio oficial de Google Chrome ya configurado si preferís el
-  navegador real de Google.
+  navegador real de Google (en Standard y Pro — Chrome no tiene versión
+  de 32 bits, así que en Legacy queda Chromium solo).
 - **Juegos en hardware potente (edición Pro)**: en el radar, con una
   limitación que nombramos de frente en vez de esconder — los pocos juegos
   con anticheat a nivel de kernel (ej. Riot Vanguard) bloquean Linux por

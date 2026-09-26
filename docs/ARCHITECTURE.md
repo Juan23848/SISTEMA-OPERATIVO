@@ -361,11 +361,18 @@ la sección anterior; ver `.github/workflows/inspect-livebuild-package.yml`):
 - `editions/*/config/bootloaders/syslinux_common/menu.cfg` y
   `live.cfg.in` (uno por edición): copia exacta de las plantillas
   reales de Debian, cambiando solo el texto visible ("Boot menu" →
-  "Antü Legacy/Standard/Pro", "Live system" → "Antü
+  "Antu Legacy/Standard/Pro", "Live system" → "Antu
   Legacy/Standard/Pro (@FLAVOUR@)") — se conservan tabs reales y los
   placeholders (`@FLAVOUR@`, `@LINUX@`, `@INITRD@`, `@APPEND_LIVE@`,
   etc.) intactos, que es lo que `binary_syslinux` necesita para
-  completar el resto.
+  completar el resto. **"Antu" sin diéresis a propósito** (hallazgo
+  real de una revisión externa, sobre una captura de pantalla real):
+  la fuente bitmap que usa isolinux para el texto del menú no
+  renderiza bien la "ü" — se ve un carácter roto, aunque el archivo en
+  sí está en UTF-8 correcto (confirmado con `cat -A`). El logo gráfico
+  del splash y el resto del sistema (desktop, docs) sí llevan "Antü"
+  completo; es solo el texto del propio menú de isolinux el que se
+  queda con la base ASCII por esta limitación puntual de esa fuente.
 - `editions/*/config/includes.chroot/etc/hostname`: un archivo de una
   línea por edición (`antu-legacy`, `antu-standard`, `antu-pro`).
 - `.gitignore`: los `splash.png`/`splash800x600.png` generados por

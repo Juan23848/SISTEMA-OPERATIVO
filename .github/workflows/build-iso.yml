@@ -103,7 +103,7 @@ jobs:
           path: iso
 
       - name: Instalar QEMU
-        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 socat imagemagick
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 socat imagemagick tesseract-ocr
 
       # Los runners hospedados por GitHub tienen /dev/kvm, pero el
       # usuario "runner" no tiene permiso de acceso por defecto (queda en
@@ -133,6 +133,7 @@ jobs:
       # siempre. Se agrega el sendkey para que el arranque avance de
       # verdad más allá del menú.
       - name: Arrancar la ISO, avanzar el menú y sacar capturas del boot
+        id: boot
         run: |
           set -x
           ISO_PATH=$(find iso -iname '*.iso' | head -n1)
@@ -153,12 +154,20 @@ jobs:
           sleep 2
           echo "sendkey ret" | socat - UNIX-CONNECT:/tmp/qmon.sock || true
 
+          # Distinguir "terminó el loop porque ya sacamos las 24 capturas
+          # previstas" de "QEMU se cerró solo antes de tiempo" (hallazgo
+          # real de una revisión externa, ChatGPT/Codex: antes esto
+          # siempre terminaba en éxito, incluso si el arranque se cortó a
+          # los pocos segundos del menú — ver docs/ROADMAP.md, Fase 0,
+          # para un caso real donde pasó justo eso).
+          MURIO_TEMPRANO=0
           for i in $(seq 1 24); do
             sleep 30
             echo "screendump boot-shots/frame-$(printf '%02d' "$i").ppm" \
               | socat - UNIX-CONNECT:/tmp/qmon.sock || true
             if ! kill -0 "$QEMU_PID" 2>/dev/null; then
               echo "QEMU ya no está corriendo (se cerró solo o crasheó) en el frame $i"
+              MURIO_TEMPRANO=1
               break
             fi
           done
@@ -172,6 +181,8 @@ jobs:
           done
           ls -la boot-shots/
 
+          echo "murio_temprano=$MURIO_TEMPRANO" >> "$GITHUB_OUTPUT"
+
       - name: Subir las capturas del boot
         if: always()
         uses: actions/upload-artifact@v4
@@ -179,3 +190,31 @@ jobs:
           name: ${{ inputs.edition }}-boot-screenshots
           path: boot-shots/
           retention-days: 14
+
+      # Chequeo automático mínimo: que el arranque no se haya cortado
+      # antes de tiempo, y que ninguna captura muestre el branding
+      # genérico de Debian (regresión del fix documentado en
+      # docs/ARCHITECTURE.md). No reemplaza una revisión manual con OCR
+      # completo (ver docs/BUILD.md), pero evita que el job quede en
+      # verde sin que nadie se dé cuenta si el arranque se rompe.
+      - name: Verificar que el arranque no se cortó antes de tiempo
+        if: always()
+        run: |
+          set -x
+          if [[ "${{ steps.boot.outputs.murio_temprano }}" == "1" ]]; then
+            echo "::error::QEMU se cerró antes de completar las capturas previstas -- el arranque no llegó a buen puerto. Revisar boot-shots/ (subido como artifact) con inspect-boot-screenshots.yml."
+            exit 1
+          fi
+
+          TEXTO_ENCONTRADO=""
+          for f in boot-shots/*.png; do
+            [[ -e "$f" ]] || continue
+            if tesseract "$f" - 2>/dev/null | grep -qiE 'Debian GNU|Boot menu'; then
+              TEXTO_ENCONTRADO="$f"
+              break
+            fi
+          done
+          if [[ -n "$TEXTO_ENCONTRADO" ]]; then
+            echo "::error::$TEXTO_ENCONTRADO muestra branding genérico de Debian ('Debian GNU'/'Boot menu') -- regresión del fix de branding del menú de arranque."
+            exit 1
+          fi

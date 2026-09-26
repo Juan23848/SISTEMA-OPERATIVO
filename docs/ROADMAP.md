@@ -494,7 +494,14 @@ apuro (plazo: el año que viene).
       de apt, sin instalar el paquete — Chrome es propietario, no lo
       redistribuye la ISO). Lanzador "Instalar Google Chrome"
       (`shared/scripts/instalar-chrome.sh`) hace el `apt install
-      google-chrome-stable` con un clic.
+      google-chrome-stable` con un clic. **Corregido (hallazgo real de
+      una revisión externa, ChatGPT/Codex)**: el hook y el lanzador solo
+      se instalan en Standard y Pro (amd64) — Google Chrome no tiene
+      versión de 32 bits desde hace años (requisito oficial: Linux de
+      64 bits), así que ofrecerlo en Legacy (i386) llevaba siempre a un
+      fallo, con un mensaje que además culpaba a la conexión en vez de
+      a la arquitectura. Legacy se queda con Chromium (libre, sí tiene
+      build para i386) como único navegador de Google-engine.
 - [ ] **Gaming (Proton/Steam)**: que la biblioteca de Steam con juegos
       de Windows funcione, pensado sobre todo para Antü Pro (hardware
       potente). No arrancado todavía — decisión explícita del proyecto:
