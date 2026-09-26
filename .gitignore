@@ -17,6 +17,10 @@ editions/*/config/bootloaders/syslinux_common/splash800x600.png
 # fue justo el bug que hizo que dos rondas de correcciones al Resolver
 # nunca llegaran a ninguna ISO (encontrado en una revisión externa).
 editions/*/config/includes.chroot/usr/bin/antu-resolver
+# Mismo criterio para los asistentes de Office/Chrome: fuente única en
+# shared/scripts/instalar-office.sh y shared/scripts/instalar-chrome.sh.
+editions/*/config/includes.chroot/usr/bin/antu-instalar-office
+editions/*/config/includes.chroot/usr/bin/antu-instalar-chrome
 
 # auto/ y config/ tienen que ser HERMANOS (ambos hijos directos de
 # editions/<edicion>/) para que live-build encuentre de verdad nuestros

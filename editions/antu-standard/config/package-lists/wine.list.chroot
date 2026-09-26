@@ -26,3 +26,9 @@ desktop-file-utils
 # Trae notify-send: antu-resolver lo usa para avisar que esta
 # abriendo/instalando algo, sin que el usuario necesite abrir un log.
 libnotify-bin
+
+# zenity: diálogos gráficos simples (elegir archivo, avisos) que
+# funcionan igual en cualquier entorno de escritorio (GTK, pero corre
+# también sobre Plasma). Lo usa shared/scripts/instalar-office.sh para
+# pedir el instalador de Office sin depender de una terminal.
+zenity

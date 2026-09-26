@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Instalar Microsoft Office
+Comment=Prepara Wine y te deja instalar tu propio Office con licencia
+Exec=antu-instalar-office
+Icon=x-office-document
+Type=Application
+Terminal=false
+Categories=Office;

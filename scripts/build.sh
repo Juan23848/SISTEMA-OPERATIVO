@@ -57,6 +57,12 @@ RESOLVER_DEST="$CONFIG_DIR/includes.chroot/usr/bin"
 mkdir -p "$RESOLVER_DEST"
 install -m 0755 "$REPO_ROOT/shared/resolver/antu-resolver" "$RESOLVER_DEST/antu-resolver"
 
+echo "==> Instalando asistentes de Office y Chrome"
+# Mismo criterio que el Resolver: fuente única en shared/scripts/,
+# nunca una copia versionada por edición.
+install -m 0755 "$REPO_ROOT/shared/scripts/instalar-office.sh" "$RESOLVER_DEST/antu-instalar-office"
+install -m 0755 "$REPO_ROOT/shared/scripts/instalar-chrome.sh" "$RESOLVER_DEST/antu-instalar-chrome"
+
 echo "==> Compilando $EDITION"
 # live-build espera correr desde el directorio que tiene a auto/ y
 # config/ como hermanos (auto/config genera/actualiza config/ en base

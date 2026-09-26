@@ -1,5 +1,12 @@
-# Aplicaciones base, elegidas por bajo consumo de recursos.
+# Aplicaciones base, elegidas por bajo consumo de recursos. No se
+# empaqueta ningún suite ofimático liviano por defecto: la respuesta a
+# "necesito Office" es el Office real corriendo vía Wine (ver
+# shared/scripts/instalar-office.sh) — versiones viejas de Office
+# (2003/2007/2010) son livianas y pensadas para hardware de esta misma
+# época, así que encajan bien acá. El usuario aporta su propio
+# instalador con licencia, no lo redistribuye la ISO.
 firefox-esr
+chromium
 pcmanfm
 mousepad
 xarchiver

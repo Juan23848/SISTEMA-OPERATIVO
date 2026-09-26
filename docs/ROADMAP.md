@@ -274,23 +274,30 @@ perdió funcionalidad. Aplica a las 3 ediciones (`compat.list.chroot` y
       Flathub agregado de fábrica, con tienda gráfica (GNOME Software en
       Standard, Discover en Pro) y soporte de AppImage (`libfuse2`) en
       las 3.
-- [x] **Ofimática**: LibreOffice (ya estaba en Standard/Pro) + fuentes
-      métricamente compatibles con Arial/Calibri/Cambria/Times New Roman
-      (`fonts-liberation2`, `fonts-crosextra-carlito`,
-      `fonts-crosextra-caladea`), para que un `.docx` de Word no se vea
-      corrido al abrirlo.
+- [x] **Fuentes de Office**: métricamente compatibles con
+      Arial/Calibri/Cambria/Times New Roman (`fonts-liberation2`,
+      `fonts-crosextra-carlito`, `fonts-crosextra-caladea`), para que
+      cualquier app que abra un `.docx`/`.xlsx` de Word no lo vea corrido.
+      **Decisión revisada**: se sacó LibreOffice como respuesta a
+      "necesito Office" (ver Fase 0.7, "Office real vía Wine") — no es
+      negociable para el proyecto que la fidelidad con macros/VBA quede
+      a mitad de camino. Las fuentes se quedan igual, sirven para
+      cualquier suite.
 - [x] **Wifi/bluetooth/impresoras**: firmware no libre de los chipsets
       más comunes, `bluez`+`blueman`, y `cups` con drivers + `avahi` para
       detectar impresoras de red solas. No se pudo probar contra
       hardware real (no hay wifi/bluetooth/impresora físicos en este
       entorno) — pendiente de validar en una máquina real.
-- [ ] **Claude y Microsoft Office no tienen versión nativa para Linux**
-      (aclarado en `docs/ARCHITECTURE.md`): el camino real es claude.ai
-      desde el navegador y LibreOffice respectivamente. Queda pendiente,
-      si se quiere, armar un acceso directo de escritorio que abra
-      claude.ai "como app".
+- [x] **Archivos comprimidos de verdad**: file-roller/xarchiver/Ark
+      (según edición) ya estaban, pero sin `p7zip-full`/`unrar`/`zip`/
+      `unzip` no podían abrir un `.zip`/`.rar`/`.7z` real — agregados en
+      las 3 ediciones (`unrar` es non-free, ya habilitado globalmente
+      por el firmware de wifi).
+- [x] **Claude no tiene versión nativa para Linux**: el camino real es
+      claude.ai desde el navegador. Queda pendiente, si se quiere, un
+      acceso directo de escritorio que lo abra "como app".
 
-## Fase 0.7 — Fusión funcional (WinLux de verdad)
+## Fase 0.7 — Fusión funcional (de verdad)
 
 Criterio del proyecto, dicho por Juan desde el arranque: Antü no es
 "Linux con logo de Antü" — es una fusión real de Windows y Linux, no
@@ -389,9 +396,40 @@ apuro (plazo: el año que viene).
       sobrescribe y agrega contenido nuevo sin error de permisos. Ver
       `docs/ARCHITECTURE.md`, sección "Red mixta con PCs Windows
       (Samba)".
+- [x] **Office real vía Wine**: se descartó LibreOffice como respuesta a
+      "necesito Office" (no negociable para el proyecto — no es 100%
+      fiel con documentos con macros/VBA). En su lugar, un asistente
+      (`shared/scripts/instalar-office.sh`, lanzador "Instalar Microsoft
+      Office" en las 3 ediciones) prepara el prefix de Wine con las
+      dependencias típicas que piden los instaladores de Office
+      (`winetricks corefonts riched20 riched30 gdiplus msxml6`) y deja
+      que el usuario elija su propio instalador — no podemos
+      redistribuir el instalador de Office en la ISO, es software con
+      licencia propia de Microsoft. La instalación en sí la maneja
+      `antu-resolver` (mismo motor que ya abre cualquier `.exe`/`.msi`),
+      sin duplicar lógica de Wine. **Pendiente de validar con un
+      instalador de Office real** (no probado todavía contra una copia
+      real de Office en este entorno) — las dependencias de arriba son
+      las que recomienda la comunidad de WineHQ en general, puede faltar
+      algo específico de una versión puntual.
+- [x] **Chromium + Google Chrome real**: Chromium (libre) instalado de
+      fábrica en las 3 ediciones, y el repositorio oficial de Google
+      Chrome pre-configurado en build-time
+      (`hooks/normal/0700-google-chrome-repo`, clave de firma + fuente
+      de apt, sin instalar el paquete — Chrome es propietario, no lo
+      redistribuye la ISO). Lanzador "Instalar Google Chrome"
+      (`shared/scripts/instalar-chrome.sh`) hace el `apt install
+      google-chrome-stable` con un clic.
 - [ ] **Gaming (Proton/Steam)**: que la biblioteca de Steam con juegos
       de Windows funcione, pensado sobre todo para Antü Pro (hardware
-      potente). No arrancado todavía.
+      potente). No arrancado todavía — decisión explícita del proyecto:
+      cola de prioridades más baja que oficina/archivos/navegador,
+      porque acá aparece el único límite verdaderamente externo al
+      proyecto (no de ingeniería, como el resto de esta fase): juegos
+      multijugador con anticheat a nivel de kernel (ej. Riot Vanguard)
+      bloquean Linux/Wine por decisión del fabricante del juego, no algo
+      que Antü pueda resolver. El resto del catálogo (single player, la
+      inmensa mayoría) sí es un objetivo real vía Proton.
 - [ ] **.NET nativo** (`dotnet-runtime`, sin pasar por Wine) para
       software moderno hecho en .NET Core/5+, que corre nativo en
       Linux sin necesitar ningún traductor. No arrancado todavía.

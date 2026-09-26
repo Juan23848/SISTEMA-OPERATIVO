@@ -9,6 +9,23 @@ ntfs-3g
 exfatprogs
 dosfstools
 
+# Archivos comprimidos: Ark (viene con Plasma) es solo la interfaz
+# gráfica — sin estos paquetes no puede abrir de verdad un
+# .zip/.rar/.7z, que son los formatos más comunes viniendo de Windows.
+# unrar es non-free (ya habilitado globalmente por el firmware de
+# wifi/bluetooth, ver auto/config) pero da soporte real de RAR5, a
+# diferencia de unrar-free.
+zip
+unzip
+p7zip-full
+unrar
+
+# wget y gnupg: los necesita el hook que configura el repositorio
+# oficial de Google Chrome (ver hooks/normal/0700-google-chrome-repo),
+# para bajar y verificar la clave de firma antes de instalar nada.
+wget
+gnupg
+
 # Flatpak: instalar apps modernas empaquetadas fuera de los repos de
 # Debian (Flathub) con un clic. Discover es la "tienda de apps" nativa
 # de Plasma; el backend de flatpak le permite listar e instalar desde

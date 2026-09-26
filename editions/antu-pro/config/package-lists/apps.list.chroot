@@ -1,6 +1,12 @@
 # Aplicaciones base + herramientas para aprovechar hardware potente.
+# Ofimática: no se empaqueta LibreOffice como respuesta a Office — la
+# respuesta real es Microsoft Office corriendo vía Wine (ver
+# shared/scripts/instalar-office.sh), porque LibreOffice no es 100%
+# fiel con documentos con macros/VBA. No podemos redistribuir el
+# instalador de Office en la ISO (es software con licencia propia), así
+# que el usuario aporta el suyo.
 firefox-esr
-libreoffice
+chromium
 vlc
 gimp
 htop

@@ -223,7 +223,7 @@ Esto traduce automáticamente casi todos los menús, categorías y textos
 genéricos del sistema, porque tira de la traducción que la gran mayoría
 de las aplicaciones de escritorio ya traen incluida — no hace falta
 tocar cada aplicación a mano. Los nombres propios de las apps (Firefox,
-LibreOffice, VLC) no se traducen, son marcas.
+Chromium, VLC) no se traducen, son marcas.
 
 Se validó con una sesión XFCE real (`xfce4-appfinder`) que los nombres y
 categorías de las aplicaciones efectivamente aparecen en español
@@ -552,12 +552,20 @@ son paquetes y configuración concreta, en las 3 ediciones
   abra "como app" (misma técnica que "Instalar como aplicación" de
   Chrome/Edge), pero eso es un acceso directo al sitio, no una app
   nativa instalada.
-- **Microsoft Office tampoco existe para Linux.** El equivalente real es
-  **LibreOffice** (ya instalado en Standard y Pro): abre y guarda
-  `.docx`/`.xlsx`/`.pptx` de forma nativa. Para que un documento hecho en
-  Word no se vea "corrido" al abrirlo acá, hace falta además que las
-  fuentes que usó (Arial, Calibri, Times New Roman, Cambria) tengan un
-  reemplazo con el mismo ancho de letra — ver más abajo.
+- **Microsoft Office tampoco existe para Linux — decisión del proyecto:
+  no se resuelve con una alternativa aproximada.** Se descartó
+  LibreOffice como respuesta (no es 100% fiel con documentos con
+  macros/VBA, y ese margen de error no es aceptable para el objetivo de
+  "cero límite frente a Windows"). La respuesta real es el **Office
+  real corriendo sobre Wine**: un asistente
+  (`shared/scripts/instalar-office.sh`, lanzador "Instalar Microsoft
+  Office" en las 3 ediciones) prepara el prefix de Wine con las
+  dependencias típicas de un instalador de Office y deja que el usuario
+  aporte su propio instalador con licencia — no se puede redistribuir
+  el instalador de Office dentro de la ISO, es software con licencia
+  propia de Microsoft, ni siquiera Windows lo trae de fábrica. Ver más
+  abajo, sección "Ofimática", y `docs/ROADMAP.md` Fase 0.7 para el
+  detalle y lo que falta validar.
 
 ### Pendrives y discos externos (montaje automático)
 
@@ -605,17 +613,35 @@ tenga paquete `.deb`, las 3 ediciones traen:
   funciona con solo marcarlo ejecutable y hacerle doble clic, como un
   `.exe` portable en Windows — no necesita instalación.
 
-### Ofimática: que un documento de Word no se vea roto
+### Ofimática: Office real, no una alternativa aproximada
 
-Además de LibreOffice, las 3 ediciones instalan fuentes **métricamente
-compatibles** con las de Office: `fonts-liberation2` (sustituto de
-Arial/Times New Roman/Courier New) y `fonts-crosextra-carlito`/
-`fonts-crosextra-caladea` (sustitutos de Calibri/Cambria, las fuentes
-por defecto de Word/Excel desde 2007). "Métricamente compatible" quiere
-decir que cada letra ocupa el mismo ancho que la original: un documento
-hecho en Word con esas fuentes mantiene los saltos de línea y de página
-al abrirlo acá, aunque la tipografía use un dibujo distinto (no son
-copias pixel a pixel de las fuentes de Microsoft, que son privativas).
+Las 3 ediciones instalan fuentes **métricamente compatibles** con las
+de Office: `fonts-liberation2` (sustituto de Arial/Times New
+Roman/Courier New) y `fonts-crosextra-carlito`/`fonts-crosextra-caladea`
+(sustitutos de Calibri/Cambria, las fuentes por defecto de Word/Excel
+desde 2007). "Métricamente compatible" quiere decir que cada letra
+ocupa el mismo ancho que la original: un documento hecho en Word con
+esas fuentes mantiene los saltos de línea y de página al abrirlo acá,
+aunque la tipografía use un dibujo distinto (no son copias pixel a
+pixel de las fuentes de Microsoft, que son privativas). Estas fuentes
+sirven para cualquier suite que abra el documento, LibreOffice incluido
+— pero LibreOffice no se instala por defecto como respuesta a "necesito
+Office" (ver la aclaración más arriba): el objetivo del proyecto es
+Office real vía Wine.
+
+El asistente de Office (`shared/scripts/instalar-office.sh`) hace dos
+cosas antes de pedir el instalador: corre `winetricks -q corefonts
+riched20 riched30 gdiplus msxml6` (componentes de Windows que varios
+instaladores/diálogos de Office esperan encontrar y que Wine no trae
+por sí solo), y después deja elegir el `.exe`/`.msi` con un diálogo
+gráfico (`zenity`). La instalación en sí la corre `antu-resolver`
+(mismo motor ya validado para cualquier `.exe`/`.msi`), para no
+duplicar la lógica de Wine en dos lugares. **Pendiente de validar
+contra un instalador de Office real**: las dependencias de arriba son
+las que recomienda en general la comunidad de WineHQ, pero no se
+probaron todavía en este proyecto contra una copia real de Office —
+puede faltar algo específico de una versión puntual, y eso solo se
+confirma con la prueba real, no antes.
 
 ### Hardware: wifi, bluetooth e impresoras
 

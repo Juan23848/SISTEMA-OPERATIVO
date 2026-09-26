@@ -4,7 +4,7 @@
 # Con esto, la gran mayoría de los menús, categorías y textos genéricos
 # de las aplicaciones aparecen en español de fábrica (usan la traducción
 # que ya traen incluida), sin tener que tocar cada aplicación a mano. Los
-# nombres propios de las apps (Firefox, LibreOffice, VLC) no se traducen
+# nombres propios de las apps (Firefox, Chromium, VLC) no se traducen
 # -son marcas-, pero el resto de la interfaz sí.
 #
 # Validado de verdad (Xvfb + xfce4-appfinder): los nombres y categorías

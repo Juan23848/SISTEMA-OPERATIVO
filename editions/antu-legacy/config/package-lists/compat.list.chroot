@@ -9,6 +9,23 @@ ntfs-3g
 exfatprogs
 dosfstools
 
+# Archivos comprimidos: xarchiver (ya en apps.list) es solo la
+# interfaz gráfica — sin estos paquetes no puede abrir de verdad un
+# .zip/.rar/.7z, que son los formatos más comunes viniendo de Windows.
+# unrar es non-free (ya habilitado globalmente por el firmware de
+# wifi/bluetooth, ver auto/config) pero da soporte real de RAR5, a
+# diferencia de unrar-free.
+zip
+unzip
+p7zip-full
+unrar
+
+# wget y gnupg: los necesita el hook que configura el repositorio
+# oficial de Google Chrome (ver hooks/normal/0700-google-chrome-repo),
+# para bajar y verificar la clave de firma antes de instalar nada.
+wget
+gnupg
+
 # Notificación/automontaje de Thunar (XFCE) al insertar un dispositivo.
 # Es un Recommends de xfce4, pero se deja explícito para no depender de
 # que la instalación de recomendados esté activada.
