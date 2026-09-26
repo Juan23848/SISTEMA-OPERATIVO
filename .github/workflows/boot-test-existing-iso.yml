@@ -59,7 +59,7 @@ jobs:
             -cdrom "$ISO_PATH" -boot d \
             -vga std -display none \
             -monitor unix:/tmp/qmon.sock,server,nowait \
-            -no-reboot &
+            -no-reboot > qemu-stdout.log 2> qemu-stderr.log &
           QEMU_PID=$!
 
           sleep 10
@@ -80,7 +80,15 @@ jobs:
           done
 
           kill "$QEMU_PID" 2>/dev/null || true
-          wait "$QEMU_PID" 2>/dev/null || true
+          wait "$QEMU_PID" 2>/dev/null
+          echo "Código de salida de QEMU: $?"
+
+          echo "=== stdout de QEMU ==="
+          cat qemu-stdout.log || true
+          echo "=== stderr de QEMU ==="
+          cat qemu-stderr.log || true
+          echo "=== dmesg (buscando OOM u otra señal del kernel del host) ==="
+          sudo dmesg --time-format iso 2>/dev/null | tail -n 80 || true
 
           for f in boot-shots/*.ppm; do
             [[ -e "$f" ]] || continue
