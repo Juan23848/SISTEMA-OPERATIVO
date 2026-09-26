@@ -49,8 +49,17 @@ escritorio seguía diciendo "Debian GNU/Linux"/"Boot menu"** — ya
 "Antü Standard" (título y entradas) y "ANTU" (splash), sin ninguna
 mención a "Debian" en las 25 capturas de la corrida, y el escritorio
 muestra el hostname correcto (`antu-standard`) — ver Fase 0 para la
-evidencia completa. Falta repetir compilar+arrancar para Legacy y Pro
-(mismo mecanismo, ya corregido en los 3 `auto/config`).
+evidencia completa. **Antü Legacy también ya se compiló y arrancó de
+punta a punta hasta un escritorio XFCE real**, con una salvedad
+importante encontrada en el camino: con aceleración KVM se cuelga muy
+temprano en el arranque en este entorno de CI (Azure sobre Hyper-V) —
+investigado a fondo y es una inestabilidad de virtualización anidada
+específica del kernel de 32 bits en *este* entorno de prueba, no un
+bug de Antü ni de los cambios de esta sesión; sin KVM (emulación por
+software) arranca bien y se confirmó con OCR real. Ver Fase 0 para el
+detalle completo de la investigación y qué significa esto para una
+máquina real. Falta repetir compilar+arrancar con evidencia para Pro
+(mismo mecanismo de base, ya corregido en los 3 `auto/config`).
 Las 3 ediciones también tienen **español (Argentina) como idioma por
 defecto** y un **set de íconos propios** (tema `Antu`) instalado como
 tema de sistema real — ver Fase 0.5. Además ya tienen la **capa de
@@ -222,6 +231,72 @@ verdad contra una pantalla virtual — ver Fase 0.7.
         (compilación + boot-test) e
         [35529102422](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/35529102422)
         (análisis OCR/pixel-diff).
+      - **Antü Legacy: compilado y arrancado hasta un escritorio XFCE
+        real, con una limitación real del entorno de CI encontrada y
+        documentada en el camino.** Al recompilar Legacy con los
+        paquetes agregados en esta sesión (ver Fase 0.6/0.7 más abajo:
+        Office real vía Wine, comprimidos reales, Chromium+Chrome), el
+        boot-test se quedaba pegado justo después del menú, con QEMU
+        cerrándose solo (código de salida 0, no un crash) unos ~10
+        segundos después de arrancar — **corrección importante sobre un
+        reporte anterior**: nunca se había verificado con OCR que Legacy
+        llegara al escritorio; el "éxito" que se había dado por bueno
+        antes de esta sesión solo reflejaba que el job de CI no había
+        fallado, no que la ISO arrancara de verdad (mismo error que ya
+        se había cometido y corregido con Standard). Repitiendo la
+        prueba contra esa ISO anterior (sin los cambios de hoy) se
+        confirmó que **el problema ya existía desde antes** — no lo
+        causaron los paquetes nuevos.
+        - Investigación (capturas cada 1s en vez de cada 30s para
+          agarrar la pantalla exacta del corte): el arranque del kernel
+          es normal hasta el mensaje genérico de `initramfs-tools`
+          ("Loading, please wait...", confirmado leyendo el script real
+          `/usr/share/initramfs-tools/init:30` — no es un mensaje de
+          `live-boot`, es anterior a que `live-boot` arranque su propia
+          búsqueda del medio live) y ahí se corta, sin ningún panic
+          visible en los 12 minutos completos de captura.
+        - Se descartó que faltara un driver: se extrajo el `initrd.img`
+          real de las ISOs de Legacy (i386) y Standard (amd64) ya
+          compiladas y se compararon los módulos de
+          ATA/CD-ROM/SCSI/squashfs incluidos — prácticamente idénticos
+          en ambas (`ata_piix`, `ahci`, `sr_mod`, `cdrom`, `isofs`,
+          `squashfs`, `virtio_blk`/`virtio_scsi`, todos presentes en
+          las dos).
+        - El indicio real que quedó: un warning de KVM en el `dmesg`
+          del *host* del runner durante el corte ("Unhandled
+          WRMSR(0xc0010007)", un registro de modelo de AMD relacionado
+          a contadores de rendimiento) — apuntando a una inestabilidad
+          de virtualización anidada (el runner de GitHub Actions ya
+          corre sobre Hyper-V, y adentro se levanta KVM) específica del
+          kernel de 32 bits, no a algo de la configuración de Antü.
+        - **Confirmado**: se volvió a arrancar la misma ISO forzando
+          emulación por software (TCG, sin `-enable-kvm`) y esta vez el
+          test corrió completo (30 capturas cada 1s + 24 cada 30s, ~13
+          minutos, sin cortarse) y el OCR de las capturas finales lee
+          el hostname `antu-legacy` y un reloj real avanzando en
+          español ("sab" — sábado — de 05:20 a 05:37), el mismo patrón
+          que confirmó a Standard. Sin ninguna mención a "Debian"/"Boot
+          menu" en ninguna de las 55 capturas.
+        - **Qué significa esto en la práctica**: el entorno de CI de
+          este proyecto no puede confirmar con aceleración de hardware
+          que Legacy arranca bien (limitación del entorno de prueba —
+          virtualización anidada inestable para i386 — no del sistema),
+          pero sí lo confirma con emulación por software, que ejercita
+          exactamente el mismo kernel y la misma ISO. Una máquina real
+          (sin virtualización anidada de por medio) no debería tener
+          este problema, pero **no se puede prometer al 100% sin
+          probarlo en hardware real** — es la validación que falta y
+          que, a diferencia de una VM, este proyecto no puede hacer por
+          sí solo.
+        - Evidencia completa: run
+          [36216587282](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36216587282)
+          (compilación), runs
+          [36219926269](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36219926269)
+          (comparación de initrd) y
+          [36220271867](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36220271867)
+          +
+          [36221127830](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36221127830)
+          (boot-test sin KVM + OCR).
 
 ## Fase 0.5 — Identidad propia (despegarse de Linux/Windows)
 
