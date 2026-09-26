@@ -1,0 +1,54 @@
+name: Comparar modulos del initrd (Legacy i386 vs Standard amd64)
+
+"on":
+  workflow_dispatch:
+    inputs:
+      legacy_run_id:
+        description: "Run ID de 'Compilar ISO' con la ISO de antu-legacy"
+        required: true
+      standard_run_id:
+        description: "Run ID de 'Compilar ISO' con la ISO de antu-standard"
+        required: true
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Crear carpetas
+        run: mkdir -p iso-legacy iso-standard
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: antu-legacy-iso
+          path: iso-legacy
+          run-id: ${{ inputs.legacy_run_id }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: antu-standard-iso
+          path: iso-standard
+          run-id: ${{ inputs.standard_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Extraer initrd de cada ISO y listar sus módulos de bloque/ATA/CD-ROM
+        run: |
+          set -x
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xorriso initramfs-tools-core
+
+          for edicion in legacy standard; do
+            echo "=========================================="
+            echo "=== $edicion ==="
+            echo "=========================================="
+            ISO=$(find "iso-$edicion" -iname '*.iso' | head -n1)
+            sudo xorriso -osirrox on -indev "$ISO" -extract /live/initrd.img "initrd-$edicion.img" 2>&1 | tail -5
+
+            echo "--- Módulos de bloque/ATA/CD-ROM/SCSI/virtio incluidos ---"
+            lsinitramfs "initrd-$edicion.img" 2>/dev/null \
+              | grep -iE 'ata_piix|ata_generic|libata\.ko|pata_|sr_mod|cdrom\.ko|isofs|squashfs|sd_mod|scsi_mod|virtio_blk|virtio_scsi|ahci|ide-|ide_' \
+              | sort
+
+            echo "--- Total de archivos en el initrd ---"
+            lsinitramfs "initrd-$edicion.img" 2>/dev/null | wc -l
+          done
