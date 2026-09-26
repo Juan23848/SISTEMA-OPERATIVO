@@ -14,6 +14,10 @@ name: Probar arranque de una ISO ya compilada
         description: "Nombre del artifact de la ISO"
         required: true
         default: antu-standard-iso
+      disable_kvm:
+        description: "true = forzar emulación por software (TCG), ignorando KVM aunque esté disponible"
+        required: false
+        default: "false"
 
 jobs:
   boot-test:
@@ -34,7 +38,10 @@ jobs:
       - name: Chequear soporte de KVM
         id: kvm
         run: |
-          if [[ -e /dev/kvm ]]; then
+          if [[ "${{ inputs.disable_kvm }}" == "true" ]]; then
+            echo "flag=" >> "$GITHUB_OUTPUT"
+            echo "KVM deshabilitado a propósito (disable_kvm=true): emulación por software (TCG)"
+          elif [[ -e /dev/kvm ]]; then
             sudo chmod 666 /dev/kvm
             echo "flag=-enable-kvm" >> "$GITHUB_OUTPUT"
             echo "Con aceleración KVM"
