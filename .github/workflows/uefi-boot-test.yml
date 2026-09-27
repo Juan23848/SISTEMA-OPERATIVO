@@ -60,18 +60,32 @@ jobs:
             echo "Sin KVM disponible: emulación por software, va a ser más lento"
           fi
 
-      # OVMF_VARS.fd es el almacenamiento de variables de UEFI (NVRAM
+      # OVMF_VARS*.fd es el almacenamiento de variables de UEFI (NVRAM
       # virtual) -- QEMU necesita una copia propia y editable, nunca el
       # archivo del paquete tal cual (ese queda de solo lectura y
-      # compartido entre corridas).
+      # compartido entre corridas). El nombre exacto varía según la
+      # versión del paquete "ovmf" (algunas usan OVMF_CODE.fd/
+      # OVMF_VARS.fd "a secas", otras el naming más nuevo de flash de
+      # 4MB, OVMF_CODE_4M.fd/OVMF_VARS_4M.fd) -- se busca por patrón en
+      # vez de asumir un nombre fijo, y se falla explícito si no
+      # aparece ninguno (encontrado en el primer intento real: la
+      # búsqueda por nombre exacto no encontró nada, siguió de largo
+      # con una ruta vacía y recién falló después, en el "cp", con un
+      # error confuso).
       - name: Preparar la firmware OVMF (copia editable de las variables NVRAM)
         id: ovmf
         run: |
           set -x
-          OVMF_DIR=$(dirname "$(find /usr/share -iname 'OVMF_CODE.fd' | head -n1)")
-          ls "$OVMF_DIR"
-          cp "$OVMF_DIR/OVMF_VARS.fd" ./OVMF_VARS.fd
-          echo "code=$OVMF_DIR/OVMF_CODE.fd" >> "$GITHUB_OUTPUT"
+          CODE_PATH=$(find /usr/share -iname 'OVMF_CODE*.fd' | sort | head -n1)
+          if [[ -z "$CODE_PATH" ]]; then
+            echo "::error::No se encontró ningún OVMF_CODE*.fd en /usr/share -- listando /usr/share/OVMF/ para diagnosticar:"
+            find /usr/share -iname 'OVMF*' 2>/dev/null
+            exit 1
+          fi
+          VARS_PATH="${CODE_PATH/CODE/VARS}"
+          ls -la "$(dirname "$CODE_PATH")"
+          cp "$VARS_PATH" ./OVMF_VARS.fd
+          echo "code=$CODE_PATH" >> "$GITHUB_OUTPUT"
 
       - name: Arrancar la ISO bajo UEFI puro y sacar capturas del boot
         id: boot
