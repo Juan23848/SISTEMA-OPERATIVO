@@ -105,13 +105,12 @@ jobs:
             grep -rl "Live system" /usr/lib/live/build/ 2>/dev/null
 
             echo "=========================================="
-            echo "=== Ese script completo ==="
+            echo "=== binary_grub_cfg completo (el candidato real, no build ni binary_grub-efi) ==="
             echo "=========================================="
-            SCRIPT=$(grep -rl "Live system" /usr/lib/live/build/ 2>/dev/null | head -n1)
-            cat "$SCRIPT"
+            cat /usr/lib/live/build/binary_grub_cfg
 
             echo "=========================================="
-            echo "=== Busca mención a THEME/grub-mkconfig/update-grub en ese script ==="
+            echo "=== Busca mención a THEME/grub-mkconfig/update-grub/config/bootloaders en ese script ==="
             echo "=========================================="
-            grep -inE "theme|grub-mkconfig|update-grub" "$SCRIPT" || echo "(sin mención)"
+            grep -inE "theme|grub-mkconfig|update-grub|config/bootloaders|config/grub" /usr/lib/live/build/binary_grub_cfg || echo "(sin mención)"
           '
