@@ -62,15 +62,12 @@ echo "==> Instalando asistente de Office"
 # nunca una copia versionada por edición.
 install -m 0755 "$REPO_ROOT/shared/scripts/instalar-office.sh" "$RESOLVER_DEST/antu-instalar-office"
 
+echo "==> Instalando asistente de Chrome"
 # Google Chrome no tiene versión de 32 bits desde hace años (requisito
-# oficial: Linux de 64 bits) — no tiene sentido copiar el asistente ni
-# el repo en Legacy (i386): el lanzador fallaría siempre, y encima con
-# un mensaje que culpa a la conexión en vez de a la arquitectura
-# (hallazgo real de una revisión externa). Standard y Pro son amd64.
-if [[ "$EDITION" != "antu-legacy" ]]; then
-    echo "==> Instalando asistente de Chrome"
-    install -m 0755 "$REPO_ROOT/shared/scripts/instalar-chrome.sh" "$RESOLVER_DEST/antu-instalar-chrome"
-fi
+# oficial: Linux de 64 bits) — antes se excluía en Legacy porque esa
+# edición era i386, pero las 3 ediciones son "amd64" ahora, así que el
+# asistente aplica a las 3 por igual.
+install -m 0755 "$REPO_ROOT/shared/scripts/instalar-chrome.sh" "$RESOLVER_DEST/antu-instalar-chrome"
 
 echo "==> Compilando $EDITION"
 # live-build espera correr desde el directorio que tiene a auto/ y

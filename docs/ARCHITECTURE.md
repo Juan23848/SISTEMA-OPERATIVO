@@ -48,15 +48,59 @@ más de 30 años de desarrollo. Por eso la estrategia de este proyecto es
 
 ### Antü Legacy (`editions/antu-legacy`)
 
-- Público: PCs con hardware equivalente a la era de Windows XP (Pentium 4 /
-  Core 2 Duo, 512MB–2GB RAM, sin aceleración 3D confiable).
+- Público: PCs modestas — Celeron o Core i3/i5 desde ~3ra generación en
+  adelante, 4GB RAM, sin aceleración 3D confiable. "Legacy" describe el
+  perfil de escritorio (liviano, sin efectos), no la arquitectura del CPU.
 - Escritorio: **XFCE**, con compositor desactivado por defecto. Shell:
   barra superior única (ver "Shell de escritorio"), sin dock ni animaciones.
-- Arquitectura: `i386` (32 bits). `live-build` solo permite una arquitectura
-  por configuración, y `i386` corre tanto en hardware de 32 como de 64 bits,
-  a diferencia de `amd64` (que no arranca en máquinas puramente de 32 bits) —
-  por eso es la opción que da máxima compatibilidad con hardware viejo.
+- Arquitectura: `amd64`, igual que Standard y Pro (ver "Legacy pasó de
+  `i386` a `amd64`" más abajo para el porqué del cambio).
 - Prioridad: arrancar rápido y consumir poca RAM, no efectos visuales.
+
+### Legacy pasó de `i386` a `amd64`
+
+**Decisión del usuario, corrigiendo una elección anterior de este
+proyecto**: Legacy arrancó siendo `i386` (32 bits) con el argumento de que
+esa arquitectura corre tanto en hardware de 32 como de 64 bits, a
+diferencia de `amd64` — "máxima compatibilidad con hardware viejo". El
+usuario señaló el problema real: el hardware que de verdad se busca cubrir
+hoy (Celeron, i3/i5 desde ~3ra generación, 4GB RAM, ni una oficina real
+tiene un Pentium M o un Celeron de los primeros funcionando) es **todo de
+64 bits** desde hace más de una década — ahí `i386` no suma nada.
+
+Y del otro lado sí hay un costo real: hardware moderno (ej. una laptop con
+un i3 de 12va gen, que también se quiere soportar) suele ser **UEFI puro,
+sin arranque BIOS/CSM** — los fabricantes vienen sacando el CSM de las
+placas desde ~2020. Ninguna de las 3 ediciones tiene hoy configuración de
+bootloader EFI (no hay `config/bootloaders/grub-efi` en ninguna, solo
+`syslinux_common` para BIOS/isolinux — ver investigación de soporte UEFI
+más abajo), así que en ese tipo de máquina la compatibilidad de arquitectura
+no alcanza si el arranque en sí no funciona.
+
+**Corregido**: `editions/antu-legacy/auto/config` pasó a
+`--architectures "amd64"`. Eso implica alinear todo lo que en Legacy
+dependía de ser i386 con lo que Standard/Pro ya hacían para correr Wine de
+32 bits sobre una base de 64 bits:
+
+- `package-lists/wine.list.chroot`: `wine` (que en i386 resolvía solo a
+  32 bits) pasó a `wine64` + `wine32:i386` — mismo patrón que
+  Standard/Pro (ver la sección "Wine en Standard/Pro" más abajo para el
+  detalle completo del mecanismo `paquete:arquitectura`).
+- Se copió `hooks/normal/0070-verify-wine32.hook.chroot` (antes solo en
+  Standard/Pro) para confirmar que la arquitectura i386 y `wine32:i386`
+  realmente quedaron instalados.
+- `package-lists/compat.list.chroot`: se agregaron `wget`/`gnupg`
+  (los necesita el hook de abajo).
+- Se copiaron `hooks/normal/0700-google-chrome-repo.hook.chroot` y el
+  lanzador `includes.chroot/usr/share/applications/antu-instalar-chrome.desktop`
+  (antes solo en Standard/Pro): Chrome no tiene versión de 32 bits, por
+  lo que `scripts/build.sh` excluía ese asistente en Legacy — con Legacy
+  ya en `amd64` esa exclusión ya no aplica, se sacó del script y se
+  agregó el asistente a la edición.
+
+**Pendiente de confirmar con una ISO real**: recompilar Legacy con este
+cambio y repetir el boot-test en QEMU (mismo estándar de evidencia que el
+resto de esta sección).
 
 ### Antü Standard (`editions/antu-standard`)
 
@@ -705,34 +749,32 @@ instaló el paquete, se probó el motor funcionando):
 
 ### Qué se instala
 
-- **Legacy** (ya es i386): `wine` (resuelve solo a `wine32`, no hace
-  falta nada extra), `wine-binfmt`, `winetricks`.
-- **Standard/Pro** (amd64): acá la mayoría del software de Windows viejo
-  es de **32 bits**, y por defecto amd64 con Wine solo trae soporte de
-  64 bits. Para el de 32 bits hace falta la arquitectura i386 como
-  arquitectura secundaria, habilitada **antes** de instalar cualquier
-  paquete (si se hiciera después, ya sería tarde: apt habría resuelto
-  las dependencias sin saber que i386 iba a existir). **No hace falta
-  ningún hook para esto** — es un mecanismo propio de `live-build`, no
-  algo que haya que orquestar a mano: cuando una entrada de un
-  package-list tiene el formato `paquete:arquitectura` (acá,
-  `wine32:i386`), `live-build` la detecta (`Discover_package_architectures`
-  en `functions/packagelists.sh`), guarda las arquitecturas distintas a
-  la principal, y antes de instalar nada corre `dpkg --add-architecture`
-  dentro del chroot y actualiza `apt` (`chroot_install-packages`).
-  Confirmado leyendo el código fuente oficial de `live-build` de Debian
-  bookworm (`1:20230502`) y trixie (`1:20250505+deb13u1`) — la misma
-  revisión externa que antes había señalado, con razón, que un hook
-  `.chroot_early` que este proyecto tuvo para esto no existía en esas
-  versiones. No hacía falta: `wine32:i386` en el package-list alcanza
-  por sí solo. Con eso, se agrega `wine64` + `wine32:i386` +
-  `wine-binfmt` + `winetricks` (que automatiza instalar las dependencias
-  que piden muchos instaladores de Windows: .NET, Visual C++
-  Redistributable, componentes de DirectX).
-  `hooks/normal/0070-verify-wine32.hook.chroot` confirma, después de
-  instalar los paquetes, que i386 quedó habilitada y `wine32:i386`
-  terminó instalado de verdad — no alcanza con confiar en el mecanismo,
-  hay que comprobar que corrió bien.
+Las 3 ediciones son `amd64` (ver "Legacy pasó de `i386` a `amd64`" más
+arriba), y la mayoría del software de Windows viejo es de **32 bits**:
+por defecto amd64 con Wine solo trae soporte de 64 bits. Para el de 32
+bits hace falta la arquitectura i386 como arquitectura secundaria,
+habilitada **antes** de instalar cualquier paquete (si se hiciera
+después, ya sería tarde: apt habría resuelto las dependencias sin saber
+que i386 iba a existir). **No hace falta ningún hook para esto** — es un
+mecanismo propio de `live-build`, no algo que haya que orquestar a mano:
+cuando una entrada de un package-list tiene el formato
+`paquete:arquitectura` (acá, `wine32:i386`), `live-build` la detecta
+(`Discover_package_architectures` en `functions/packagelists.sh`), guarda
+las arquitecturas distintas a la principal, y antes de instalar nada
+corre `dpkg --add-architecture` dentro del chroot y actualiza `apt`
+(`chroot_install-packages`). Confirmado leyendo el código fuente oficial
+de `live-build` de Debian bookworm (`1:20230502`) y trixie
+(`1:20250505+deb13u1`) — la misma revisión externa que antes había
+señalado, con razón, que un hook `.chroot_early` que este proyecto tuvo
+para esto no existía en esas versiones. No hacía falta: `wine32:i386` en
+el package-list alcanza por sí solo. Con eso, se agrega `wine64` +
+`wine32:i386` + `wine-binfmt` + `winetricks` (que automatiza instalar las
+dependencias que piden muchos instaladores de Windows: .NET, Visual C++
+Redistributable, componentes de DirectX).
+`hooks/normal/0070-verify-wine32.hook.chroot` confirma, después de
+instalar los paquetes, que i386 quedó habilitada y `wine32:i386` terminó
+instalado de verdad — no alcanza con confiar en el mecanismo, hay que
+comprobar que corrió bien.
 
 ### La parte "mágica": doble clic en un `.exe`
 

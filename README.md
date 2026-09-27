@@ -28,8 +28,7 @@ verdad, no cosmética:
 - **Cualquier `.exe`/`.msi`** corre con solo hacer doble clic (Wine real,
   sin necesitar Windows instalado), y Chromium viene de fábrica con el
   repositorio oficial de Google Chrome ya configurado si preferís el
-  navegador real de Google (en Standard y Pro — Chrome no tiene versión
-  de 32 bits, así que en Legacy queda Chromium solo).
+  navegador real de Google, en las tres ediciones.
 - **Juegos en hardware potente (edición Pro)**: en el radar, con una
   limitación que nombramos de frente en vez de esconder — los pocos juegos
   con anticheat a nivel de kernel (ej. Riot Vanguard) bloquean Linux por
@@ -45,7 +44,7 @@ hardware y distinto uso:
 
 | Edición | Carpeta | Hardware objetivo | Inspiración de escritorio |
 |---|---|---|---|
-| **Antü Legacy** | [`editions/antu-legacy`](editions/antu-legacy) | PCs viejas, equivalentes a las que corrían Windows XP (32 bits, poca RAM) | Escritorio clásico, mínimo consumo de recursos |
+| **Antü Legacy** | [`editions/antu-legacy`](editions/antu-legacy) | PCs modestas (Celeron, i3/i5 desde ~3ra gen, 4GB RAM) | Escritorio clásico, mínimo consumo de recursos |
 | **Antü Standard** | [`editions/antu-standard`](editions/antu-standard) | Uso doméstico/oficina, equivalente a Windows 7 en adelante | Escritorio moderno pero liviano, barra de tareas y menú inicio clásicos |
 | **Antü Pro** | [`editions/antu-pro`](editions/antu-pro) | Hardware potente actual | Escritorio con efectos visuales completos, mejor aprovechamiento de CPU/GPU/multinúcleo |
 

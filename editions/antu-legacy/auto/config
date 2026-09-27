@@ -1,6 +1,17 @@
 #!/bin/sh
 # Configuración de live-build para Antü Legacy.
-# Pensada para hardware de la era Windows XP: poca RAM, sin GPU confiable.
+# Pensada para hardware modesto (poca RAM, sin GPU confiable), no para
+# hardware literalmente de 32 bits: todo el rango real que se busca
+# cubrir (Celeron e i3/i5 desde ~3ra generación en adelante, 4GB de
+# RAM) ya es de 64 bits desde hace más de una década. Por eso, a
+# diferencia de una versión anterior de este archivo, la arquitectura
+# es "amd64" y no "i386" — usar i386 hoy solo suma un problema real sin
+# resolver ninguno: hardware moderno sin BIOS/CSM (solo UEFI puro, ej.
+# una laptop con un i3 de 12va gen) no tiene garantizado un camino de
+# arranque de 32 bits, mientras que ese mismo hardware es exactamente
+# el que sí debe poder arrancar amd64 sin problema. "Legacy" acá
+# describe el perfil de escritorio (liviano, sin compositor, XFCE), no
+# la arquitectura del CPU.
 #
 # --bootappend-live con locales=/keyboard-layouts=: el hook
 # 0300-locale-es (que genera es_AR.UTF-8 y lo deja como LANG del
@@ -32,7 +43,7 @@ set -e
 
 lb config noauto \
     --mode debian \
-    --architectures "i386" \
+    --architectures "amd64" \
     --distribution "bookworm" \
     --binary-images "iso-hybrid" \
     --archive-areas "main contrib non-free non-free-firmware" \

@@ -68,12 +68,12 @@ Debería empezar con `1:` (línea de versiones de Debian), no con `3.0~`
 
 **Ya resuelto (y era más simple de lo que parecía)**: el mecanismo para
 habilitar la arquitectura i386 antes de instalar paquetes (necesario
-para Wine de 32 bits en Standard/Pro) no necesita ningún hook propio.
-Leyendo el código fuente de esos mismos tarballs se confirmó que
-`live-build` ya lo resuelve solo: cuando una entrada de un package-list
-tiene el formato `paquete:arquitectura` (como `wine32:i386`, que
-Standard/Pro ya tenían), lo detecta antes de instalar nada, habilita esa
-arquitectura y actualiza `apt`. El hook `.chroot_early` que este
+para Wine de 32 bits, ya que las 3 ediciones son `amd64`) no necesita
+ningún hook propio. Leyendo el código fuente de esos mismos tarballs se
+confirmó que `live-build` ya lo resuelve solo: cuando una entrada de un
+package-list tiene el formato `paquete:arquitectura` (como `wine32:i386`,
+que las 3 ediciones tienen), lo detecta antes de instalar nada, habilita
+esa arquitectura y actualiza `apt`. El hook `.chroot_early` que este
 proyecto tuvo para esto (que ni siquiera existe como mecanismo en esas
 versiones) se sacó. Queda un hook normal
 (`hooks/normal/0070-verify-wine32.hook.chroot`) que confirma, después de

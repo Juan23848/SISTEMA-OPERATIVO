@@ -1,12 +1,15 @@
 # Antü Legacy
 
-Edición pensada para PCs con hardware equivalente a la era de **Windows XP**:
-procesadores de 1-2 núcleos, 512MB–2GB de RAM, sin aceleración 3D confiable.
+Edición pensada para PCs modestas: Celeron o i3/i5 desde ~3ra generación en
+adelante, con 4GB de RAM, sin aceleración 3D confiable. "Legacy" describe el
+perfil de escritorio (liviano, sin efectos), no la arquitectura del CPU.
 
 ## Características
 
-- Arquitectura: `i386` (32 bits). Corre tanto en hardware de 32 como de 64
-  bits, a diferencia de `amd64` — por eso es la elegida para esta edición.
+- Arquitectura: `amd64` (64 bits), igual que Standard y Pro. Todo el hardware
+  al que apunta esta edición ya es de 64 bits desde hace más de una década;
+  usar `i386` solo perdería compatibilidad con equipos modernos sin arranque
+  BIOS/CSM (UEFI puro), sin sumar nada a cambio.
 - Escritorio: **XFCE**, sin compositor activado por defecto.
 - Apariencia: identidad Antü con glow reducido y sin blur (colores planos),
   para que se vea bien incluso sin aceleración gráfica.

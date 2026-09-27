@@ -25,6 +25,12 @@ unrar
 # que la instalación de recomendados esté activada.
 thunar-volman
 
+# wget y gnupg: los necesita el hook que configura el repositorio
+# oficial de Google Chrome (ver hooks/normal/0700-google-chrome-repo),
+# para bajar y verificar la clave de firma antes de instalar nada.
+wget
+gnupg
+
 # Flatpak (sin tienda gráfica: en hardware de la era XP no vale la pena
 # el consumo de una app tipo GNOME Software). Sirve igual por línea de
 # comandos o si el usuario instala un cliente liviano después. El

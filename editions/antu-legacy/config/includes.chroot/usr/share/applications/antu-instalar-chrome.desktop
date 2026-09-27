@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Instalar Google Chrome
+Comment=Instala el navegador real de Google (repo oficial ya configurado)
+Exec=antu-instalar-chrome
+Icon=web-browser
+Type=Application
+Terminal=false
+Categories=Network;

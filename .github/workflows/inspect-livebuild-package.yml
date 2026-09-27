@@ -30,3 +30,50 @@ jobs:
             echo "=========================================="
             cat /usr/share/live/build/bootloaders/syslinux_common/splash.svg
           '
+
+      # Las 3 ediciones son "amd64" (ver docs/ARCHITECTURE.md, "Legacy
+      # pasó de i386 a amd64"), y ninguna declara --bootloaders a mano
+      # ni tiene overrides en config/bootloaders/grub-efi/. Antes de dar
+      # por sentado que la ISO ya arranca en UEFI puro (hardware moderno
+      # sin BIOS/CSM, ej. un i3 de 12va gen), hay que confirmar contra el
+      # live-build real qué bootloader(s) usa por defecto para
+      # --binary-images iso-hybrid en amd64/i386, y si ese default ya
+      # incluye grub-efi o si hace falta declararlo.
+      - name: Confirmar el default de --bootloaders para iso-hybrid en amd64/i386
+        run: |
+          docker run --rm debian:bookworm bash -c '
+            set -x
+            apt-get update -qq
+            apt-get install -y -qq live-build >/dev/null
+
+            echo "=========================================="
+            echo "=== dpkg-query -W live-build (version real usada) ==="
+            echo "=========================================="
+            dpkg-query -W live-build
+
+            echo "=========================================="
+            echo "=== Donde live-build define el default de Bootloaders segun arquitectura ==="
+            echo "=========================================="
+            grep -rn "Bootloaders\|LB_BOOTLOADERS\|BOOTLOADERS=" /usr/lib/live/build/lb_config /usr/lib/live/build/config 2>/dev/null
+
+            echo "=========================================="
+            echo "=== lb config real (amd64, iso-hybrid, sin --bootloaders) -- que queda en config/binary ==="
+            echo "=========================================="
+            mkdir -p /work/amd64 && cd /work/amd64
+            lb config noauto --mode debian --architectures amd64 \
+              --distribution bookworm --binary-images iso-hybrid
+            grep -i bootloader config/binary || echo "(sin BOOTLOADERS en config/binary)"
+
+            echo "=========================================="
+            echo "=== Carpetas de bootloaders que trae el paquete (grub-efi esta ahi?) ==="
+            echo "=========================================="
+            ls /usr/share/live/build/bootloaders/
+
+            echo "=========================================="
+            echo "=== lb config real (i386, iso-hybrid, sin --bootloaders) -- para comparar ==="
+            echo "=========================================="
+            mkdir -p /work/i386 && cd /work/i386
+            lb config noauto --mode debian --architectures i386 \
+              --distribution bookworm --binary-images iso-hybrid
+            grep -i bootloader config/binary || echo "(sin BOOTLOADERS en config/binary)"
+          '

@@ -1,0 +1,25 @@
+#!/bin/sh
+# Configura el repositorio oficial de Google Chrome (clave de firma +
+# fuente de apt), para que instalar el navegador real sea un solo
+# comando ("apt install google-chrome-stable") sin tener que buscar
+# cómo agregar el repo a mano.
+#
+# No instala el paquete: Chrome es software propietario de Google y no
+# tenemos derecho a redistribuir su binario dentro de esta ISO (mismo
+# motivo por el que Debian tampoco lo trae). Lo que sí es 100% nuestro
+# es dejar el repo ya configurado y de confianza. El lanzador de
+# escritorio "Instalar Google Chrome" (ver includes.chroot) hace ese
+# único apt install cuando el usuario lo pide.
+#
+# La clave se baja acá, en build-time dentro del contenedor de CI (con
+# internet real) — no en la máquina final del usuario.
+set -e
+
+KEYRING=/usr/share/keyrings/google-chrome.gpg
+wget -qO- https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o "$KEYRING"
+
+cat > /etc/apt/sources.list.d/google-chrome.list <<EOF
+deb [arch=amd64 signed-by=$KEYRING] http://dl.google.com/linux/chrome/deb/ stable main
+EOF
+
+apt-get update
