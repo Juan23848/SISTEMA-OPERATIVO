@@ -113,4 +113,18 @@ jobs:
             echo "=== Busca mención a THEME/grub-mkconfig/update-grub/config/bootloaders en ese script ==="
             echo "=========================================="
             grep -inE "theme|grub-mkconfig|update-grub|config/bootloaders|config/grub" /usr/lib/live/build/binary_grub_cfg || echo "(sin mención)"
+
+            echo "=========================================="
+            echo "=== Plantillas default que trae el paquete en bootloaders/grub-pc/ (lo que _SOURCE_USER puede pisar) ==="
+            echo "=========================================="
+            ls -la /usr/share/live/build/bootloaders/grub-pc/
+
+            echo "=========================================="
+            echo "=== Contenido de cada una (para saber cuáles branding y cuáles son solo estructura) ==="
+            echo "=========================================="
+            for f in /usr/share/live/build/bootloaders/grub-pc/*; do
+              echo "--- $f ---"
+              cat "$f"
+              echo
+            done
           '
