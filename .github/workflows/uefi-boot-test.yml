@@ -1,0 +1,157 @@
+name: Probar arranque bajo UEFI puro (OVMF)
+
+# Utilidad de investigación puntual, no un gate de CI (no corre en cada
+# push/build): el boot-test real de build-iso.yml arranca la ISO con la
+# firmware BIOS por defecto de QEMU (BIOS/CSM, vía isolinux). Eso deja
+# sin probar exactamente el escenario que motivó el cambio de Legacy a
+# amd64 (ver docs/ARCHITECTURE.md, "Legacy pasó de i386 a amd64"):
+# hardware moderno sin BIOS/CSM, solo UEFI puro (ej. un i3 de 12va gen).
+# Este workflow reusa una ISO ya compilada por "Compilar ISO" y la
+# arranca con la firmware OVMF (UEFI real, no BIOS) para confirmar con
+# evidencia real -- no solo con la lectura de config/binary de
+# live-build (ver esa misma sección de ARCHITECTURE.md) -- que la ISO
+# arranca ahí.
+"on":
+  workflow_dispatch:
+    inputs:
+      edition:
+        description: "Edición cuya ISO ya compilada se va a probar"
+        required: true
+        default: antu-legacy
+        type: choice
+        options:
+          - antu-legacy
+          - antu-standard
+          - antu-pro
+      build_run_id:
+        description: "Run ID de 'Compilar ISO' que generó esa ISO"
+        required: true
+
+jobs:
+  uefi-boot-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Descargar la ISO ya compilada
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.edition }}-iso
+          path: iso
+          run-id: ${{ inputs.build_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Instalar QEMU + OVMF (firmware UEFI real, no BIOS)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 ovmf socat imagemagick tesseract-ocr
+
+      # Los runners hospedados por GitHub tienen /dev/kvm pero sin
+      # permiso de acceso por defecto (mismo hallazgo que en
+      # build-iso.yml) -- se abre a mano, es un runner descartable.
+      - name: Chequear soporte de KVM
+        id: kvm
+        run: |
+          if [[ -e /dev/kvm ]]; then
+            sudo chmod 666 /dev/kvm
+            echo "flag=-enable-kvm" >> "$GITHUB_OUTPUT"
+            echo "Con aceleración KVM"
+          else
+            echo "flag=" >> "$GITHUB_OUTPUT"
+            echo "Sin KVM disponible: emulación por software, va a ser más lento"
+          fi
+
+      # OVMF_VARS.fd es el almacenamiento de variables de UEFI (NVRAM
+      # virtual) -- QEMU necesita una copia propia y editable, nunca el
+      # archivo del paquete tal cual (ese queda de solo lectura y
+      # compartido entre corridas).
+      - name: Preparar la firmware OVMF (copia editable de las variables NVRAM)
+        id: ovmf
+        run: |
+          set -x
+          OVMF_DIR=$(dirname "$(find /usr/share -iname 'OVMF_CODE.fd' | head -n1)")
+          ls "$OVMF_DIR"
+          cp "$OVMF_DIR/OVMF_VARS.fd" ./OVMF_VARS.fd
+          echo "code=$OVMF_DIR/OVMF_CODE.fd" >> "$GITHUB_OUTPUT"
+
+      - name: Arrancar la ISO bajo UEFI puro y sacar capturas del boot
+        id: boot
+        run: |
+          set -x
+          ISO_PATH=$(find iso -iname '*.iso' | head -n1)
+          mkdir -p boot-shots-uefi
+          qemu-system-x86_64 \
+            -m 3072 -smp 2 \
+            ${{ steps.kvm.outputs.flag }} \
+            -drive if=pflash,format=raw,unit=0,readonly=on,file="${{ steps.ovmf.outputs.code }}" \
+            -drive if=pflash,format=raw,unit=1,file=OVMF_VARS.fd \
+            -cdrom "$ISO_PATH" -boot order=dc \
+            -vga std -display none \
+            -monitor unix:/tmp/qmon.sock,server,nowait \
+            -no-reboot &
+          QEMU_PID=$!
+
+          sleep 10
+          echo "screendump boot-shots-uefi/frame-00-menu.ppm" \
+            | socat - UNIX-CONNECT:/tmp/qmon.sock || true
+
+          # GRUB (a diferencia del menú de isolinux) avanza solo tras su
+          # timeout por defecto -- el "ret" es solo por si quedara
+          # esperando una tecla, no hace daño si no la necesita.
+          sleep 2
+          echo "sendkey ret" | socat - UNIX-CONNECT:/tmp/qmon.sock || true
+
+          MURIO_TEMPRANO=0
+          for i in $(seq 1 20); do
+            sleep 15
+            echo "screendump boot-shots-uefi/frame-$(printf '%02d' "$i").ppm" \
+              | socat - UNIX-CONNECT:/tmp/qmon.sock || true
+            if ! kill -0 "$QEMU_PID" 2>/dev/null; then
+              echo "QEMU ya no está corriendo (se cerró solo o crasheó) en el frame $i"
+              MURIO_TEMPRANO=1
+              break
+            fi
+          done
+
+          kill "$QEMU_PID" 2>/dev/null || true
+          wait "$QEMU_PID" 2>/dev/null || true
+
+          for f in boot-shots-uefi/*.ppm; do
+            [[ -e "$f" ]] || continue
+            convert "$f" "${f%.ppm}.png" && rm "$f"
+          done
+          ls -la boot-shots-uefi/
+
+          echo "murio_temprano=$MURIO_TEMPRANO" >> "$GITHUB_OUTPUT"
+
+      - name: OCR de cada captura (para ver qué texto muestra el menú bajo UEFI)
+        if: always()
+        run: |
+          for f in boot-shots-uefi/*.png; do
+            [[ -e "$f" ]] || continue
+            echo "=========================================="
+            echo "=== $f ==="
+            echo "=========================================="
+            tesseract "$f" - 2>/dev/null || true
+          done
+
+      - name: Subir las capturas del boot bajo UEFI
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.edition }}-uefi-boot-screenshots
+          path: boot-shots-uefi/
+          retention-days: 14
+
+      # A diferencia del boot-test de build-iso.yml, este SÍ falla si el
+      # arranque se corta antes de tiempo (eso confirmaría que la ISO no
+      # arranca bajo UEFI puro), pero NO falla por branding genérico --
+      # ya está documentado que el menú de grub-efi probablemente no
+      # tenga la marca de Antü (ver ARCHITECTURE.md), así que ese texto
+      # se reporta por OCR más arriba, no se usa como gate.
+      - name: Verificar que el arranque no se cortó antes de tiempo
+        if: always()
+        run: |
+          if [[ "${{ steps.boot.outputs.murio_temprano }}" == "1" ]]; then
+            echo "::error::QEMU se cerró antes de completar las capturas previstas -- la ISO no llegó a buen puerto bajo UEFI puro. Revisar boot-shots-uefi/ (subido como artifact)."
+            exit 1
+          fi

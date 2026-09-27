@@ -342,12 +342,19 @@ de `isolinux`, así que probablemente no muestre la marca de Antü bajo
 UEFI puro — pendiente de confirmar con una ISO real y arreglar como
 mejora separada, no bloquea el arranque en sí).
 
-**Pendiente**: recompilar Legacy y repetir el boot-test de CI (que sigue
-siendo BIOS/CSM vía QEMU, no UEFI) con la ISO `amd64`; y, en algún
-momento, probar/arrancar una ISO real bajo UEFI puro (QEMU con
-`OVMF`/`-bios OVMF.fd`, o hardware real) para confirmar con evidencia
-concreta lo que esta investigación ya resolvió por lectura de
-configuración.
+**Recompilado y revalidado**: nueva ISO de Legacy ya en `amd64`, run
+[36283983622](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36283983622)
+— compiló bien y el boot-test (BIOS/CSM vía QEMU) arrancó de punta a
+punta, esta vez **con aceleración KVM real** (a diferencia de la ISO
+`i386` anterior, que necesitaba forzar emulación por software): 25
+capturas completas, sin corte temprano, sin branding genérico de Debian
+en el menú.
+
+**Pendiente**: probar el arranque bajo UEFI puro con una ISO real (no
+solo con la lectura de `config/binary` de más arriba) — se agregó
+`.github/workflows/uefi-boot-test.yml` para esto, que reusa la ISO ya
+compilada y la arranca con firmware `OVMF` real en vez del BIOS por
+defecto de QEMU.
 
 ## Fase 0.5 — Identidad propia (despegarse de Linux/Windows)
 
