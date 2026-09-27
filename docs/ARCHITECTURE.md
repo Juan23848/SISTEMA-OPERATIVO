@@ -139,11 +139,41 @@ se usó para poner "Antü Legacy/Standard/Pro" en el menú de isolinux (ver
 Antü" más arriba) no tiene un equivalente listo para el menú de
 `grub-efi`. Conclusión: **el arranque UEFI en sí funciona sin cambios**,
 pero el menú que se ve al arrancar en una máquina UEFI pura
-probablemente siga sin la marca de Antü — separado del problema de
-compatibilidad que motivó este cambio de arquitectura, y sin evidencia
-real todavía (falta confirmarlo arrancando una ISO real bajo UEFI, no
-solo BIOS/CSM como en los boot-tests actuales de CI). Ver
-`docs/ROADMAP.md`.
+probablemente siga sin la marca de Antü.
+
+**Confirmado con una ISO real** (no solo con la lectura de
+`config/binary` de más arriba): `.github/workflows/uefi-boot-test.yml`
+arranca una ISO ya compilada con firmware `OVMF` real (UEFI puro, sin
+BIOS/CSM) en vez del BIOS por defecto de QEMU. Primer intento con la ISO
+de Legacy (`amd64`) ya recompilada, run
+[36347907803](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36347907803)
+(el intento anterior,
+[36342720433](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36342720433),
+había fallado por un detalle de nombres de archivo del paquete `ovmf`
+en el runner —`OVMF_CODE_4M.fd`/`OVMF_VARS_4M.fd`, no `OVMF_CODE.fd` "a
+secas" — corregido buscando por patrón en vez de nombre fijo):
+
+- Confirma **ambas mitades exactas de lo previsto**. El menú de GRUB
+  bajo UEFI, por OCR de la primera captura, muestra el texto genérico
+  del template de Debian ("Live system (amd64)", "Live system (amd64
+  fail-safe mode)", "Start installer", "Advanced install options...",
+  "Utilities...") — sin ninguna marca de Antü, exactamente el hallazgo
+  de más arriba, ahora con evidencia real y no solo predicho.
+- Pero el arranque **sigue de largo hasta un escritorio real y
+  sostenido**: las capturas siguientes (a partir del frame 03, cada 15s
+  durante ~5 minutos) muestran el hostname `antu-legacy` y un reloj real
+  avanzando de forma continua ("dom, 20:26" → "dom, 20:30") — mismo
+  estándar de evidencia que ya se usó para confirmar un escritorio
+  sostenido bajo BIOS (ver más arriba). **La ISO arranca de punta a
+  punta bajo UEFI puro**, sin que el branding pendiente del menú de
+  GRUB afecte en nada al sistema que arranca después.
+
+Personalizar el menú de `grub-efi` (sin plantilla propia que
+`config/bootloaders/grub-efi/` pueda sobreescribir, a diferencia de
+isolinux) queda como mejora separada, documentada en `docs/ROADMAP.md`
+pero no bloqueante: el objetivo de este cambio de arquitectura —que
+Legacy arranque en hardware moderno UEFI-puro— ya está confirmado con
+evidencia real.
 
 ### Antü Standard (`editions/antu-standard`)
 

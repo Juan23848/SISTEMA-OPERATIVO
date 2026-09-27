@@ -350,11 +350,26 @@ punta, esta vez **con aceleración KVM real** (a diferencia de la ISO
 capturas completas, sin corte temprano, sin branding genérico de Debian
 en el menú.
 
-**Pendiente**: probar el arranque bajo UEFI puro con una ISO real (no
-solo con la lectura de `config/binary` de más arriba) — se agregó
-`.github/workflows/uefi-boot-test.yml` para esto, que reusa la ISO ya
-compilada y la arranca con firmware `OVMF` real en vez del BIOS por
-defecto de QEMU.
+**Probado bajo UEFI puro con una ISO real y confirmado**:
+`.github/workflows/uefi-boot-test.yml` arranca la ISO ya compilada con
+firmware `OVMF` real (no el BIOS por defecto de QEMU). Primer intento
+([36342720433](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36342720433))
+falló por un detalle del entorno, no de la ISO: el paquete `ovmf` de
+este runner nombra los archivos `OVMF_CODE_4M.fd`/`OVMF_VARS_4M.fd`, no
+`OVMF_CODE.fd` "a secas" como asumía el script — corregido buscando por
+patrón. Segundo intento
+([36347907803](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36347907803)):
+**arrancó de punta a punta hasta un escritorio real y sostenido bajo
+UEFI puro** — hostname `antu-legacy` y un reloj real avanzando durante
+~5 minutos de capturas (mismo estándar de evidencia que el resto de esta
+fase). Confirma con evidencia real, no solo con la lectura de
+`config/binary`, que el cambio de arquitectura logró su objetivo:
+arrancar en hardware moderno sin BIOS/CSM. Único hallazgo (esperado, no
+bloqueante, ver `docs/ARCHITECTURE.md`): el menú de GRUB bajo UEFI
+todavía muestra el texto genérico de Debian, sin la marca de Antü —
+personalizarlo queda pendiente como mejora separada, sin plantilla
+propia (`config/bootloaders/grub-efi/`) que hoy pueda sobreescribir
+nada, a diferencia de isolinux.
 
 ## Fase 0.5 — Identidad propia (despegarse de Linux/Windows)
 
@@ -650,8 +665,17 @@ doméstico/oficina).
       siendo `i386` con el argumento de que corre en hardware de 32 y 64
       bits — corregido: el hardware real al que apunta esta edición
       (Celeron, i3/i5 desde ~3ra gen, 4GB RAM) ya es todo de 64 bits, y
-      `i386` no ayuda con hardware moderno UEFI-puro. Ver Fase 0, sección
+      `i386` no ayuda con hardware moderno UEFI-puro. **Confirmado con
+      una ISO real arrancando bajo firmware UEFI (OVMF), no solo BIOS**:
+      llega hasta un escritorio real y sostenido. Ver Fase 0, sección
       "Legacy pasó de `i386` a `amd64`".
+- [ ] Personalizar el menú de `grub-efi` con la marca de Antü (hoy
+      muestra el texto genérico de Debian bajo UEFI puro — confirmado
+      por OCR real, ver Fase 0). No hay plantilla propia que
+      `config/bootloaders/grub-efi/` pueda sobreescribir como sí la hay
+      para isolinux; pendiente investigar el mecanismo real antes de
+      intentar nada (mismo criterio que se usó para el menú de
+      isolinux).
 - [x] Shell de escritorio propio en XFCE (barra superior única),
       **probado con una sesión XFCE real** (Xvfb + xfce4-session) — la
       única de las 3 ediciones validada así hasta ahora. Encontró y
