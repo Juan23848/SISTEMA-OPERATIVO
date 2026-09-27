@@ -77,3 +77,41 @@ jobs:
               --distribution bookworm --binary-images iso-hybrid
             grep -i bootloader config/binary || echo "(sin BOOTLOADERS en config/binary)"
           '
+
+      # Antes de asumir que un tema de GRUB "para sistema instalado" (ej.
+      # vinceliuice/grub2-themes, que edita /etc/default/grub + corre
+      # grub-mkconfig) sirve para el menú de una ISO viva: el menú real
+      # que vimos por OCR bajo UEFI ("Live system (amd64)", "Start
+      # installer", "Utilities...") es texto propio de live-build/d-i,
+      # no lo que grub-mkconfig generaría en un sistema instalado normal.
+      # Hay que confirmar de dónde sale ese texto y si existe algún
+      # mecanismo de tema/override antes de intentar nada -- mismo
+      # criterio que ya se usó para encontrar _PROJECT en binary_syslinux.
+      - name: Buscar de dónde sale el menú de grub-efi para la ISO viva (¿admite tema?)
+        run: |
+          docker run --rm debian:bookworm bash -c '
+            set -x
+            apt-get update -qq
+            apt-get install -y -qq live-build >/dev/null
+
+            echo "=========================================="
+            echo "=== Scripts de live-build relacionados con grub ==="
+            echo "=========================================="
+            ls /usr/lib/live/build/ | grep -i grub
+
+            echo "=========================================="
+            echo "=== Qué script contiene el texto real del menú (\"Live system\") ==="
+            echo "=========================================="
+            grep -rl "Live system" /usr/lib/live/build/ 2>/dev/null
+
+            echo "=========================================="
+            echo "=== Ese script completo ==="
+            echo "=========================================="
+            SCRIPT=$(grep -rl "Live system" /usr/lib/live/build/ 2>/dev/null | head -n1)
+            cat "$SCRIPT"
+
+            echo "=========================================="
+            echo "=== Busca mención a THEME/grub-mkconfig/update-grub en ese script ==="
+            echo "=========================================="
+            grep -inE "theme|grub-mkconfig|update-grub" "$SCRIPT" || echo "(sin mención)"
+          '
