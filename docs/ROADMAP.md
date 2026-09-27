@@ -50,16 +50,19 @@ escritorio seguía diciendo "Debian GNU/Linux"/"Boot menu"** — ya
 mención a "Debian" en las 25 capturas de la corrida, y el escritorio
 muestra el hostname correcto (`antu-standard`) — ver Fase 0 para la
 evidencia completa. **Antü Legacy también ya se compiló y arrancó de
-punta a punta hasta un escritorio XFCE real**, con una salvedad
-importante encontrada en el camino: con aceleración KVM se cuelga muy
-temprano en el arranque en este entorno de CI (Azure sobre Hyper-V) —
-investigado a fondo y es una inestabilidad de virtualización anidada
-específica del kernel de 32 bits en *este* entorno de prueba, no un
-bug de Antü ni de los cambios de esta sesión; sin KVM (emulación por
-software) arranca bien y se confirmó con OCR real. Ver Fase 0 para el
-detalle completo de la investigación y qué significa esto para una
-máquina real. Falta repetir compilar+arrancar con evidencia para Pro
-(mismo mecanismo de base, ya corregido en los 3 `auto/config`).
+punta a punta hasta un escritorio XFCE real**, en ese momento siendo
+`i386` — con una salvedad encontrada en el camino (con KVM se colgaba muy
+temprano, inestabilidad de virtualización anidada específica del kernel
+de 32 bits en *ese* entorno de CI, no un bug de Antü). **Esa elección de
+arquitectura se corrigió después**: el usuario señaló que el hardware
+real que se busca cubrir (Celeron, i3/i5 desde ~3ra gen, 4GB RAM) ya es
+todo de 64 bits, así que Legacy pasó a `amd64` (igual que Standard y
+Pro) — y de paso se confirmó contra el `live-build` real que las 3
+ediciones ya arrancan tanto en BIOS/CSM como en UEFI puro por defecto,
+sin cambios de configuración. Ver Fase 0, sección "Legacy pasó de
+`i386` a `amd64`", para el detalle y la evidencia completa. Falta
+repetir compilar+arrancar con evidencia para Pro (mismo mecanismo de
+base, ya corregido en los 3 `auto/config`) y para Legacy ya en `amd64`.
 Las 3 ediciones también tienen **español (Argentina) como idioma por
 defecto** y un **set de íconos propios** (tema `Antu`) instalado como
 tema de sistema real — ver Fase 0.5. Además ya tienen la **capa de
@@ -298,6 +301,54 @@ verdad contra una pantalla virtual — ver Fase 0.7.
           [36221127830](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36221127830)
           (boot-test sin KVM + OCR).
 
+### Legacy pasó de `i386` a `amd64` (corrección de una elección anterior)
+
+**Decisión del usuario**: todo lo anterior en esta fase (la inestabilidad
+de KVM, la comparación de initrd) investigó a Legacy siendo `i386`. El
+usuario señaló, con razón, que el hardware real que busca cubrir esta
+edición (Celeron, i3/i5 desde ~3ra generación, 4GB RAM — nada anterior a
+eso sigue en uso en una oficina real hoy) ya es **todo de 64 bits** desde
+hace más de una década, mientras que hardware moderno que también se
+quiere soportar (ej. un i3 de 12va gen) suele ser **UEFI puro, sin
+BIOS/CSM**. `i386` no sumaba nada al primer grupo y no ayudaba con el
+segundo. Ver `docs/ARCHITECTURE.md`, sección "Legacy pasó de `i386` a
+`amd64`", para el detalle completo del cambio (que incluyó alinear Wine,
+Chrome y el hook de verificación con lo que Standard/Pro ya hacían).
+
+**Consecuencia directa sobre lo investigado en esta fase**: la
+inestabilidad de KVM de más arriba era **específica del kernel de 32
+bits** ("una inestabilidad de virtualización anidada... específica del
+kernel de 32 bits") — con Legacy ya en `amd64`, ese workaround en
+`.github/workflows/build-iso.yml` (deshabilitar KVM solo para Legacy) se
+revirtió. Si reaparece una inestabilidad real con la ISO `amd64`, hay que
+reconfirmarla con evidencia antes de reintroducir cualquier workaround.
+
+**Antes de dar el cambio por suficiente**, se investigó si `amd64` (y
+`i386`, para comparar) arrancan en hardware UEFI puro — no alcanza con
+que la arquitectura sea compatible si el bootloader que trae la ISO solo
+sabe arrancar en BIOS/CSM. Confirmado contra el `live-build` real de
+Debian bookworm (`1:20230502`, ver
+`.github/workflows/inspect-livebuild-package.yml`, run
+[36283509010](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36283509010)):
+sin declarar `--bootloaders`, `lb config` ya resuelve
+`LB_BOOTLOADER_BIOS="syslinux"` **y** `LB_BOOTLOADER_EFI="grub-efi"` por
+defecto, tanto para `amd64` como para `i386`, con `--binary-images
+iso-hybrid`. Es decir: **las 3 ediciones ya generan una ISO híbrida que
+arranca tanto en BIOS/CSM como en UEFI puro, sin cambios**. Ver
+`docs/ARCHITECTURE.md`, sección "Soporte UEFI: confirmado por defecto",
+para el detalle y para un hallazgo secundario (el menú de `grub-efi` no
+tiene el mismo mecanismo de personalización que ya se usó para el menú
+de `isolinux`, así que probablemente no muestre la marca de Antü bajo
+UEFI puro — pendiente de confirmar con una ISO real y arreglar como
+mejora separada, no bloquea el arranque en sí).
+
+**Pendiente**: recompilar Legacy y repetir el boot-test de CI (que sigue
+siendo BIOS/CSM vía QEMU, no UEFI) con la ISO `amd64`; y, en algún
+momento, probar/arrancar una ISO real bajo UEFI puro (QEMU con
+`OVMF`/`-bios OVMF.fd`, o hardware real) para confirmar con evidencia
+concreta lo que esta investigación ya resolvió por lectura de
+configuración.
+
 ## Fase 0.5 — Identidad propia (despegarse de Linux/Windows)
 
 Criterio del proyecto: que Antü se sienta propio, no "Linux con logo
@@ -502,6 +553,10 @@ apuro (plazo: el año que viene).
       fallo, con un mensaje que además culpaba a la conexión en vez de
       a la arquitectura. Legacy se queda con Chromium (libre, sí tiene
       build para i386) como único navegador de Google-engine.
+      **Desactualizado por el cambio de arquitectura de Legacy** (ver
+      Fase 0, "Legacy pasó de `i386` a `amd64`"): con las 3 ediciones ya
+      en `amd64`, el hook y el lanzador de Chrome se agregaron también a
+      Legacy — las 3 lo ofrecen por igual.
 - [ ] **Gaming (Proton/Steam)**: que la biblioteca de Steam con juegos
       de Windows funcione, pensado sobre todo para Antü Pro (hardware
       potente). No arrancado todavía — decisión explícita del proyecto:
@@ -584,9 +639,12 @@ doméstico/oficina).
 
 ## Fase 2 — Antü Legacy
 
-- [x] Configurar la edición en `i386` (`live-build` no soporta múltiples
-      arquitecturas en una misma configuración; `i386` corre en hardware de
-      32 y 64 bits, a diferencia de `amd64`).
+- [x] Configurar la edición en `amd64` (igual que Standard/Pro). Arrancó
+      siendo `i386` con el argumento de que corre en hardware de 32 y 64
+      bits — corregido: el hardware real al que apunta esta edición
+      (Celeron, i3/i5 desde ~3ra gen, 4GB RAM) ya es todo de 64 bits, y
+      `i386` no ayuda con hardware moderno UEFI-puro. Ver Fase 0, sección
+      "Legacy pasó de `i386` a `amd64`".
 - [x] Shell de escritorio propio en XFCE (barra superior única),
       **probado con una sesión XFCE real** (Xvfb + xfce4-session) — la
       única de las 3 ediciones validada así hasta ahora. Encontró y

@@ -68,14 +68,14 @@ hoy (Celeron, i3/i5 desde ~3ra generación, 4GB RAM, ni una oficina real
 tiene un Pentium M o un Celeron de los primeros funcionando) es **todo de
 64 bits** desde hace más de una década — ahí `i386` no suma nada.
 
-Y del otro lado sí hay un costo real: hardware moderno (ej. una laptop con
-un i3 de 12va gen, que también se quiere soportar) suele ser **UEFI puro,
-sin arranque BIOS/CSM** — los fabricantes vienen sacando el CSM de las
-placas desde ~2020. Ninguna de las 3 ediciones tiene hoy configuración de
-bootloader EFI (no hay `config/bootloaders/grub-efi` en ninguna, solo
-`syslinux_common` para BIOS/isolinux — ver investigación de soporte UEFI
-más abajo), así que en ese tipo de máquina la compatibilidad de arquitectura
-no alcanza si el arranque en sí no funciona.
+Y del otro lado sí hay un riesgo real que había que confirmar antes de dar
+el cambio por suficiente: hardware moderno (ej. una laptop con un i3 de
+12va gen, que también se quiere soportar) suele ser **UEFI puro, sin
+arranque BIOS/CSM** — los fabricantes vienen sacando el CSM de las placas
+desde ~2020. Si las ISOs solo tuvieran un bootloader BIOS (isolinux), la
+compatibilidad de arquitectura no alcanzaría: la ISO no arrancaría ahí
+sin importar si es `i386` o `amd64`. Ver "Soporte UEFI: confirmado por
+defecto" más abajo para la investigación real de este punto.
 
 **Corregido**: `editions/antu-legacy/auto/config` pasó a
 `--architectures "amd64"`. Eso implica alinear todo lo que en Legacy
@@ -101,6 +101,49 @@ dependía de ser i386 con lo que Standard/Pro ya hacían para correr Wine de
 **Pendiente de confirmar con una ISO real**: recompilar Legacy con este
 cambio y repetir el boot-test en QEMU (mismo estándar de evidencia que el
 resto de esta sección).
+
+### Soporte UEFI: confirmado por defecto (sin `--bootloaders` explícito)
+
+**Investigado antes de asumir nada**, contra el `live-build` real de
+Debian bookworm (`1:20230502`, contenedor `debian:bookworm` en CI — ver
+`.github/workflows/inspect-livebuild-package.yml`, corrida
+[36283509010](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36283509010)):
+corriendo `lb config` con exactamente las mismas opciones que usan las 3
+ediciones (`--distribution bookworm --binary-images iso-hybrid`, sin
+`--bootloaders`), tanto para `--architectures amd64` como para
+`--architectures i386`, el `config/binary` resultante queda con:
+
+```
+LB_BOOTLOADER_BIOS="syslinux"
+LB_BOOTLOADER_EFI="grub-efi"
+LB_BOOTLOADERS=""
+```
+
+Es decir: `live-build` **ya resuelve un bootloader BIOS y uno EFI por
+defecto**, sin que haga falta declarar nada — `LB_BOOTLOADERS` (la
+variable que un `--bootloaders` explícito llenaría) queda vacía, pero eso
+no significa "sin bootloader": son dos variables separadas
+(`LB_BOOTLOADER_BIOS`/`LB_BOOTLOADER_EFI`) que `live-build` resuelve
+igual. Confirma que las 3 ediciones (y Legacy ya en `amd64`) generan una
+ISO híbrida que trae tanto `isolinux` (arranca en BIOS/CSM) como
+`grub-efi` (arranca en UEFI puro, sin CSM) — no hace falta agregar
+`--bootloaders` a ningún `auto/config`.
+
+**Un hallazgo real, pendiente como mejora separada, no como bloqueante**:
+`/usr/share/live/build/bootloaders/` (las plantillas que trae el paquete)
+solo tiene `extlinux`, `grub-legacy`, `grub-pc`, `isolinux`, `pxelinux`,
+`syslinux` y `syslinux_common` — **no hay una carpeta `grub-efi`**. Es
+decir, el mecanismo de override (`config/bootloaders/<nombre>/`) que ya
+se usó para poner "Antü Legacy/Standard/Pro" en el menú de isolinux (ver
+"El menú de arranque (isolinux/grub) mostraba 'Debian GNU/Linux', no
+Antü" más arriba) no tiene un equivalente listo para el menú de
+`grub-efi`. Conclusión: **el arranque UEFI en sí funciona sin cambios**,
+pero el menú que se ve al arrancar en una máquina UEFI pura
+probablemente siga sin la marca de Antü — separado del problema de
+compatibilidad que motivó este cambio de arquitectura, y sin evidencia
+real todavía (falta confirmarlo arrancando una ISO real bajo UEFI, no
+solo BIOS/CSM como en los boot-tests actuales de CI). Ver
+`docs/ROADMAP.md`.
 
 ### Antü Standard (`editions/antu-standard`)
 
