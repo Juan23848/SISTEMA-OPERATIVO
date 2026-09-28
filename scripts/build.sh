@@ -69,6 +69,34 @@ echo "==> Instalando asistente de Chrome"
 # asistente aplica a las 3 por igual.
 install -m 0755 "$REPO_ROOT/shared/scripts/instalar-chrome.sh" "$RESOLVER_DEST/antu-instalar-chrome"
 
+echo "==> Branding del menú de arranque bajo UEFI (grub-efi)"
+# El menú de isolinux (BIOS) ya tiene la marca de Antü, pero el de
+# grub-efi (UEFI) seguía mostrando "Live system (amd64)" -- confirmado
+# arrancando una ISO real bajo firmware OVMF (ver docs/ARCHITECTURE.md,
+# "Soporte UEFI"). A diferencia de isolinux, ese texto no sale de
+# ningún archivo que config/bootloaders/grub-pc/ pueda pisar: está
+# hardcodeado como argumento literal de "Live system (${_FLAVOUR})" (y
+# 5 variantes más: autodetect, fail-safe, multi-kernel) dentro del
+# propio script /usr/lib/live/build/binary_grub_cfg -- confirmado
+# leyendo el script real de Debian bookworm (1:20230502) en CI, no
+# asumido. Las 6 variantes empiezan igual ("Live system"), así que un
+# solo sed cubre las 6. "Antu" sin diéresis a propósito, mismo motivo
+# que en el menú de isolinux (la fuente de GRUB tampoco renderiza bien
+# la "ü" en este contexto de arranque).
+case "$EDITION" in
+    antu-legacy) EDITION_DISPLAY="Antu Legacy" ;;
+    antu-standard) EDITION_DISPLAY="Antu Standard" ;;
+    antu-pro) EDITION_DISPLAY="Antu Pro" ;;
+esac
+GRUB_CFG_SCRIPT="/usr/lib/live/build/binary_grub_cfg"
+if [[ -f "$GRUB_CFG_SCRIPT" ]]; then
+    sed -i "s/Live system/$EDITION_DISPLAY/g" "$GRUB_CFG_SCRIPT"
+else
+    echo "ADVERTENCIA: no se encontró $GRUB_CFG_SCRIPT -- el menú de" \
+         "grub-efi va a quedar sin la marca de Antü (¿versión distinta" \
+         "de live-build?)."
+fi
+
 echo "==> Compilando $EDITION"
 # live-build espera correr desde el directorio que tiene a auto/ y
 # config/ como hermanos (auto/config genera/actualiza config/ en base
