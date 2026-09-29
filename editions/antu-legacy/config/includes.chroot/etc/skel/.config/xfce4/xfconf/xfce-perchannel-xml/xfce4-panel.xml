@@ -4,8 +4,10 @@
   Barra superior única de Antü para XFCE (edición Legacy).
 
   Lógica: lanzador con el logo de Antü + lista de ventanas abiertas a la
-  izquierda, bandeja del sistema y reloj a la derecha. Sin dock separado
-  ni animaciones: esta edición prioriza el bajo consumo de recursos.
+  izquierda, bandeja del sistema, ícono de volumen (xfce4-pulseaudio-
+  plugin, ver package-lists/desktop.list.chroot) y reloj a la derecha.
+  Sin dock separado ni animaciones: esta edición prioriza el bajo
+  consumo de recursos.
 -->
 <channel name="xfce4-panel" version="1.0">
   <property name="configver" type="int" value="2"/>
@@ -22,6 +24,7 @@
         <value type="int" value="2"/>
         <value type="int" value="3"/>
         <value type="int" value="4"/>
+        <value type="int" value="6"/>
         <value type="int" value="5"/>
       </property>
     </property>
@@ -43,5 +46,6 @@
     <property name="plugin-5" type="string" value="clock">
       <property name="digital-format" type="string" value="%a %d %b  %H:%M"/>
     </property>
+    <property name="plugin-6" type="string" value="pulseaudio"/>
   </property>
 </channel>

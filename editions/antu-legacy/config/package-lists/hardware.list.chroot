@@ -3,6 +3,17 @@
 # Set liviano acorde al hardware de la era XP (no la lista completa
 # "-all" de drivers de impresora, que pesa bastante más).
 
+# Firmware amplio (chipsets varios además de wifi/bt: algunas GPU
+# integradas, controladoras de red, etc.) + microcódigo de CPU real
+# (Intel y AMD) -- Legacy se había quedado con solo el firmware de
+# wifi/bt de abajo, a diferencia de Pro que ya traía firmware-linux.
+# Da igual instalar los dos microcódigos: el que no coincide con el
+# CPU real simplemente no hace nada, y no sabemos de antemano en qué
+# CPU va a arrancar esta ISO.
+firmware-linux
+intel-microcode
+amd64-microcode
+
 # Firmware no libre de los chipsets de wifi/bluetooth más comunes.
 firmware-realtek
 firmware-iwlwifi

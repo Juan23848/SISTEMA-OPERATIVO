@@ -7,3 +7,17 @@ lightdm
 lightdm-gtk-greeter
 network-manager
 network-manager-gnome
+
+# Audio: Legacy se había quedado sin nada de esto (a diferencia de
+# Standard/Pro, que ya traen pulseaudio) -- sin esto no hay control de
+# volumen ni salida de sonido funcional de verdad. pulseaudio-module-
+# bluetooth para que los auriculares/parlantes Bluetooth (ya
+# habilitados en hardware.list.chroot) realmente reproduzcan audio, no
+# solo se conecten. xfce4-pulseaudio-plugin agrega el ícono de volumen
+# real a la barra superior de Antü; pavucontrol como mezclador gráfico
+# de respaldo (elegir dispositivo de salida, etc.).
+pulseaudio
+pulseaudio-module-bluetooth
+alsa-utils
+xfce4-pulseaudio-plugin
+pavucontrol

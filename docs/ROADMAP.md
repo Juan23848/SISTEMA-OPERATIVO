@@ -734,6 +734,53 @@ doméstico/oficina).
 - [ ] Reducir el set de paquetes.
 - [ ] Validar arranque y uso fluido en hardware con ≤2GB RAM.
 
+### Validación en hardware real (notebook), antes de seguir con Standard/Pro
+
+**Decisión del usuario**: enfocar todo en Legacy hasta tener una ISO
+probada de punta a punta en una PC/notebook real, y solo después subir
+la complejidad a Standard/Pro. Todo lo probado hasta ahora (Fase 0) fue
+en QEMU, que emula hardware genérico (VGA estándar sin touchpad, audio
+simplificado) — confirma que el sistema arranca y llega a un
+escritorio real, pero no dice nada sobre touchpad, resolución nativa,
+o audio en hardware de verdad.
+
+Comparando Legacy contra Standard/Pro se encontraron 2 gaps reales
+(no supuestos):
+
+- [x] **Audio**: Legacy no tenía `pulseaudio` ni `alsa-utils` en
+      ningún lado (Standard sí tiene `pulseaudio`, Pro tiene
+      `pulseaudio`+`pipewire`) -- sin control de volumen ni salida de
+      sonido funcional. Agregado `pulseaudio` +
+      `pulseaudio-module-bluetooth` (para que los auriculares/parlantes
+      Bluetooth, ya habilitados, realmente reproduzcan audio) +
+      `alsa-utils` + `xfce4-pulseaudio-plugin` (ícono de volumen real
+      en la barra superior de Antü, agregado a `xfce4-panel.xml`) +
+      `pavucontrol` (mezclador gráfico de respaldo).
+- [x] **Firmware/microcódigo de CPU**: Legacy solo tenía el firmware
+      específico de wifi/bluetooth, sin el paquete amplio
+      `firmware-linux` (Pro sí lo tenía) ni microcódigo de Intel/AMD
+      (ninguna edición lo tenía). Agregado `firmware-linux` +
+      `intel-microcode` + `amd64-microcode` (instalar los dos
+      microcódigos no hace daño: el que no coincide con el CPU real no
+      hace nada).
+
+**Pendiente, no se puede confirmar sin hardware real**:
+
+- [ ] Touchpad: probablemente funciona básico (tap+scroll) porque
+      `xorg` trae `xserver-xorg-input-libinput` como dependencia, pero
+      nunca se verificó -- QEMU no emula touchpad.
+- [ ] Resolución de pantalla nativa: probablemente se autodetecta bien
+      vía `xserver-xorg-video-all` + KMS (mejor que en QEMU, que fuerza
+      una lista de modos fija), pero tampoco verificado.
+- [ ] Wifi/bluetooth con el chipset real de la notebook (el firmware
+      agregado cubre los chipsets más comunes, no es 100% universal).
+- [ ] Sonido de verdad saliendo por los parlantes/auriculares (recién
+      agregado el stack, sin probar en hardware real todavía).
+
+**Nota para más adelante**: el mismo gap de `firmware-linux`/microcódigo
+existe también en Standard (no en Pro) -- no se tocó todavía porque el
+foco actual es solo Legacy, según lo pedido.
+
 ## Fase 3 — Antü Pro
 
 - [x] Shell de escritorio propio vía un paquete "Look and Feel" de Plasma
