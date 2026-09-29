@@ -168,12 +168,54 @@ secas" — corregido buscando por patrón en vez de nombre fijo):
   punta bajo UEFI puro**, sin que el branding pendiente del menú de
   GRUB afecte en nada al sistema que arranca después.
 
-Personalizar el menú de `grub-efi` (sin plantilla propia que
-`config/bootloaders/grub-efi/` pueda sobreescribir, a diferencia de
-isolinux) queda como mejora separada, documentada en `docs/ROADMAP.md`
-pero no bloqueante: el objetivo de este cambio de arquitectura —que
-Legacy arranque en hardware moderno UEFI-puro— ya está confirmado con
-evidencia real.
+### El menú de grub-efi (UEFI) también quedó con la marca de Antü
+
+**Investigado a fondo antes de tocar nada**, contra el `binary_grub_cfg`
+real del paquete `live-build` de Debian bookworm (`1:20230502` — ver
+`.github/workflows/inspect-livebuild-package.yml`, runs
+[36355609165](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36355609165)
+y
+[36360459902](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36360459902)):
+
+- Confirmado que **sí existe** un mecanismo de override real para grub
+  (compartido entre `grub-pc` y `grub-efi`, ya que ambos usan el mismo
+  script para generar el `grub.cfg`): `_SOURCE_USER="config/bootloaders/
+  grub-pc"`. Los archivos `install*.cfg`/`grub.cfg`/`theme.cfg` que trae
+  por defecto ese directorio son overrideables — pero su contenido
+  ("Advanced install options...", "Utilities...") es texto técnico
+  genérico, no branding de Debian, así que no había nada ahí que
+  cambiar (mismo criterio con el que tampoco se tocó el equivalente en
+  `syslinux_common`).
+- El fondo/splash del menú **ya se conecta solo** al mismo
+  `splash.png` de Antü que usa `isolinux`: `theme.cfg` detecta
+  `/isolinux/splash.png` (que `binary_syslinux` ya coloca ahí) y activa
+  `set theme=/boot/grub/live-theme/theme.txt` — mecanismo nativo de
+  `live-build`, sin que hiciera falta ningún cambio nuestro.
+- El texto real que decía "Live system (amd64)" **no sale de ningún
+  archivo overrideable**: está hardcodeado como argumento literal
+  (`Grub_live_menu_entry "Live system (${_FLAVOUR})" ...`, y 5 variantes
+  más para autodetect/fail-safe/multi-kernel) dentro del propio script
+  `/usr/lib/live/build/binary_grub_cfg`. Sin plantilla ni placeholder
+  que pisar, a diferencia de `_PROJECT` en `binary_syslinux` (que sí
+  terminó siendo irrelevante gracias al override completo de
+  `live.cfg.in`).
+
+**Corregido** con un `sed` puntual sobre ese script, en
+`scripts/build.sh`, antes de `lb build` (las 6 variantes empiezan igual,
+"Live system", así que un solo `sed -i "s/Live system/$EDITION_DISPLAY/
+g"` las cubre todas — "Antu" sin diéresis, mismo motivo que en el menú
+de isolinux: la fuente de GRUB tampoco renderiza bien la "ü" ahí).
+**Revalidado con una ISO real**: recompilada Legacy (run
+[36360831182](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36360831182))
+y repetido el boot-test bajo UEFI (run
+[36368563490](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36368563490))
+— el OCR de la primera captura ahora lee **"Antu Legacy (amd64)"** y
+"Antu Legacy (amd64 fail-safe mode)", y el arranque sigue llegando de
+punta a punta hasta el escritorio real y sostenido (hostname
+`antu-legacy`, reloj avanzando). Sin pendientes: el objetivo de este
+cambio de arquitectura —que Legacy arranque, con la marca de Antü, en
+hardware moderno UEFI-puro— está confirmado con evidencia real de
+punta a punta.
 
 ### Antü Standard (`editions/antu-standard`)
 

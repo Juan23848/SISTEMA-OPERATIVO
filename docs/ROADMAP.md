@@ -338,9 +338,8 @@ arranca tanto en BIOS/CSM como en UEFI puro, sin cambios**. Ver
 `docs/ARCHITECTURE.md`, sección "Soporte UEFI: confirmado por defecto",
 para el detalle y para un hallazgo secundario (el menú de `grub-efi` no
 tiene el mismo mecanismo de personalización que ya se usó para el menú
-de `isolinux`, así que probablemente no muestre la marca de Antü bajo
-UEFI puro — pendiente de confirmar con una ISO real y arreglar como
-mejora separada, no bloquea el arranque en sí).
+de `isolinux` — investigado y corregido más abajo, ver "El menú de
+grub-efi (UEFI) también quedó con la marca de Antü").
 
 **Recompilado y revalidado**: nueva ISO de Legacy ya en `amd64`, run
 [36283983622](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36283983622)
@@ -364,12 +363,40 @@ UEFI puro** — hostname `antu-legacy` y un reloj real avanzando durante
 ~5 minutos de capturas (mismo estándar de evidencia que el resto de esta
 fase). Confirma con evidencia real, no solo con la lectura de
 `config/binary`, que el cambio de arquitectura logró su objetivo:
-arrancar en hardware moderno sin BIOS/CSM. Único hallazgo (esperado, no
-bloqueante, ver `docs/ARCHITECTURE.md`): el menú de GRUB bajo UEFI
-todavía muestra el texto genérico de Debian, sin la marca de Antü —
-personalizarlo queda pendiente como mejora separada, sin plantilla
-propia (`config/bootloaders/grub-efi/`) que hoy pueda sobreescribir
-nada, a diferencia de isolinux.
+arrancar en hardware moderno sin BIOS/CSM. Único hallazgo de esa
+corrida (esperado, no bloqueante): el menú de GRUB bajo UEFI todavía
+mostraba el texto genérico de Debian, sin la marca de Antü.
+
+### El menú de grub-efi (UEFI) también quedó con la marca de Antü
+
+**Investigado a fondo antes de tocar nada**, contra el `binary_grub_cfg`
+real de `live-build` (runs
+[36355609165](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36355609165)
+y
+[36360459902](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36360459902)):
+sí existe un override real para grub (`config/bootloaders/grub-pc/`,
+compartido entre `grub-pc` y `grub-efi`), pero el texto puntual "Live
+system (amd64)" no sale de ningún archivo overrideable — está
+hardcodeado como argumento literal dentro del propio script (6
+variantes: normal, fail-safe, autodetect, multi-kernel), sin plantilla
+ni placeholder que pisar. El resto del menú ("Advanced install
+options...", "Utilities...") es texto técnico genérico, no branding de
+Debian, así que no necesitaba cambios; y el fondo/splash ya se conecta
+solo al mismo `splash.png` de Antü que usa isolinux (mecanismo nativo
+de `live-build`, sin cambios de nuestra parte). Ver
+`docs/ARCHITECTURE.md` para el detalle completo de la investigación.
+
+**Corregido** con un `sed` puntual sobre `binary_grub_cfg` en
+`scripts/build.sh`, antes de `lb build` (un solo `sed` cubre las 6
+variantes, todas empiezan con "Live system"). **Revalidado con una ISO
+real**: Legacy recompilada (run
+[36360831182](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36360831182))
+y boot-test bajo UEFI repetido (run
+[36368563490](https://github.com/Juan23848/SISTEMA-OPERATIVO/actions/runs/36368563490))
+— el OCR ahora lee **"Antu Legacy (amd64)"** en vez de "Live system
+(amd64)", y el arranque sigue llegando de punta a punta hasta el
+escritorio real (hostname `antu-legacy`, reloj avanzando). Sin
+pendientes.
 
 ## Fase 0.5 — Identidad propia (despegarse de Linux/Windows)
 
@@ -669,13 +696,17 @@ doméstico/oficina).
       una ISO real arrancando bajo firmware UEFI (OVMF), no solo BIOS**:
       llega hasta un escritorio real y sostenido. Ver Fase 0, sección
       "Legacy pasó de `i386` a `amd64`".
-- [ ] Personalizar el menú de `grub-efi` con la marca de Antü (hoy
-      muestra el texto genérico de Debian bajo UEFI puro — confirmado
-      por OCR real, ver Fase 0). No hay plantilla propia que
-      `config/bootloaders/grub-efi/` pueda sobreescribir como sí la hay
-      para isolinux; pendiente investigar el mecanismo real antes de
-      intentar nada (mismo criterio que se usó para el menú de
-      isolinux).
+- [x] Personalizar el menú de `grub-efi` con la marca de Antü. El texto
+      ("Live system (amd64)") no salía de ningún archivo overrideable
+      -- estaba hardcodeado como argumento literal dentro del propio
+      script `binary_grub_cfg` de `live-build` (confirmado leyendo el
+      script real, no asumido). Corregido con un `sed` puntual sobre
+      ese script en `scripts/build.sh`, antes de `lb build`.
+      **Revalidado con una ISO real**: el OCR de una nueva ISO de
+      Legacy arrancada bajo UEFI (OVMF) ya lee "Antu Legacy (amd64)" en
+      vez de "Live system (amd64)", sin afectar el arranque hasta el
+      escritorio real. Ver Fase 0, sección "El menú de grub-efi (UEFI)
+      también quedó con la marca de Antü", para el detalle completo.
 - [x] Shell de escritorio propio en XFCE (barra superior única),
       **probado con una sesión XFCE real** (Xvfb + xfce4-session) — la
       única de las 3 ediciones validada así hasta ahora. Encontró y
