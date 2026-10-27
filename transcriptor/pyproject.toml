@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "transcriptor"
+version = "0.1.0"
+description = "Pasa video y audio a texto desde casi cualquier fuente: archivos, audios de WhatsApp, links (YouTube, Drive, etc.) o grabando lo que suena en la compu."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = [
+    "faster-whisper>=1.1",
+    # PyAV 19 quitó un parámetro que faster-whisper 1.2.x todavía usa
+    # (av.open(metadata_errors=...)) y rompe la lectura de cualquier archivo.
+    "av>=11,<19",
+    "yt-dlp>=2025.1.1",
+    "soundcard>=0.4.3",
+    "numpy",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+transcribir = "transcriptor.cli:main"
+
+[tool.setuptools]
+packages = ["transcriptor"]
