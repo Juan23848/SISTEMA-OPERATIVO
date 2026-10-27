@@ -18,8 +18,9 @@ from typing import List, Optional
 
 from . import __version__
 from .fuentes import ErrorFuente, Fuente, carpeta_temporal, desde_archivo, desde_url, es_url, expandir
-from .salida import FORMATOS_VALIDOS, guardar, nombre_seguro
+from .salida import FORMATOS_POR_DEFECTO, FORMATOS_VALIDOS, armar_parrafos, guardar, nombre_seguro
 from .segmentos import Segmento, formato_tiempo
+from .sistema import abrir, carpeta_documentos, copiar_al_portapapeles
 from .transcripcion import MODELO_POR_DEFECTO, MODELOS, transcribir
 
 
@@ -52,10 +53,15 @@ def _opciones_comunes(p: argparse.ArgumentParser) -> None:
     p.add_argument("-i", "--idioma", default="es",
                    help="código de idioma del audio: es, en, pt, fr... "
                         "o 'auto' para que lo detecte (por defecto: es)")
-    p.add_argument("-o", "--salida", type=Path, default=Path("transcripciones"),
-                   help="carpeta donde guardar los textos (por defecto: ./transcripciones)")
-    p.add_argument("-f", "--formatos", type=_formatos, default=["txt", "md"],
-                   help="formatos a generar, separados por coma: txt, md, srt (por defecto: txt,md)")
+    p.add_argument("-o", "--salida", type=Path, default=None,
+                   help="carpeta donde guardar los textos (por defecto: Documentos/Transcripciones)")
+    p.add_argument("-f", "--formatos", type=_formatos, default=FORMATOS_POR_DEFECTO,
+                   help="formatos a generar, separados por coma: docx (Word), txt, md, srt "
+                        f"(por defecto: {','.join(FORMATOS_POR_DEFECTO)})")
+    p.add_argument("--copiar", action="store_true",
+                   help="copiar el texto al portapapeles al terminar, para pegarlo con Ctrl+V")
+    p.add_argument("--abrir", action="store_true",
+                   help="abrir el documento al terminar (con Word, LibreOffice o lo que tengas)")
     p.add_argument("--cpu", action="store_true",
                    help="forzar el uso del procesador aunque haya placa de video")
 
@@ -101,7 +107,8 @@ def _parser_grabar() -> argparse.ArgumentParser:
     return p
 
 
-def _procesar(fuente: Fuente, args) -> None:
+def _procesar(fuente: Fuente, args) -> str:
+    """Transcribe y guarda. Devuelve el texto limpio (para el portapapeles)."""
     idioma = None if args.idioma == "auto" else args.idioma
     if fuente.subtitulos:
         segmentos = fuente.subtitulos
@@ -120,14 +127,31 @@ def _procesar(fuente: Fuente, args) -> None:
         parcial.unlink()
     if not segmentos:
         print("  No se detectó voz en este audio.")
-        return
-    for ruta in guardar(segmentos, fuente.titulo, fuente.origen, duracion, args.salida, args.formatos):
+        return ""
+    rutas = guardar(segmentos, fuente.titulo, fuente.origen, duracion, args.salida, args.formatos)
+    for ruta in rutas:
         print(f"  Listo: {ruta}")
+    if args.abrir:
+        abrir(rutas[0])
+    return fuente.titulo + "\n\n" + "\n\n".join(p.texto for p in armar_parrafos(segmentos))
+
+
+def _copiar(textos: List[str]) -> None:
+    textos = [t for t in textos if t]
+    if not textos:
+        return
+    if copiar_al_portapapeles("\n\n\n".join(textos)):
+        print("\nTexto copiado al portapapeles: pegalo donde quieras con Ctrl+V.")
+    else:
+        print("\nNo encontré cómo usar el portapapeles. En Linux/Antü instalá xclip:\n"
+              "    sudo apt install xclip\n"
+              "El texto igual está en los archivos de arriba.")
 
 
 def _transcribir_fuentes(args) -> int:
     entradas = expandir(args.fuentes)
     errores = 0
+    textos = []
     for n, entrada in enumerate(entradas, 1):
         print(f"\n[{n}/{len(entradas)}] {entrada}")
         try:
@@ -140,9 +164,9 @@ def _transcribir_fuentes(args) -> int:
                         copia = args.salida / (nombre_seguro(fuente.titulo) + fuente.audio.suffix)
                         copia.write_bytes(fuente.audio.read_bytes())
                         print(f"  Audio guardado: {copia}")
-                    _procesar(fuente, args)
+                    textos.append(_procesar(fuente, args))
             else:
-                _procesar(desde_archivo(entrada), args)
+                textos.append(_procesar(desde_archivo(entrada), args))
         except ErrorFuente as e:
             errores += 1
             print(f"  {e}", file=sys.stderr)
@@ -152,6 +176,8 @@ def _transcribir_fuentes(args) -> int:
         except Exception as e:  # que un archivo roto no frene una carpeta entera
             errores += 1
             print(f"  Error con {entrada}: {e}", file=sys.stderr)
+    if args.copiar:
+        _copiar(textos)
     if len(entradas) > 1:
         print(f"\nTerminado: {len(entradas) - errores} de {len(entradas)} bien.")
     return 1 if errores else 0
@@ -160,6 +186,7 @@ def _transcribir_fuentes(args) -> int:
 def _grabar(argv: List[str]) -> int:
     from .grabacion import grabar
     args = _parser_grabar().parse_args(argv)
+    args.salida = args.salida or carpeta_documentos()
     titulo = args.titulo or f"Grabación {datetime.now():%Y-%m-%d %H-%M}"
     args.salida.mkdir(parents=True, exist_ok=True)
     audio = args.salida / (nombre_seguro(titulo) + ".wav")
@@ -172,8 +199,10 @@ def _grabar(argv: List[str]) -> int:
     if args.solo_grabar:
         return 0
     try:
-        _procesar(Fuente(titulo=titulo, origen="grabación del audio de la compu"
-                         if not args.microfono else "grabación del micrófono", audio=audio), args)
+        texto = _procesar(Fuente(titulo=titulo, origen="grabación del audio de la compu"
+                                 if not args.microfono else "grabación del micrófono", audio=audio), args)
+        if args.copiar:
+            _copiar([texto])
     except KeyboardInterrupt:
         print(f"\nCancelado. El audio sigue en {audio}; podés transcribirlo después con:\n"
               f'    transcribir "{audio}"')
@@ -184,7 +213,8 @@ def _grabar(argv: List[str]) -> int:
 def _interactivo() -> Optional[List[str]]:
     print(f"Transcriptor {__version__} — pasá video o audio a texto.\n")
     print("Pegá un link, o arrastrá acá un archivo o carpeta (varios separados por Enter).")
-    print("Escribí 'grabar' para grabar lo que suena en la compu. Enter vacío para empezar.\n")
+    print("Escribí 'grabar' para grabar lo que suena en la compu. Enter vacío para empezar.")
+    print(f"Los documentos se guardan en: {carpeta_documentos()}\n")
     entradas = []
     while True:
         try:
@@ -195,9 +225,10 @@ def _interactivo() -> Optional[List[str]]:
         if not linea:
             break
         if linea.lower() == "grabar":
-            return ["grabar"]
+            return ["grabar", "--copiar", "--abrir"]
         entradas.append(linea)
-    return entradas or None
+    # Quien usa el modo interactivo quiere el resultado a mano, sin buscarlo.
+    return entradas + ["--copiar", "--abrir"] if entradas else None
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -206,6 +237,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         argv = _interactivo()
         if argv is None:
             return 0
+        codigo = main(argv)
+        # Abierto desde el menú (Antü, acceso directo de Windows): que la
+        # ventana no se cierre antes de poder leer el resultado.
+        try:
+            input("\nEnter para cerrar...")
+        except (EOFError, KeyboardInterrupt):
+            pass
+        return codigo
     if argv[0] == "grabar":
         return _grabar(argv[1:])
     if argv[0] == "dispositivos":
@@ -217,6 +256,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 1
         return 0
     args = _parser_principal().parse_args(argv)
+    args.salida = args.salida or carpeta_documentos()
     if not args.fuentes:
         _parser_principal().print_help()
         return 2

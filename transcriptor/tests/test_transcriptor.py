@@ -158,7 +158,7 @@ def test_cli_url_usa_subtitulos_sin_transcribir(tmp_path, monkeypatch):
     monkeypatch.setattr(cli, "desde_url", desde_url_falso)
     assert cli.main(["https://youtu.be/abc", "--subtitulos", "-o", str(tmp_path)]) == 0
     assert llamadas == []
-    assert "Del subtítulo." in (tmp_path / "Video.md").read_text(encoding="utf-8")
+    assert "Del subtítulo." in (tmp_path / "Video.txt").read_text(encoding="utf-8")
 
 
 def test_grabar_escribe_wav_valido(tmp_path, monkeypatch):
@@ -193,3 +193,38 @@ def test_grabar_escribe_wav_valido(tmp_path, monkeypatch):
         assert (w.getnchannels(), w.getframerate(), w.getnframes()) == (1, 16000, 32000)
         muestras = np.frombuffer(w.readframes(10), dtype="<i2")
         assert (muestras == int(0.5 * 32767)).all()
+
+
+def test_docx_se_abre_y_tiene_el_texto(tmp_path):
+    from docx import Document
+
+    segs = [Segmento(0, 2, "Hoy vemos límites y derivadas."), Segmento(9, 11, "Ejercicio uno.")]
+    salida.guardar(segs, "Análisis I - Clase 3", "https://drive.google.com/x", 11, tmp_path, ["docx"])
+    doc = Document(str(tmp_path / "Análisis I - Clase 3.docx"))
+    textos = [p.text for p in doc.paragraphs]
+    assert textos[0] == "Análisis I - Clase 3"
+    assert "[00:00:00]  Hoy vemos límites y derivadas." in textos
+    assert "[00:00:09]  Ejercicio uno." in textos
+    assert doc.styles["Normal"].font.name == "Calibri"
+
+
+def test_cli_copia_al_portapapeles_y_formatos_por_defecto(tmp_path, monkeypatch):
+    llamadas, copiado = [], []
+    _whisper_falso(monkeypatch, llamadas)
+    monkeypatch.setattr(cli, "copiar_al_portapapeles", lambda t: copiado.append(t) or True)
+    audio = tmp_path / "clase.mp4"
+    audio.write_bytes(b"x")
+    out = tmp_path / "out"
+    assert cli.main([str(audio), "-o", str(out), "--copiar"]) == 0
+    assert sorted(p.name for p in out.iterdir()) == ["clase.docx", "clase.txt"]
+    assert copiado == ["clase\n\nEsto es una prueba. Segunda oración."]
+
+
+def test_salida_por_defecto_en_documentos(tmp_path, monkeypatch):
+    llamadas = []
+    _whisper_falso(monkeypatch, llamadas)
+    monkeypatch.setattr(cli, "carpeta_documentos", lambda: tmp_path / "Documentos" / "Transcripciones")
+    audio = tmp_path / "a.opus"
+    audio.write_bytes(b"x")
+    assert cli.main([str(audio), "-f", "txt"]) == 0
+    assert (tmp_path / "Documentos" / "Transcripciones" / "a.txt").exists()

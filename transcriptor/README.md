@@ -21,13 +21,19 @@ español (incluido el rioplatense).
 
 ## Qué te devuelve
 
-Por cada video/audio, en la carpeta `transcripciones/`:
+Por cada video/audio, en `Documentos/Transcripciones/`:
 
 | Archivo | Para qué |
 |---|---|
-| `Nombre.txt` | Texto corrido, separado en párrafos. Para leer, subrayar, resumir o pasárselo a una IA. |
-| `Nombre.md` | Lo mismo pero cada párrafo empieza con el minuto (`**[01:23:45]**`), para volver al video justo en la parte que no entendiste. |
-| `Nombre.srt` | (opcional, `-f txt,md,srt`) Subtítulos para ver el video en VLC con texto. |
+| `Nombre.docx` | **Documento de Word** con título, datos de la clase y el texto en párrafos. Cada párrafo empieza con el minuto en gris chiquito (`[01:23:45]`), para volver al video justo en la parte que no entendiste. Se abre en Word (Windows, o Antü con el asistente de Office), en LibreOffice y en Google Docs. Viene en Calibri y con el corrector en español. |
+| `Nombre.txt` | Texto corrido en párrafos, sin nada más. Para copiar y pegar, o pasárselo a una IA. |
+| `Nombre.md` | (opcional) Igual que el .txt, pero con el minuto en cada párrafo. |
+| `Nombre.srt` | (opcional) Subtítulos para ver el video en VLC con texto. |
+
+Y si querés **el texto para pegarlo directo** en otro lado, agregá `--copiar`:
+al terminar queda en el portapapeles y lo pegás con Ctrl+V. Si abrís el
+programa sin opciones (escribiendo `transcribir` solo, o desde el menú en Antü),
+copia el texto y abre el documento automáticamente.
 
 Mientras transcribe va guardando un `Nombre.parcial.txt`: si se corta la luz
 o cerrás la ventana en la hora 2 de 3, lo hecho no se pierde.
@@ -46,10 +52,23 @@ pipx ensurepath
 pipx install "ruta\a\esta\carpeta\transcriptor"
 ```
 
-**Linux** (Debian/Ubuntu/Antü):
+**Antü OS** (y cualquier Debian/Ubuntu): desde esta carpeta,
 
 ```bash
-sudo apt install pipx ffmpeg
+./instalar-antu.sh
+```
+
+Instala lo necesario (pipx, ffmpeg y xclip para copiar el texto), el
+programa, y un ícono **"Transcriptor"** en el menú de aplicaciones: lo abrís
+desde ahí como cualquier otro programa, pegás el link o arrastrás el archivo,
+y al terminar se abre el Word. Los `.docx` se abren con Word si lo instalaste
+con el asistente de Office de Antü; si no, con el programa que tengas para
+documentos.
+
+**Otras distribuciones de Linux**:
+
+```bash
+sudo apt install pipx ffmpeg xclip     # o el equivalente de tu distro
 pipx install ./transcriptor
 ```
 
@@ -87,8 +106,10 @@ transcribir grabar                                # grabar lo que suena (Ctrl+C 
 |---|---|
 | `-m turbo` | Modelo más preciso (por defecto: `small`). Ver tabla de abajo. |
 | `-i en` | El audio está en inglés (u otro: `pt`, `fr`, `it`...). `-i auto` lo detecta solo. Por defecto: español. |
-| `-o carpeta` | Dónde guardar los textos. |
-| `-f txt,md,srt` | Qué formatos generar. |
+| `--copiar` | Copia el texto al portapapeles al terminar (pegalo con Ctrl+V). |
+| `--abrir` | Abre el documento de Word al terminar. |
+| `-o carpeta` | Dónde guardar los textos (por defecto: `Documentos/Transcripciones`). |
+| `-f docx,txt,md,srt` | Qué formatos generar (por defecto: `docx,txt`). Ej.: `-f docx` solo Word. |
 | `--cookies-navegador chrome` | Para videos privados o compartidos con tu cuenta (Drive de la facultad, etc.). Usa la sesión que ya tenés abierta en Chrome / Firefox / Edge / Brave. |
 | `--subtitulos` | Si el video ya tiene subtítulos **escritos por una persona**, los usa directamente (instantáneo). Los automáticos de YouTube se ignoran porque Whisper los hace mejor. |
 | `--conservar-audio` | Guarda también el audio bajado de un link. |
@@ -112,7 +133,8 @@ transcribir grabar                                # grabar lo que suena (Ctrl+C 
 | Audio de WhatsApp | En el celu: mantené apretado el audio → Compartir → mandátelo por mail/Drive, o copiá la carpeta `WhatsApp/Media/WhatsApp Voice Notes` a la compu. Después `transcribir archivo-o-carpeta`. En WhatsApp Web: menú del audio → Descargar. |
 | YouTube (público o no listado) | `transcribir link` (probá `--subtitulos` primero, si el profe los subió es instantáneo) |
 | Google Drive público | `transcribir link` |
-| Drive compartido solo con tu cuenta, o con descarga deshabilitada | `transcribir link --cookies-navegador chrome` (con tu cuenta abierta en ese navegador). Si Chrome falla por las cookies cifradas, probá con Firefox. |
+| Drive con descarga deshabilitada, pero compartido "con cualquier persona con el link" | `transcribir link`. El programa baja el mismo audio que usa el reproductor, así que no le importa que esté sacado el botón de descarga. |
+| Drive compartido solo con tu cuenta (por ejemplo, la cuenta de la facultad) | `transcribir link --cookies-navegador firefox` con esa cuenta abierta en el navegador. **En Windows usá Firefox**: Chrome y Edge cifran sus cookies de una forma que yt-dlp no puede leer. En Antü/Linux, Chrome también funciona. |
 | Video incrustado en el campus / Moodle / una página | 1) Probá `transcribir link-de-la-página --cookies-navegador chrome`. 2) Si no: F12 → pestaña *Red* → reproducí el video → filtrá por `m3u8` o `mp4` → clic derecho → *Copiar URL* → `transcribir "esa URL"`. |
 | Clase grabada en Zoom / Teams / Meet con link de reproducción | Igual que el anterior; si no anda, `transcribir grabar`. |
 | Clase en vivo por Zoom/Meet/Teams | `transcribir grabar -t "Análisis - clase 5"` antes de que empiece, Ctrl+C al terminar. |
@@ -133,7 +155,7 @@ transcribir grabar                                # grabar lo que suena (Ctrl+C 
   varias placas de sonido o auriculares Bluetooth.
 - `-d 1h30m` la detiene sola (útil si te vas a dormir con un video largo).
 - `--solo-grabar` guarda el audio y lo podés transcribir más tarde con
-  `transcribir "transcripciones/Grabación ....wav"`.
+  `transcribir "Documentos/Transcripciones/Grabación ....wav"`.
 
 ## Problemas comunes
 
@@ -169,6 +191,7 @@ transcriptor/
 ├── fuentes.py        # archivo, carpeta o link -> audio local (yt-dlp)
 ├── grabacion.py      # grabar la salida de audio o el micrófono (soundcard)
 ├── transcripcion.py  # Whisper (faster-whisper), con barra de progreso
-├── salida.py         # párrafos y archivos .txt / .md / .srt
+├── salida.py         # párrafos y archivos .docx / .txt / .md / .srt
+├── sistema.py        # portapapeles, abrir archivos, carpeta Documentos
 └── segmentos.py      # tipo común de fragmento con tiempo
 ```

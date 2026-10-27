@@ -31,16 +31,33 @@ def cargar_modelo(nombre: str, dispositivo: str = "auto"):
         raise RuntimeError("Falta faster-whisper. Instalalo con: pip install -U faster-whisper") from e
 
     print(f"Cargando el modelo '{nombre}' (la primera vez se descarga, puede tardar)...")
+    try:
+        modelo = _crear_modelo(WhisperModel, nombre, dispositivo)
+    except Exception as e:
+        red = ("requests", "huggingface_hub", "httpx", "httpcore", "urllib3")
+        if isinstance(e, ConnectionError) or e.__class__.__module__.startswith(red):
+            raise RuntimeError(
+                f"No pude descargar el modelo '{nombre}' ({e}). La primera vez hace falta internet; "
+                "después funciona sin conexión."
+            ) from e
+        raise
+    _cache_modelos[clave] = modelo
+    return modelo
+
+
+def _crear_modelo(WhisperModel, nombre: str, dispositivo: str):
+    if dispositivo == "auto":
+        import ctranslate2
+        dispositivo = "cuda" if ctranslate2.get_cuda_device_count() > 0 else "cpu"
     if dispositivo == "cpu":
         modelo = WhisperModel(nombre, device="cpu", compute_type="int8")
     else:
         try:
-            modelo = WhisperModel(nombre, device=dispositivo, compute_type="auto")
-        except Exception as e:
+            modelo = WhisperModel(nombre, device="cuda", compute_type="auto")
+        except (RuntimeError, ValueError) as e:
             # Típico: hay GPU pero faltan las librerías de CUDA. Caemos al procesador.
-            print(f"  No pude usar la GPU ({e.__class__.__name__}); uso el procesador.")
+            print(f"  No pude usar la placa de video ({e}); uso el procesador.")
             modelo = WhisperModel(nombre, device="cpu", compute_type="int8")
-    _cache_modelos[clave] = modelo
     return modelo
 
 
