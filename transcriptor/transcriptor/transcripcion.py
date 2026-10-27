@@ -48,7 +48,12 @@ def cargar_modelo(nombre: str, dispositivo: str = "auto"):
 def _crear_modelo(WhisperModel, nombre: str, dispositivo: str):
     if dispositivo == "auto":
         import ctranslate2
-        dispositivo = "cuda" if ctranslate2.get_cuda_device_count() > 0 else "cpu"
+        # En el .exe de Windows no se usa la placa de video salvo que se pida
+        # con --gpu: si falta cuDNN, CTranslate2 cierra el programa de golpe
+        # (no es un error que se pueda atrapar), y casi nadie lo tiene instalado.
+        empaquetado = getattr(sys, "frozen", False)
+        hay_gpu = not empaquetado and ctranslate2.get_cuda_device_count() > 0
+        dispositivo = "cuda" if hay_gpu else "cpu"
     if dispositivo == "cpu":
         modelo = WhisperModel(nombre, device="cpu", compute_type="int8")
     else:

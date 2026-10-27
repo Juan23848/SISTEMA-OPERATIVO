@@ -62,8 +62,11 @@ def _opciones_comunes(p: argparse.ArgumentParser) -> None:
                    help="copiar el texto al portapapeles al terminar, para pegarlo con Ctrl+V")
     p.add_argument("--abrir", action="store_true",
                    help="abrir el documento al terminar (con Word, LibreOffice o lo que tengas)")
-    p.add_argument("--cpu", action="store_true",
-                   help="forzar el uso del procesador aunque haya placa de video")
+    dispositivo = p.add_mutually_exclusive_group()
+    dispositivo.add_argument("--cpu", action="store_true",
+                             help="forzar el uso del procesador aunque haya placa de video")
+    dispositivo.add_argument("--gpu", action="store_true",
+                             help="usar la placa de video NVIDIA (requiere CUDA 12 y cuDNN 9 instalados)")
 
 
 def _parser_principal() -> argparse.ArgumentParser:
@@ -123,7 +126,7 @@ def _procesar(fuente: Fuente, args) -> str:
                 f.flush()
 
             segmentos, duracion = transcribir(fuente.audio, args.modelo, idioma,
-                                              "cpu" if args.cpu else "auto", al_segmento)
+                                              "cpu" if args.cpu else "cuda" if args.gpu else "auto", al_segmento)
         parcial.unlink()
     if not segmentos:
         print("  No se detectó voz en este audio.")
@@ -231,20 +234,51 @@ def _interactivo() -> Optional[List[str]]:
     return entradas + ["--copiar", "--abrir"] if entradas else None
 
 
+def _ventana_propia() -> bool:
+    """True si en Windows el programa se abrió con doble clic o arrastrando
+    archivos al ícono (la consola es solo suya), no desde una terminal."""
+    if sys.platform != "win32":
+        return False
+    try:
+        import ctypes
+        procesos = (ctypes.c_uint * 4)()
+        return ctypes.windll.kernel32.GetConsoleProcessList(procesos, 4) == 1
+    except Exception:
+        return False
+
+
+def _esperar_enter() -> None:
+    # Que la ventana no se cierre antes de poder leer el resultado.
+    try:
+        input("\nEnter para cerrar...")
+    except (EOFError, KeyboardInterrupt):
+        pass
+
+
 def main(argv: Optional[List[str]] = None) -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        # Una consola que no entiende algún carácter no debe tirar abajo una transcripción de horas.
+        sys.stdout.reconfigure(errors="replace")
+        sys.stderr.reconfigure(errors="replace")
     argv = sys.argv[1:] if argv is None else argv
     if not argv:
         argv = _interactivo()
         if argv is None:
             return 0
-        codigo = main(argv)
-        # Abierto desde el menú (Antü, acceso directo de Windows): que la
-        # ventana no se cierre antes de poder leer el resultado.
-        try:
-            input("\nEnter para cerrar...")
-        except (EOFError, KeyboardInterrupt):
-            pass
+        codigo = _ejecutar(argv)
+        _esperar_enter()
         return codigo
+    if _ventana_propia():
+        # Archivos arrastrados sobre el ícono del .exe.
+        if argv[0] not in ("grabar", "dispositivos"):
+            argv = argv + ["--copiar", "--abrir"]
+        codigo = _ejecutar(argv)
+        _esperar_enter()
+        return codigo
+    return _ejecutar(argv)
+
+
+def _ejecutar(argv: List[str]) -> int:
     if argv[0] == "grabar":
         return _grabar(argv[1:])
     if argv[0] == "dispositivos":

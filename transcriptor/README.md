@@ -40,10 +40,35 @@ o cerrás la ventana en la hora 2 de 3, lo hecho no se pierde.
 
 ## Instalación
 
-Necesitás **Python 3.9 o más nuevo**.
+### Windows (lo más fácil: sin instalar nada)
 
-**Windows**: instalá Python desde [python.org](https://www.python.org/downloads/)
-(tildá *"Add python.exe to PATH"*). Después, en una terminal (PowerShell):
+1. Bajá **Transcriptor-Windows.zip** de la
+   [página de descarga](https://github.com/Juan23848/SISTEMA-OPERATIVO/releases/tag/transcriptor-windows).
+2. Descomprimilo (clic derecho → *Extraer todo...*) donde quieras, por ejemplo en Documentos.
+3. Abrí la carpeta y hacé doble clic en **transcribir.exe**. La primera vez
+   Windows puede decir *"Windows protegió su PC"*, porque el programa no está
+   firmado: *Más información* → *Ejecutar de todas formas*.
+
+Se usa así:
+- **Doble clic** en `transcribir.exe`: pegás un link o arrastrás el archivo a
+  la ventana, Enter dos veces, y listo.
+- O **arrastrás** videos, audios o una carpeta **encima del ícono** de `transcribir.exe`.
+
+Al terminar se abre el Word y el texto queda copiado (Ctrl+V). Tip: clic
+derecho en `transcribir.exe` → *Enviar a* → *Escritorio (crear acceso directo)*.
+
+En el `.exe` la placa de video está apagada por defecto, porque sin CUDA
+instalado haría que el programa se cierre de golpe. Si tenés NVIDIA con
+CUDA 12 y cuDNN 9, usá `--gpu`.
+
+Esa versión la arma GitHub solo (`.github/workflows/transcriptor-windows.yml`)
+cada vez que cambia el código, y antes de publicarla la prueba transcribiendo
+un audio real.
+
+### Windows con Python (para desarrollar)
+
+Instalá Python 3.9 o más nuevo desde [python.org](https://www.python.org/downloads/)
+(tildá *"Add python.exe to PATH"*). Después, en PowerShell:
 
 ```powershell
 pip install pipx
@@ -113,7 +138,7 @@ transcribir grabar                                # grabar lo que suena (Ctrl+C 
 | `--cookies-navegador chrome` | Para videos privados o compartidos con tu cuenta (Drive de la facultad, etc.). Usa la sesión que ya tenés abierta en Chrome / Firefox / Edge / Brave. |
 | `--subtitulos` | Si el video ya tiene subtítulos **escritos por una persona**, los usa directamente (instantáneo). Los automáticos de YouTube se ignoran porque Whisper los hace mejor. |
 | `--conservar-audio` | Guarda también el audio bajado de un link. |
-| `--cpu` | No usar la placa de video (si da errores de CUDA). |
+| `--cpu` / `--gpu` | Forzar procesador o placa de video NVIDIA. |
 
 ### ¿Qué modelo uso?
 
@@ -194,4 +219,8 @@ transcriptor/
 ├── salida.py         # párrafos y archivos .docx / .txt / .md / .srt
 ├── sistema.py        # portapapeles, abrir archivos, carpeta Documentos
 └── segmentos.py      # tipo común de fragmento con tiempo
+windows/
+├── construir.py      # arma transcribir.exe con PyInstaller
+├── lanzador.py       # punto de entrada del .exe
+└── LEEME.txt         # instrucciones que van dentro del .zip
 ```

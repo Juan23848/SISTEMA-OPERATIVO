@@ -1,0 +1,42 @@
+TRANSCRIPTOR - video y audio a texto
+====================================
+
+CÓMO USARLO
+-----------
+Hay tres formas, elegí la que te quede más cómoda:
+
+1) Doble clic en "transcribir.exe". Se abre una ventana: pegá un link
+   (YouTube, Google Drive...) o arrastrá un archivo adentro de la ventana,
+   apretá Enter dos veces y esperá.
+
+2) Arrastrá uno o varios videos/audios (o una carpeta entera) ENCIMA del
+   ícono de "transcribir.exe".
+
+3) Escribí "grabar" en la ventana para grabar lo que suena en la compu
+   (sirve para cualquier video que no se deje bajar). Ctrl+C para terminar.
+
+Cuando termina, el documento de Word se abre solo y el texto queda copiado:
+lo podés pegar donde quieras con Ctrl+V.
+
+Los documentos quedan en:  Documentos\Transcripciones
+
+LA PRIMERA VEZ
+--------------
+- Windows puede mostrar "Windows protegió su PC", porque el programa no
+  está firmado (eso cuesta dinero, no significa que tenga virus).
+  Hacé clic en "Más información" y después en "Ejecutar de todas formas".
+- La primera transcripción descarga el modelo de reconocimiento de voz
+  (unos 500 MB con el modelo normal). Necesita internet esa sola vez;
+  después funciona sin conexión.
+- No muevas "transcribir.exe" fuera de esta carpeta: necesita los archivos
+  de "_internal". Si querés tenerlo a mano, hacé clic derecho sobre él >
+  "Enviar a" > "Escritorio (crear acceso directo)".
+
+OPCIONES (desde una terminal, para usuarios avanzados)
+------------------------------------------------------
+  transcribir.exe --help                      ver todas las opciones
+  transcribir.exe clase.mp4 -m turbo          más preciso (y más lento)
+  transcribir.exe link --cookies-navegador firefox
+        para videos de Drive compartidos solo con tu cuenta
+        (en Windows usá Firefox: con Chrome/Edge no funciona)
+  transcribir.exe grabar --microfono          grabar una clase presencial

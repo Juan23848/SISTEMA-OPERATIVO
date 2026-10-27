@@ -1,0 +1,90 @@
+name: Transcriptor para Windows
+
+# Arma transcribir.exe en una máquina Windows de GitHub, lo prueba con una
+# transcripción real (audio con voz -> Whisper -> .docx/.txt), y lo publica
+# como .zip en la release "transcriptor-windows" del repo, lista para bajar.
+"on":
+  push:
+    paths:
+      - "transcriptor/**"
+      - ".github/workflows/transcriptor-windows.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: transcriptor-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write  # para publicar la release
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: transcriptor
+    env:
+      PYTHONIOENCODING: utf-8
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar el programa y PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[dev]" pyinstaller
+
+      - name: Pruebas automáticas
+        run: python -m pytest -q
+
+      - name: Armar transcribir.exe
+        run: python windows/construir.py
+
+      # La prueba que importa: un audio real con voz, transcripto por el .exe
+      # tal cual lo va a usar alguien que lo baja (modelo descargado de cero).
+      - name: Probar el .exe con un archivo de audio real
+        run: |
+          Invoke-WebRequest https://github.com/openai/whisper/raw/main/tests/jfk.flac -OutFile jfk.flac
+          .\dist\transcribir\transcribir.exe jfk.flac -m tiny -i en -o prueba -f docx,txt
+          if ($LASTEXITCODE -ne 0) { throw "transcribir.exe terminó con error $LASTEXITCODE" }
+          Get-Content prueba\jfk.txt
+          if (-not (Select-String -Path prueba\jfk.txt -Pattern "country" -Quiet)) { throw "La transcripción no tiene el texto esperado" }
+          if ((Get-Item prueba\jfk.docx).Length -lt 5000) { throw "No se generó el .docx" }
+
+      - name: Probar el .exe con un link (descarga con yt-dlp)
+        run: |
+          .\dist\transcribir\transcribir.exe https://github.com/openai/whisper/raw/main/tests/jfk.flac -m tiny -i en -o prueba-link -f txt
+          if ($LASTEXITCODE -ne 0) { throw "transcribir.exe terminó con error $LASTEXITCODE" }
+          if (-not (Select-String -Path prueba-link\*.txt -Pattern "country" -Quiet)) { throw "La transcripción del link no tiene el texto esperado" }
+
+      - name: Empaquetar el .zip
+        run: |
+          New-Item -ItemType Directory Transcriptor | Out-Null
+          Copy-Item -Recurse dist\transcribir\* Transcriptor\
+          Copy-Item windows\LEEME.txt Transcriptor\
+          Compress-Archive -Path Transcriptor -DestinationPath Transcriptor-Windows.zip
+          "{0:N0} MB" -f ((Get-Item Transcriptor-Windows.zip).Length / 1MB)
+
+      - name: Guardar el .zip en esta ejecución
+        uses: actions/upload-artifact@v4
+        with:
+          name: Transcriptor-Windows
+          path: transcriptor/Transcriptor-Windows.zip
+          retention-days: 30
+
+      # Una sola release que se reemplaza con cada versión nueva: el link para
+      # bajarla es siempre el mismo y no hace falta tener cuenta de GitHub.
+      - name: Publicar en la release "transcriptor-windows"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete transcriptor-windows --yes --cleanup-tag 2>$null
+          $notas = "Programa para pasar video y audio a texto en Windows. Descargá Transcriptor-Windows.zip, descomprimilo y abrí transcribir.exe (instrucciones en LEEME.txt). Versión armada desde el commit $env:GITHUB_SHA."
+          gh release create transcriptor-windows Transcriptor-Windows.zip --target $env:GITHUB_SHA --title "Transcriptor para Windows" --notes $notas --prerelease
