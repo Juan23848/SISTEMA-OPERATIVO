@@ -65,11 +65,14 @@ jobs:
           if (-not (Select-String -Path prueba-link\*.txt -Pattern "country" -Quiet)) { throw "La transcripción del link no tiene el texto esperado" }
 
       - name: Empaquetar el .zip
+        # Se arma fuera del repo: Windows no distingue mayúsculas y una carpeta
+        # "Transcriptor" acá chocaría con el código, que vive en "transcriptor".
         run: |
-          New-Item -ItemType Directory Transcriptor | Out-Null
-          Copy-Item -Recurse dist\transcribir\* Transcriptor\
-          Copy-Item windows\LEEME.txt Transcriptor\
-          Compress-Archive -Path Transcriptor -DestinationPath Transcriptor-Windows.zip
+          $carpeta = Join-Path $env:RUNNER_TEMP "Transcriptor"
+          New-Item -ItemType Directory $carpeta | Out-Null
+          Copy-Item -Recurse dist\transcribir\* $carpeta
+          Copy-Item windows\LEEME.txt $carpeta
+          Compress-Archive -Path $carpeta -DestinationPath Transcriptor-Windows.zip
           "{0:N0} MB" -f ((Get-Item Transcriptor-Windows.zip).Length / 1MB)
 
       - name: Guardar el .zip en esta ejecución
