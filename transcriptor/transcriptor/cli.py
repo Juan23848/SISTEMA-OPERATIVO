@@ -11,6 +11,7 @@ Uso rápido:
 """
 
 import argparse
+import shlex
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -18,10 +19,10 @@ from typing import List, Optional
 
 from . import __version__
 from .fuentes import ErrorFuente, Fuente, carpeta_temporal, desde_archivo, desde_url, es_url, expandir
-from .salida import FORMATOS_POR_DEFECTO, FORMATOS_VALIDOS, armar_parrafos, guardar, nombre_seguro
-from .segmentos import Segmento, formato_tiempo
+from .salida import FORMATOS_POR_DEFECTO, FORMATOS_VALIDOS, nombre_seguro
 from .sistema import abrir, carpeta_documentos, copiar_al_portapapeles
-from .transcripcion import MODELO_POR_DEFECTO, MODELOS, transcribir
+from .trabajo import transcribir_fuente
+from .transcripcion import MODELO_POR_DEFECTO, MODELOS
 
 
 def _formatos(texto: str) -> List[str]:
@@ -112,31 +113,17 @@ def _parser_grabar() -> argparse.ArgumentParser:
 
 def _procesar(fuente: Fuente, args) -> str:
     """Transcribe y guarda. Devuelve el texto limpio (para el portapapeles)."""
-    idioma = None if args.idioma == "auto" else args.idioma
-    if fuente.subtitulos:
-        segmentos = fuente.subtitulos
-        duracion = segmentos[-1].fin
-    else:
-        args.salida.mkdir(parents=True, exist_ok=True)
-        # Se va guardando a medida que avanza: si se corta, queda lo hecho.
-        parcial = args.salida / (nombre_seguro(fuente.titulo) + ".parcial.txt")
-        with parcial.open("w", encoding="utf-8") as f:
-            def al_segmento(seg: Segmento) -> None:
-                f.write(f"[{formato_tiempo(seg.inicio)}] {seg.texto}\n")
-                f.flush()
-
-            segmentos, duracion = transcribir(fuente.audio, args.modelo, idioma,
-                                              "cpu" if args.cpu else "cuda" if args.gpu else "auto", al_segmento)
-        parcial.unlink()
-    if not segmentos:
+    rutas, texto = transcribir_fuente(
+        fuente, args.salida, args.modelo, None if args.idioma == "auto" else args.idioma,
+        "cpu" if args.cpu else "cuda" if args.gpu else "auto", args.formatos)
+    if not rutas:
         print("  No se detectó voz en este audio.")
         return ""
-    rutas = guardar(segmentos, fuente.titulo, fuente.origen, duracion, args.salida, args.formatos)
     for ruta in rutas:
         print(f"  Listo: {ruta}")
     if args.abrir:
         abrir(rutas[0])
-    return fuente.titulo + "\n\n" + "\n\n".join(p.texto for p in armar_parrafos(segmentos))
+    return texto
 
 
 def _copiar(textos: List[str]) -> None:
@@ -213,25 +200,52 @@ def _grabar(argv: List[str]) -> int:
     return 0
 
 
-def _interactivo() -> Optional[List[str]]:
-    print(f"Transcriptor {__version__} — pasá video o audio a texto.\n")
-    print("Pegá un link, o arrastrá acá un archivo o carpeta (varios separados por Enter).")
-    print("Escribí 'grabar' para grabar lo que suena en la compu. Enter vacío para empezar.")
-    print(f"Los documentos se guardan en: {carpeta_documentos()}\n")
-    entradas = []
+def _separar_entradas(linea: str) -> List[str]:
+    """Una línea puede traer un link, una ruta con espacios, o varios archivos
+    arrastrados juntos a la ventana ("C:\\a b.mp4" "C:\\c.opus")."""
+    linea = linea.strip()
+    sola = linea.strip('"').strip("'")
+    if es_url(sola) or Path(sola).expanduser().exists():
+        return [sola]
+    try:
+        partes = shlex.split(linea, posix=False)
+    except ValueError:
+        return [sola]
+    return [p.strip('"').strip("'") for p in partes if p.strip('"').strip("'")]
+
+
+def _modo_interactivo() -> int:
+    """Doble clic o `transcribir` sin nada: pide un link/archivo y arranca enseguida."""
+    print(f"Transcriptor {__version__} — pasá video o audio a texto.")
+    print(f"Los documentos se guardan en: {carpeta_documentos()}")
+    codigo = 0
+    primera = True
     while True:
+        if primera:
+            print("\nPegá el link del video (clic derecho para pegar) o arrastrá el archivo")
+            print("a esta ventana, y apretá Enter:")
+        else:
+            print("\n¿Otro? Pegá otro link o arrastrá otro archivo y apretá Enter.")
+            print("Para salir, apretá Enter sin escribir nada.")
         try:
-            linea = input("> ").strip().strip('"').strip("'")
+            linea = input("> ").strip()
         except (EOFError, KeyboardInterrupt):
             print()
-            return None
-        if not linea:
             break
+        if not linea:
+            if primera:
+                continue
+            break
+        primera = False
         if linea.lower() == "grabar":
-            return ["grabar", "--copiar", "--abrir"]
-        entradas.append(linea)
-    # Quien usa el modo interactivo quiere el resultado a mano, sin buscarlo.
-    return entradas + ["--copiar", "--abrir"] if entradas else None
+            codigo = _ejecutar(["grabar", "--copiar", "--abrir"])
+            continue
+        # Quien usa esta ventana quiere el resultado a mano, sin buscarlo.
+        codigo = _ejecutar(_separar_entradas(linea) + ["--copiar", "--abrir"])
+        if codigo != 0:
+            print("\nSi ese video no se puede bajar de ninguna forma, queda un último recurso:")
+            print("escribí  grabar  y reproducilo; se graba lo que suena y se pasa a texto.")
+    return codigo
 
 
 def _ventana_propia() -> bool:
@@ -262,12 +276,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         sys.stderr.reconfigure(errors="replace")
     argv = sys.argv[1:] if argv is None else argv
     if not argv:
-        argv = _interactivo()
-        if argv is None:
-            return 0
-        codigo = _ejecutar(argv)
-        _esperar_enter()
-        return codigo
+        return _modo_interactivo()
     if _ventana_propia():
         # Archivos arrastrados sobre el ícono del .exe.
         if argv[0] not in ("grabar", "dispositivos"):

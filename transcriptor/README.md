@@ -45,25 +45,29 @@ o cerrás la ventana en la hora 2 de 3, lo hecho no se pierde.
 1. Bajá **Transcriptor-Windows.zip** de la
    [página de descarga](https://github.com/Juan23848/SISTEMA-OPERATIVO/releases/tag/transcriptor-windows).
 2. Descomprimilo (clic derecho → *Extraer todo...*) donde quieras, por ejemplo en Documentos.
-3. Abrí la carpeta y hacé doble clic en **transcribir.exe**. La primera vez
+3. Abrí la carpeta y hacé doble clic en **Transcriptor.exe**. La primera vez
    Windows puede decir *"Windows protegió su PC"*, porque el programa no está
    firmado: *Más información* → *Ejecutar de todas formas*.
 
-Se usa así:
-- **Doble clic** en `transcribir.exe`: pegás un link o arrastrás el archivo a
-  la ventana, Enter dos veces, y listo.
-- O **arrastrás** videos, audios o una carpeta **encima del ícono** de `transcribir.exe`.
+Se abre una ventana: arrastrás el video o audio (o pegás el link) y tocás
+**Transcribir**. No hace falta reproducir nada: el programa baja o lee el
+audio y lo pasa a texto por su cuenta, con una barra que muestra cuánto
+falta. Al terminar, el texto aparece en la ventana, con botones para
+copiarlo o abrirlo en Word. La ventana recuerda el idioma, la calidad y la
+carpeta que elegiste.
 
-Al terminar se abre el Word y el texto queda copiado (Ctrl+V). Tip: clic
-derecho en `transcribir.exe` → *Enviar a* → *Escritorio (crear acceso directo)*.
+Para links privados (un Drive compartido solo con tu cuenta), el programa
+prueba solo con la sesión de tus navegadores: tené abierta esa cuenta en
+Firefox (o cerrá Chrome/Edge antes de transcribir).
 
 En el `.exe` la placa de video está apagada por defecto, porque sin CUDA
-instalado haría que el programa se cierre de golpe. Si tenés NVIDIA con
-CUDA 12 y cuDNN 9, usá `--gpu`.
+instalado haría que el programa se cierre de golpe; usa todos los núcleos
+del procesador y procesa varios pedazos del audio a la vez.
 
 Esa versión la arma GitHub solo (`.github/workflows/transcriptor-windows.yml`)
 cada vez que cambia el código, y antes de publicarla la prueba transcribiendo
-un audio real.
+un audio real y abriendo la ventana. Si algo falla, el programa anota lo que
+hizo en `%APPDATA%\Transcriptor\registro.txt`.
 
 ### Windows con Python (para desarrollar)
 
@@ -212,7 +216,9 @@ Estructura:
 
 ```
 transcriptor/
+├── gui.py            # la ventana (customtkinter + arrastrar y soltar)
 ├── cli.py            # comandos y opciones (transcribir / grabar / dispositivos)
+├── trabajo.py        # fuente -> transcripción -> documentos (común a ventana y CLI)
 ├── fuentes.py        # archivo, carpeta o link -> audio local (yt-dlp)
 ├── grabacion.py      # grabar la salida de audio o el micrófono (soundcard)
 ├── transcripcion.py  # Whisper (faster-whisper), con barra de progreso
@@ -221,6 +227,6 @@ transcriptor/
 └── segmentos.py      # tipo común de fragmento con tiempo
 windows/
 ├── construir.py      # arma transcribir.exe con PyInstaller
-├── lanzador.py       # punto de entrada del .exe
+├── lanzador.py       # punto de entrada del .exe (ventana; --cli para la terminal)
 └── LEEME.txt         # instrucciones que van dentro del .zip
 ```

@@ -3,22 +3,29 @@ TRANSCRIPTOR - video y audio a texto
 
 CÓMO USARLO
 -----------
-Hay tres formas, elegí la que te quede más cómoda:
+1) Doble clic en "Transcriptor.exe".
+2) Arrastrá el video o audio a la ventana (o tocá "Elegir archivos..."),
+   o pegá el link (YouTube, Google Drive...) en el cuadro de abajo.
+3) Tocá "Transcribir".
 
-1) Doble clic en "transcribir.exe". Se abre una ventana: pegá un link
-   (YouTube, Google Drive...) o arrastrá un archivo adentro de la ventana,
-   apretá Enter dos veces y esperá.
+No hace falta reproducir nada: el programa lee o baja el audio y lo pasa
+a texto por su cuenta. Vas a ver una barra con el tiempo que falta.
 
-2) Arrastrá uno o varios videos/audios (o una carpeta entera) ENCIMA del
-   ícono de "transcribir.exe".
-
-3) Escribí "grabar" en la ventana para grabar lo que suena en la compu
-   (sirve para cualquier video que no se deje bajar). Ctrl+C para terminar.
-
-Cuando termina, el documento de Word se abre solo y el texto queda copiado:
-lo podés pegar donde quieras con Ctrl+V.
+Al terminar, el texto aparece en la ventana. Con "Copiar texto" lo pegás
+donde quieras (Ctrl+V), y "Abrir en Word" abre el documento.
 
 Los documentos quedan en:  Documentos\Transcripciones
+(se puede cambiar con "Cambiar carpeta...")
+
+También podés arrastrar videos o carpetas ENCIMA del ícono de
+"Transcriptor.exe" y arranca solo.
+
+VIDEOS DE DRIVE PRIVADOS (compartidos solo con tu cuenta)
+---------------------------------------------------------
+El programa prueba solo con la sesión de tus navegadores. Para que funcione,
+tené abierta la cuenta que tiene acceso al video en Firefox (en Windows es
+el más confiable). Si usás Chrome o Edge, cerralo del todo antes de
+transcribir.
 
 LA PRIMERA VEZ
 --------------
@@ -26,17 +33,21 @@ LA PRIMERA VEZ
   está firmado (eso cuesta dinero, no significa que tenga virus).
   Hacé clic en "Más información" y después en "Ejecutar de todas formas".
 - La primera transcripción descarga el modelo de reconocimiento de voz
-  (unos 500 MB con el modelo normal). Necesita internet esa sola vez;
+  (unos 500 MB con la calidad "Normal"). Necesita internet esa sola vez;
   después funciona sin conexión.
-- No muevas "transcribir.exe" fuera de esta carpeta: necesita los archivos
-  de "_internal". Si querés tenerlo a mano, hacé clic derecho sobre él >
-  "Enviar a" > "Escritorio (crear acceso directo)".
+- No muevas "Transcriptor.exe" fuera de esta carpeta: necesita los archivos
+  de "_internal". Para tenerlo a mano: clic derecho sobre él > "Enviar a" >
+  "Escritorio (crear acceso directo)".
 
-OPCIONES (desde una terminal, para usuarios avanzados)
-------------------------------------------------------
-  transcribir.exe --help                      ver todas las opciones
-  transcribir.exe clase.mp4 -m turbo          más preciso (y más lento)
-  transcribir.exe link --cookies-navegador firefox
-        para videos de Drive compartidos solo con tu cuenta
-        (en Windows usá Firefox: con Chrome/Edge no funciona)
-  transcribir.exe grabar --microfono          grabar una clase presencial
+ÚLTIMO RECURSO
+--------------
+Si un video no se puede bajar de ninguna forma, "Grabar lo que suena"
+graba el audio de la compu mientras lo reproducís y después lo pasa a
+texto. Es solo para cuando todo lo demás falla.
+
+SI ALGO FALLA
+-------------
+El programa anota lo que hace en:
+    %APPDATA%\Transcriptor\registro.txt
+(pegá esa ruta en la barra del Explorador de archivos). Ese archivo sirve
+para saber qué pasó.

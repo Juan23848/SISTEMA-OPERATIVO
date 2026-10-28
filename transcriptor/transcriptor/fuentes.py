@@ -15,9 +15,9 @@ import re
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import Callable, List, Optional
 
-from .segmentos import Segmento
+from .segmentos import Cancelado, Segmento
 
 EXTENSIONES_MEDIA = {
     ".mp4", ".mkv", ".avi", ".mov", ".webm", ".wmv", ".flv", ".m4v", ".3gp", ".mpg", ".mpeg", ".ts",
@@ -69,7 +69,8 @@ def desde_archivo(entrada: str) -> Fuente:
     return Fuente(titulo=ruta.stem, origen=str(ruta.resolve()), audio=ruta)
 
 
-def _opciones_ytdlp(carpeta: Path, cookies_navegador: Optional[str]) -> dict:
+def _opciones_ytdlp(carpeta: Path, cookies_navegador: Optional[str],
+                    al_descargar: Optional[Callable[[float], None]] = None) -> dict:
     opciones = {
         # Solo el audio: es lo único que necesitamos y pesa muchísimo menos.
         # Si el sitio no separa audio y video, baja el archivo más liviano.
@@ -81,6 +82,12 @@ def _opciones_ytdlp(carpeta: Path, cookies_navegador: Optional[str]) -> dict:
         "retries": 10,
         "fragment_retries": 10,
     }
+    if al_descargar:
+        def gancho(d):
+            total = d.get("total_bytes") or d.get("total_bytes_estimate")
+            if d.get("status") == "downloading" and total:
+                al_descargar(min(d.get("downloaded_bytes", 0) / total, 1.0))
+        opciones["progress_hooks"] = [gancho]
     if cookies_navegador:
         # yt-dlp acepta "chrome", "firefox", "edge", "brave", "opera", "safari",
         # "chromium", "vivaldi" y opcionalmente un perfil: "chrome:Profile 1".
@@ -127,50 +134,104 @@ def parsear_vtt(contenido: str) -> List[Segmento]:
     return segmentos
 
 
-def desde_url(url: str, carpeta: Path, cookies_navegador: Optional[str] = None,
-              usar_subtitulos: bool = False, idioma: Optional[str] = None) -> Fuente:
-    try:
-        import yt_dlp
-    except ImportError as e:
-        raise ErrorFuente("Falta yt-dlp. Instalalo con: pip install -U yt-dlp") from e
+# Navegadores donde buscar tu sesión, en orden. Firefox primero porque en
+# Windows es el único del que yt-dlp puede leer la sesión con el navegador
+# abierto (Chrome y Edge cifran sus cookies con una clave atada a la app).
+NAVEGADORES = ("firefox", "edge", "chrome", "brave", "opera", "vivaldi", "chromium")
 
-    opciones = _opciones_ytdlp(carpeta, cookies_navegador)
-    try:
-        with yt_dlp.YoutubeDL(opciones) as ydl:
-            info = ydl.extract_info(url, download=False)
-            if info.get("_type") == "playlist":
-                entradas = [e for e in (info.get("entries") or []) if e]
-                if not entradas:
-                    raise ErrorFuente("El link es una lista vacía.")
-                info = entradas[0]
-            titulo = info.get("title") or info.get("id") or "transcripcion"
 
-            if usar_subtitulos:
-                pista = _elegir_subtitulos(info, idioma)
-                if pista:
-                    print("  Encontré subtítulos escritos por una persona; los uso en vez de transcribir.")
-                    contenido = ydl.urlopen(pista["url"]).read().decode("utf-8", "replace")
-                    segmentos = parsear_vtt(contenido)
-                    if segmentos:
-                        return Fuente(titulo=titulo, origen=url, subtitulos=segmentos)
+def _bajar(yt_dlp, url: str, carpeta: Path, cookies_navegador: Optional[str],
+           usar_subtitulos: bool, idioma: Optional[str], al_descargar=None) -> Fuente:
+    with yt_dlp.YoutubeDL(_opciones_ytdlp(carpeta, cookies_navegador, al_descargar)) as ydl:
+        info = ydl.extract_info(url, download=False)
+        if info.get("_type") == "playlist":
+            entradas = [e for e in (info.get("entries") or []) if e]
+            if not entradas:
+                raise ErrorFuente("El link es una lista vacía.")
+            info = entradas[0]
+        titulo = info.get("title") or info.get("id") or "transcripcion"
 
-            print("  Descargando el audio...")
-            info = ydl.process_ie_result(info, download=True)
-            descargas = info.get("requested_downloads") or [info]
-            ruta = Path(descargas[0].get("filepath") or ydl.prepare_filename(info))
-    except yt_dlp.utils.DownloadError as e:
-        raise ErrorFuente(_explicar_error(str(e), url, cookies_navegador)) from e
+        if usar_subtitulos:
+            pista = _elegir_subtitulos(info, idioma)
+            if pista:
+                print("  Encontré subtítulos escritos por una persona; los uso en vez de transcribir.")
+                contenido = ydl.urlopen(pista["url"]).read().decode("utf-8", "replace")
+                segmentos = parsear_vtt(contenido)
+                if segmentos:
+                    return Fuente(titulo=titulo, origen=url, subtitulos=segmentos)
 
+        # Se baja el archivo de audio directo del servidor, a toda la velocidad
+        # de la conexión: no se reproduce nada ni hay que esperar lo que dura.
+        print("  Descargando el audio...")
+        info = ydl.process_ie_result(info, download=True)
+        descargas = info.get("requested_downloads") or [info]
+        ruta = Path(descargas[0].get("filepath") or ydl.prepare_filename(info))
     if not ruta.exists():
         raise ErrorFuente(f"yt-dlp terminó pero no encuentro el archivo descargado ({ruta}).")
     return Fuente(titulo=titulo, origen=url, audio=ruta)
 
 
-def _explicar_error(mensaje: str, url: str, cookies_navegador: Optional[str]) -> str:
+def _fue_cancelado(error: BaseException) -> bool:
+    """yt-dlp envuelve lo que se lanza desde el gancho de progreso: hay que buscarlo adentro."""
+    vistos = set()
+    while error is not None and id(error) not in vistos:
+        if isinstance(error, Cancelado):
+            return True
+        vistos.add(id(error))
+        envuelto = (getattr(error, "exc_info", None) or (None, None))[1]
+        error = envuelto or error.__cause__ or error.__context__
+    return False
+
+
+def desde_url(url: str, carpeta: Path, cookies_navegador: Optional[str] = None,
+              usar_subtitulos: bool = False, idioma: Optional[str] = None,
+              al_descargar: Optional[Callable[[float], None]] = None) -> Fuente:
+    try:
+        import yt_dlp
+    except ImportError as e:
+        raise ErrorFuente("Falta yt-dlp. Instalalo con: pip install -U yt-dlp") from e
+
+    try:
+        return _bajar(yt_dlp, url, carpeta, cookies_navegador, usar_subtitulos, idioma, al_descargar)
+    except yt_dlp.utils.DownloadError as e:
+        if _fue_cancelado(e):
+            raise Cancelado() from e
+        primer_error = e
+    if cookies_navegador or "unsupported url" in str(primer_error).lower():
+        raise ErrorFuente(_explicar_error(str(primer_error), url, cookies_navegador)) from primer_error
+
+    # Probablemente es privado (por ejemplo, un Drive compartido solo con tu
+    # cuenta de la facultad): se reintenta solo, con la sesión de cada
+    # navegador instalado, para entrar como vos. Nada sale de tu compu.
+    print("  No se pudo sin iniciar sesión; pruebo con tu sesión del navegador...")
+    for navegador in NAVEGADORES:
+        try:
+            fuente = _bajar(yt_dlp, url, carpeta, navegador, usar_subtitulos, idioma, al_descargar)
+            print(f"  Funcionó con tu sesión de {navegador.capitalize()}.")
+            return fuente
+        except (ErrorFuente, Cancelado):
+            raise
+        except Exception as e:
+            if _fue_cancelado(e):
+                raise Cancelado() from e
+            # Navegador no instalado, sesión sin permiso para ese archivo,
+            # cookies ilegibles... se sigue con el próximo.
+            continue
+    raise ErrorFuente(_explicar_error(str(primer_error), url, None, probo_navegadores=True)) from primer_error
+
+
+def _explicar_error(mensaje: str, url: str, cookies_navegador: Optional[str],
+                    probo_navegadores: bool = False) -> str:
     consejos = [f"No pude bajar el audio de {url}.", f"Detalle técnico: {mensaje.strip()}", ""]
     bajo = mensaje.lower()
     privado = any(p in bajo for p in ("login", "sign in", "private", "403", "401", "cookies", "permission"))
-    if privado and not cookies_navegador:
+    if probo_navegadores:
+        consejos.append("Probé también con la sesión de tus navegadores y no alcanzó. Revisá que:")
+        consejos.append("  - El link se abra y reproduzca en tu navegador.")
+        consejos.append("  - Tengas abierta la sesión con la cuenta que tiene acceso, en Firefox")
+        consejos.append("    (en Windows es el más confiable para esto). Si es Chrome o Edge,")
+        consejos.append("    cerralo del todo antes de volver a intentar.")
+    elif privado and not cookies_navegador:
         consejos.append("Parece que hace falta estar logueado. Probá agregando, por ejemplo:")
         consejos.append("    --cookies-navegador chrome      (o firefox, edge, brave...)")
         consejos.append("con una sesión abierta en ese navegador que pueda ver el video.")

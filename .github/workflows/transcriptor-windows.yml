@@ -1,8 +1,9 @@
 name: Transcriptor para Windows
 
-# Arma transcribir.exe en una máquina Windows de GitHub, lo prueba con una
-# transcripción real (audio con voz -> Whisper -> .docx/.txt), y lo publica
-# como .zip en la release "transcriptor-windows" del repo, lista para bajar.
+# Arma Transcriptor.exe en una máquina Windows de GitHub, lo prueba con una
+# transcripción real (audio con voz -> Whisper -> .docx/.txt), confirma que
+# la ventana abre, y lo publica como .zip en la release "transcriptor-windows"
+# del repo, lista para bajar.
 "on":
   push:
     paths:
@@ -39,30 +40,62 @@ jobs:
       - name: Instalar el programa y PyInstaller
         run: |
           python -m pip install --upgrade pip
-          pip install ".[dev]" pyinstaller
+          # Pillow: PyInstaller lo usa para convertir el ícono .png a .ico.
+          pip install ".[dev]" pyinstaller pillow
 
-      - name: Pruebas automáticas
+      - name: Pruebas automáticas (incluida la ventana)
         run: python -m pytest -q
 
-      - name: Armar transcribir.exe
+      - name: Armar Transcriptor.exe
         run: python windows/construir.py
 
       # La prueba que importa: un audio real con voz, transcripto por el .exe
       # tal cual lo va a usar alguien que lo baja (modelo descargado de cero).
+      # --cli usa el mismo motor que la ventana, sin necesitar clics.
       - name: Probar el .exe con un archivo de audio real
         run: |
           Invoke-WebRequest https://github.com/openai/whisper/raw/main/tests/jfk.flac -OutFile jfk.flac
-          .\dist\transcribir\transcribir.exe jfk.flac -m tiny -i en -o prueba -f docx,txt
-          if ($LASTEXITCODE -ne 0) { throw "transcribir.exe terminó con error $LASTEXITCODE" }
+          $p = Start-Process .\dist\Transcriptor\Transcriptor.exe -ArgumentList '--cli', 'jfk.flac', '-m', 'tiny', '-i', 'en', '-o', 'prueba', '-f', 'docx,txt' -Wait -PassThru
+          Get-Content "$env:APPDATA\Transcriptor\registro.txt" -ErrorAction SilentlyContinue
+          if ($p.ExitCode -ne 0) { throw "Transcriptor.exe terminó con error $($p.ExitCode)" }
           Get-Content prueba\jfk.txt
           if (-not (Select-String -Path prueba\jfk.txt -Pattern "country" -Quiet)) { throw "La transcripción no tiene el texto esperado" }
           if ((Get-Item prueba\jfk.docx).Length -lt 5000) { throw "No se generó el .docx" }
 
       - name: Probar el .exe con un link (descarga con yt-dlp)
         run: |
-          .\dist\transcribir\transcribir.exe https://github.com/openai/whisper/raw/main/tests/jfk.flac -m tiny -i en -o prueba-link -f txt
-          if ($LASTEXITCODE -ne 0) { throw "transcribir.exe terminó con error $LASTEXITCODE" }
+          $p = Start-Process .\dist\Transcriptor\Transcriptor.exe -ArgumentList '--cli', 'https://github.com/openai/whisper/raw/main/tests/jfk.flac', '-m', 'tiny', '-i', 'en', '-o', 'prueba-link', '-f', 'txt' -Wait -PassThru
+          Get-Content "$env:APPDATA\Transcriptor\registro.txt" -ErrorAction SilentlyContinue
+          if ($p.ExitCode -ne 0) { throw "Transcriptor.exe terminó con error $($p.ExitCode)" }
           if (-not (Select-String -Path prueba-link\*.txt -Pattern "country" -Quiet)) { throw "La transcripción del link no tiene el texto esperado" }
+
+      # Que la ventana abra y siga abierta (si faltara algo del empaquetado,
+      # como los temas o el arrastrar y soltar, se cerraría enseguida).
+      - name: Probar que la ventana abre
+        run: |
+          $p = Start-Process .\dist\Transcriptor\Transcriptor.exe -PassThru
+          Start-Sleep -Seconds 20
+          if ($p.HasExited) {
+            Get-Content "$env:APPDATA\Transcriptor\registro.txt" -ErrorAction SilentlyContinue
+            throw "La ventana se cerró sola (código $($p.ExitCode))"
+          }
+          try {
+            Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+            $pantalla = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $imagen = New-Object System.Drawing.Bitmap $pantalla.Width, $pantalla.Height
+            [System.Drawing.Graphics]::FromImage($imagen).CopyFromScreen($pantalla.Location, [System.Drawing.Point]::Empty, $pantalla.Size)
+            $imagen.Save("$pwd\captura-ventana.png")
+          } catch { Write-Host "No se pudo capturar la pantalla: $_" }
+          Stop-Process -Id $p.Id
+
+      - name: Guardar la captura de la ventana
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: captura-ventana
+          path: transcriptor/captura-ventana.png
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Empaquetar el .zip
         # Se arma fuera del repo: Windows no distingue mayúsculas y una carpeta
@@ -70,7 +103,7 @@ jobs:
         run: |
           $carpeta = Join-Path $env:RUNNER_TEMP "Transcriptor"
           New-Item -ItemType Directory $carpeta | Out-Null
-          Copy-Item -Recurse dist\transcribir\* $carpeta
+          Copy-Item -Recurse dist\Transcriptor\* $carpeta
           Copy-Item windows\LEEME.txt $carpeta
           Compress-Archive -Path $carpeta -DestinationPath Transcriptor-Windows.zip
           "{0:N0} MB" -f ((Get-Item Transcriptor-Windows.zip).Length / 1MB)
@@ -89,5 +122,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete transcriptor-windows --yes --cleanup-tag 2>$null
-          $notas = "Programa para pasar video y audio a texto en Windows. Descargá Transcriptor-Windows.zip, descomprimilo y abrí transcribir.exe (instrucciones en LEEME.txt). Versión armada desde el commit $env:GITHUB_SHA."
+          $notas = "Programa para pasar video y audio a texto en Windows. Descargá Transcriptor-Windows.zip, descomprimilo y abrí Transcriptor.exe (instrucciones en LEEME.txt). Versión armada desde el commit $env:GITHUB_SHA."
           gh release create transcriptor-windows Transcriptor-Windows.zip --target $env:GITHUB_SHA --title "Transcriptor para Windows" --notes $notas --prerelease

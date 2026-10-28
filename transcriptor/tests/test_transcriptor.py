@@ -1,12 +1,13 @@
 import sys
 import types
+import time
 import wave
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-from transcriptor import cli, fuentes, salida
+from transcriptor import cli, fuentes, salida, trabajo
 from transcriptor.segmentos import Segmento, formato_tiempo
 
 
@@ -114,14 +115,14 @@ def test_formatos_invalidos():
 
 
 def _whisper_falso(monkeypatch, llamadas):
-    def falso(audio, modelo, idioma, dispositivo, al_segmento):
+    def falso(audio, modelo, idioma, dispositivo, al_segmento, al_progreso=None):
         llamadas.append((audio, modelo, idioma, dispositivo))
         segs = [Segmento(0, 2, "Esto es una prueba."), Segmento(2, 4, "Segunda oración.")]
         for s in segs:
             al_segmento(s)
         return segs, 4.0
 
-    monkeypatch.setattr(cli, "transcribir", falso)
+    monkeypatch.setattr(trabajo, "transcribir", falso)
 
 
 def test_cli_archivo_local_de_punta_a_punta(tmp_path, monkeypatch):
@@ -228,3 +229,95 @@ def test_salida_por_defecto_en_documentos(tmp_path, monkeypatch):
     audio.write_bytes(b"x")
     assert cli.main([str(audio), "-f", "txt"]) == 0
     assert (tmp_path / "Documentos" / "Transcripciones" / "a.txt").exists()
+
+
+def _yt_dlp_falso(monkeypatch, tmp_path, navegador_que_anda):
+    """yt-dlp de mentira: el link es privado y solo se puede bajar con la sesión de un navegador."""
+    intentos = []
+
+    class DownloadError(Exception):
+        pass
+
+    class YoutubeDL:
+        def __init__(self, opciones):
+            self.nav = (opciones.get("cookiesfrombrowser") or (None,))[0]
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def extract_info(self, url, download):
+            intentos.append(self.nav)
+            if self.nav is None:
+                raise DownloadError("ERROR: [GoogleDrive] x: Sign in to view this file")
+            if self.nav != navegador_que_anda:
+                raise FileNotFoundError(f"could not find {self.nav} cookies database")
+            return {"title": "Clase privada", "id": "x"}
+
+        def process_ie_result(self, info, download):
+            ruta = tmp_path / "x.m4a"
+            ruta.write_bytes(b"audio")
+            return {**info, "requested_downloads": [{"filepath": str(ruta)}]}
+
+    falso = types.SimpleNamespace(YoutubeDL=YoutubeDL, utils=types.SimpleNamespace(DownloadError=DownloadError))
+    monkeypatch.setitem(sys.modules, "yt_dlp", falso)
+    return intentos
+
+
+def test_link_privado_reintenta_solo_con_la_sesion_del_navegador(tmp_path, monkeypatch):
+    intentos = _yt_dlp_falso(monkeypatch, tmp_path, "edge")
+    fuente = fuentes.desde_url("https://drive.google.com/file/d/x/view", tmp_path)
+    assert fuente.titulo == "Clase privada" and fuente.audio.exists()
+    assert intentos == [None, "firefox", "edge"]
+
+
+def test_link_privado_sin_ningun_navegador_explica_que_hacer(tmp_path, monkeypatch):
+    intentos = _yt_dlp_falso(monkeypatch, tmp_path, "ninguno")
+    with pytest.raises(fuentes.ErrorFuente) as error:
+        fuentes.desde_url("https://drive.google.com/file/d/x/view", tmp_path)
+    assert intentos == [None, *fuentes.NAVEGADORES]
+    assert "Firefox" in str(error.value)
+
+
+def test_separar_entradas(tmp_path):
+    con_espacios = tmp_path / "clase 1.mp4"
+    con_espacios.write_bytes(b"")
+    assert cli._separar_entradas(f'"{con_espacios}"') == [str(con_espacios)]
+    assert cli._separar_entradas(str(con_espacios)) == [str(con_espacios)]
+    assert cli._separar_entradas(" https://youtu.be/abc ") == ["https://youtu.be/abc"]
+    assert cli._separar_entradas('"C:\\a b.mp4" "C:\\c.opus"') == ["C:\\a b.mp4", "C:\\c.opus"]
+
+
+def test_ventana_transcribe_y_muestra_el_texto(tmp_path, monkeypatch):
+    pytest.importorskip("tkinter")
+    pytest.importorskip("customtkinter")
+    import tkinter
+    from transcriptor import gui
+
+    llamadas = []
+    _whisper_falso(monkeypatch, llamadas)
+    monkeypatch.setattr(gui, "_ruta_config", lambda: tmp_path / "config.json")
+    try:
+        app = gui.Aplicacion()
+    except tkinter.TclError:
+        pytest.skip("no hay pantalla")
+    try:
+        app.carpeta_salida = tmp_path / "out"
+        audio = tmp_path / "clase.mp4"
+        audio.write_bytes(b"x")
+        app._agregar([str(audio)])
+        app._empezar()
+        for _ in range(100):  # el trabajo corre en otro hilo
+            app.update()
+            if not app.trabajando:
+                break
+            time.sleep(0.05)
+        assert not app.trabajando
+        assert "Esto es una prueba. Segunda oración." in app.texto.get("1.0", "end")
+        assert app.ultimo_resultado == tmp_path / "out" / "clase.docx"
+        assert app.b_copiar.cget("state") == "normal"
+        assert (tmp_path / "config.json").exists()  # recuerda idioma y calidad
+    finally:
+        app.destroy()

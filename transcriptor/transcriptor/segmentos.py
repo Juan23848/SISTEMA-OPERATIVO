@@ -3,6 +3,10 @@
 from dataclasses import dataclass
 
 
+class Cancelado(Exception):
+    """La persona apretó "Cancelar" (o Ctrl+C) en medio del trabajo."""
+
+
 @dataclass
 class Segmento:
     inicio: float  # segundos

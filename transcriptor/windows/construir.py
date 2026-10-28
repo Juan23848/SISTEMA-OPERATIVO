@@ -16,8 +16,10 @@ subprocess.run([
     # Carpeta y no un único .exe: arranca mucho más rápido (no se descomprime
     # cada vez) y los antivirus desconfían menos.
     "--onedir",
-    "--console",
-    "--name", "transcribir",
+    # Programa de ventana: sin la consola negra detrás.
+    "--windowed",
+    "--name", "Transcriptor",
+    "--icon", str(raiz / "transcriptor" / "recursos" / "icono.png"),
     "--distpath", str(raiz / "dist"),
     "--workpath", str(raiz / "build"),
     "--specpath", str(raiz / "build"),
@@ -28,6 +30,11 @@ subprocess.run([
     "--collect-all", "ctranslate2",
     "--collect-all", "soundcard",
     "--collect-data", "docx",
+    # La ventana: temas de customtkinter, las bibliotecas de arrastrar y
+    # soltar de tkinterdnd2 y el ícono propio.
+    "--collect-data", "customtkinter",
+    "--collect-all", "tkinterdnd2",
+    "--collect-data", "transcriptor",
     "--collect-submodules", "transcriptor",
     str(raiz / "windows" / "lanzador.py"),
 ], check=True, cwd=raiz)

@@ -5,6 +5,7 @@ modelo) y sin pagar nada. Si hay una placa de video NVIDIA con CUDA la usa sola;
 si no, usa el procesador.
 """
 
+import os
 import sys
 import time
 from pathlib import Path
@@ -45,6 +46,10 @@ def cargar_modelo(nombre: str, dispositivo: str = "auto"):
     return modelo
 
 
+# Todos los núcleos del procesador (CTranslate2 usa solo 4 si no se le dice).
+HILOS_CPU = os.cpu_count() or 4
+
+
 def _crear_modelo(WhisperModel, nombre: str, dispositivo: str):
     if dispositivo == "auto":
         import ctranslate2
@@ -55,14 +60,14 @@ def _crear_modelo(WhisperModel, nombre: str, dispositivo: str):
         hay_gpu = not empaquetado and ctranslate2.get_cuda_device_count() > 0
         dispositivo = "cuda" if hay_gpu else "cpu"
     if dispositivo == "cpu":
-        modelo = WhisperModel(nombre, device="cpu", compute_type="int8")
+        modelo = WhisperModel(nombre, device="cpu", compute_type="int8", cpu_threads=HILOS_CPU)
     else:
         try:
             modelo = WhisperModel(nombre, device="cuda", compute_type="auto")
         except (RuntimeError, ValueError) as e:
             # Típico: hay GPU pero faltan las librerías de CUDA. Caemos al procesador.
             print(f"  No pude usar la placa de video ({e}); uso el procesador.")
-            modelo = WhisperModel(nombre, device="cpu", compute_type="int8")
+            modelo = WhisperModel(nombre, device="cpu", compute_type="int8", cpu_threads=HILOS_CPU)
     return modelo
 
 
@@ -79,19 +84,28 @@ def _barra(hecho: float, total: float, inicio: float) -> str:
 
 def transcribir(audio: Path, modelo: str = MODELO_POR_DEFECTO, idioma: Optional[str] = "es",
                 dispositivo: str = "auto",
-                al_segmento: Optional[Callable[[Segmento], None]] = None) -> Tuple[List[Segmento], float]:
+                al_segmento: Optional[Callable[[Segmento], None]] = None,
+                al_progreso: Optional[Callable[[float, float], None]] = None) -> Tuple[List[Segmento], float]:
     """Devuelve (segmentos, duración en segundos).
 
     `al_segmento` se llama con cada fragmento apenas sale, para ir guardando
     el avance: si se corta la luz en la hora 2 de 3, no se pierde todo.
+    `al_progreso(segundos_hechos, segundos_totales)` es para la barra de la ventana.
     """
+    from faster_whisper import BatchedInferencePipeline
+
     whisper = cargar_modelo(modelo, dispositivo)
-    segmentos_gen, info = whisper.transcribe(
+    en_gpu = whisper.model.device == "cuda"
+    print("  Procesando con " + ("la placa de video." if en_gpu else f"el procesador ({HILOS_CPU} hilos)."))
+    # En lotes: corta el audio en las pausas (detector de voz) y procesa varios
+    # pedazos a la vez en vez de uno detrás del otro. Es entre 2 y 4 veces más
+    # rápido, también en procesador, y como cada pedazo es independiente no
+    # arrastra errores ni repite frases en bucle en clases largas.
+    segmentos_gen, info = BatchedInferencePipeline(model=whisper).transcribe(
         str(audio),
         language=idioma or None,  # None = que lo detecte solo
-        vad_filter=True,  # saltea silencios: más rápido y menos "alucinaciones"
+        batch_size=16 if en_gpu else 8,
         beam_size=5,
-        condition_on_previous_text=False,  # evita que repita frases en bucle en clases largas
     )
     if not idioma:
         print(f"  Idioma detectado: {info.language} ({info.language_probability:.0%})")
@@ -105,6 +119,8 @@ def transcribir(audio: Path, modelo: str = MODELO_POR_DEFECTO, idioma: Optional[
         segmentos.append(seg)
         if al_segmento:
             al_segmento(seg)
+        if al_progreso:
+            al_progreso(seg.fin, duracion)
         if interactivo:
             print(_barra(seg.fin, duracion, inicio), end="", flush=True)
     if interactivo:

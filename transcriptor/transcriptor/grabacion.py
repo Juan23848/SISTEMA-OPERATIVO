@@ -11,10 +11,11 @@ grabar directamente: hay que instalar BlackHole (gratis) y elegirlo como
 dispositivo; ver el README.
 """
 
+import threading
 import time
 import wave
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 import numpy as np
 
@@ -61,8 +62,11 @@ def _elegir_entrada(microfono: bool, dispositivo: Optional[str]):
 
 
 def grabar(destino: Path, microfono: bool = False, dispositivo: Optional[str] = None,
-           duracion: Optional[float] = None) -> float:
-    """Graba en `destino` (WAV mono 16 kHz) hasta Ctrl+C o hasta `duracion` segundos.
+           duracion: Optional[float] = None, detener: Optional[threading.Event] = None,
+           al_avance: Optional[Callable[[float, float], None]] = None) -> float:
+    """Graba en `destino` (WAV mono 16 kHz) hasta Ctrl+C, hasta `duracion` segundos
+    o hasta que se active `detener` (el botón "Detener" de la ventana).
+    `al_avance(segundos, nivel 0..1)` reemplaza el medidor de texto en la ventana.
 
     Escribe a disco a medida que graba, así una clase de 3 horas no llena la
     memoria y, si algo se corta, lo grabado hasta ese momento queda guardado.
@@ -70,10 +74,11 @@ def grabar(destino: Path, microfono: bool = False, dispositivo: Optional[str] = 
     """
     entrada = _elegir_entrada(microfono, dispositivo)
     print(f"Grabando desde: {entrada.name}")
-    if duracion:
-        print(f"Se detiene sola a los {int(duracion // 60)} min {int(duracion % 60)} s, o antes con Ctrl+C.")
-    else:
-        print("Poné a reproducir el video/audio. Cuando termine, apretá Ctrl+C.")
+    if al_avance is None:
+        if duracion:
+            print(f"Se detiene sola a los {int(duracion // 60)} min {int(duracion % 60)} s, o antes con Ctrl+C.")
+        else:
+            print("Poné a reproducir el video/audio. Cuando termine, apretá Ctrl+C.")
 
     grabados = 0
     inicio = time.monotonic()
@@ -82,20 +87,24 @@ def grabar(destino: Path, microfono: bool = False, dispositivo: Optional[str] = 
         wav.setsampwidth(2)
         wav.setframerate(FRECUENCIA)
         try:
-            while duracion is None or grabados < duracion * FRECUENCIA:
+            while (duracion is None or grabados < duracion * FRECUENCIA) and not (detener and detener.is_set()):
                 datos = rec.record(numframes=BLOQUE)
                 if datos.ndim > 1:
                     datos = datos.mean(axis=1)
                 pcm = (np.clip(datos, -1.0, 1.0) * 32767).astype("<i2")
                 wav.writeframes(pcm.tobytes())
                 grabados += len(pcm)
-                nivel = float(np.abs(datos).max()) if len(datos) else 0.0
-                medidor = "|" * int(min(nivel, 1.0) * 20)
+                nivel = min(float(np.abs(datos).max()) if len(datos) else 0.0, 1.0)
+                if al_avance:
+                    al_avance(grabados / FRECUENCIA, nivel)
+                    continue
+                medidor = "|" * int(nivel * 20)
                 print(f"\r  {time.strftime('%H:%M:%S', time.gmtime(time.monotonic() - inicio))}  "
                       f"nivel [{medidor:<20}]", end="", flush=True)
         except KeyboardInterrupt:
             pass
-    print("\nGrabación terminada.")
+    if al_avance is None:
+        print("\nGrabación terminada.")
     segundos = grabados / FRECUENCIA
     if segundos < 1:
         raise RuntimeError("No se grabó nada.")
