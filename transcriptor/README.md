@@ -60,9 +60,16 @@ Para links privados (un Drive compartido solo con tu cuenta), el programa
 prueba solo con la sesión de tus navegadores: tené abierta esa cuenta en
 Firefox (o cerrá Chrome/Edge antes de transcribir).
 
-En el `.exe` la placa de video está apagada por defecto, porque sin CUDA
-instalado haría que el programa se cierre de golpe; usa todos los núcleos
-del procesador y procesa varios pedazos del audio a la vez.
+**Placa de video NVIDIA**: si la compu tiene una, la ventana muestra
+*"Activar placa de video"*. Ese botón baja una sola vez cuBLAS y cuDNN
+(~1,4 GB, de los paquetes oficiales de NVIDIA en PyPI) a
+`%LOCALAPPDATA%\Transcriptor\cuda`, prueba la placa en un proceso aparte
+(si algo falla ahí, CTranslate2 cierra el proceso de golpe, y así se cierra
+el de prueba y no la ventana) y, si anda, la usa desde ese momento en
+`float16`, el formato que soportan las RTX 50. Si la placa falla en medio de
+una transcripción antes de dar texto, sigue sola con el procesador. Sin
+placa, usa todos los núcleos del procesador y procesa varios pedazos del
+audio a la vez.
 
 Esa versión la arma GitHub solo (`.github/workflows/transcriptor-windows.yml`)
 cada vez que cambia el código, y antes de publicarla la prueba transcribiendo
@@ -219,6 +226,7 @@ transcriptor/
 ├── gui.py            # la ventana (customtkinter + arrastrar y soltar)
 ├── cli.py            # comandos y opciones (transcribir / grabar / dispositivos)
 ├── trabajo.py        # fuente -> transcripción -> documentos (común a ventana y CLI)
+├── aceleracion.py    # bajar las bibliotecas de NVIDIA y probar la placa (.exe)
 ├── fuentes.py        # archivo, carpeta o link -> audio local (yt-dlp)
 ├── grabacion.py      # grabar la salida de audio o el micrófono (soundcard)
 ├── transcripcion.py  # Whisper (faster-whisper), con barra de progreso

@@ -321,3 +321,78 @@ def test_ventana_transcribe_y_muestra_el_texto(tmp_path, monkeypatch):
         assert (tmp_path / "config.json").exists()  # recuerda idioma y calidad
     finally:
         app.destroy()
+
+
+def test_elegir_rueda_toma_la_mas_nueva_de_la_version_mayor():
+    from transcriptor import aceleracion
+
+    def rueda(nombre):
+        return {"filename": nombre, "url": "u/" + nombre, "size": 1}
+
+    datos = {"releases": {
+        "12.4.5.8": [rueda("cublas-12.4.5.8-win_amd64.whl")],  # muy vieja para RTX 50
+        "12.9.1.4": [rueda("cublas-12.9.1.4-win_amd64.whl"), rueda("cublas-12.9.1.4-manylinux.whl")],
+        "12.10.0.1": [{**rueda("cublas-12.10.0.1-win_amd64.whl"), "yanked": True}],
+        "13.0.0.19": [rueda("cublas-13.0.0.19-win_amd64.whl")],  # otra versión mayor: no sirve
+    }}
+    assert aceleracion.elegir_rueda(datos, "12.", (12, 8))["filename"] == "cublas-12.9.1.4-win_amd64.whl"
+    with pytest.raises(aceleracion.ErrorAceleracion):
+        aceleracion.elegir_rueda(datos, "11.", (11, 0))
+
+
+def test_extraer_solo_las_dll(tmp_path):
+    import zipfile
+    from transcriptor import aceleracion
+
+    rueda = tmp_path / "x.whl"
+    with zipfile.ZipFile(rueda, "w") as z:
+        z.writestr("nvidia/cudnn/bin/cudnn64_9.dll", b"dll")
+        z.writestr("nvidia/cudnn/bin/cudnn_ops64_9.dll", b"dll")
+        z.writestr("nvidia/cudnn/include/cudnn.h", b"h")
+        z.writestr("nvidia_cudnn_cu12-9.dist-info/METADATA", b"m")
+    destino = tmp_path / "cuda"
+    assert aceleracion.extraer_bibliotecas(rueda, destino) == 2
+    assert sorted(p.name for p in destino.iterdir()) == ["cudnn64_9.dll", "cudnn_ops64_9.dll"]
+
+
+def test_fuera_del_exe_de_windows_no_se_ofrece_la_placa():
+    from transcriptor import aceleracion
+    assert not aceleracion.aplica() or sys.platform == "win32"
+    assert not aceleracion.gpu_lista() or aceleracion.aplica()
+
+
+def test_si_la_placa_falla_al_empezar_sigue_con_el_procesador(tmp_path, monkeypatch):
+    from transcriptor import aceleracion, transcripcion
+
+    class ModeloFalso:
+        def __init__(self, device):
+            self.model = types.SimpleNamespace(device=device)
+
+    usados, fallas = [], []
+    monkeypatch.setattr(transcripcion, "cargar_modelo", lambda nombre, disp: ModeloFalso(
+        "cpu" if disp == "cpu" else "cuda"))
+    monkeypatch.setattr(aceleracion, "marcar_falla", lambda: fallas.append(True))
+
+    def transcribir_con(whisper, en_gpu, audio, idioma, al_segmento, al_progreso):
+        usados.append(whisper.model.device)
+        if en_gpu:
+            raise RuntimeError("cuBLAS failed with status CUBLAS_STATUS_NOT_SUPPORTED")
+        return [Segmento(0, 1, "Hola.")], 1.0
+
+    monkeypatch.setattr(transcripcion, "_transcribir_con", transcribir_con)
+    segs, _ = transcripcion.transcribir(tmp_path / "a.mp4", "small", "es", "auto")
+    assert usados == ["cuda", "cpu"] and fallas == [True]
+    assert segs[0].texto == "Hola."
+
+
+def test_un_error_despues_de_empezar_no_se_reintenta():
+    from transcriptor import transcripcion
+
+    def generador():
+        yield "primer pedazo"
+        raise RuntimeError("se quedó sin memoria")
+
+    g = transcripcion._marcar_si_ya_empezo(generador())
+    assert next(g) == "primer pedazo"
+    with pytest.raises(transcripcion._YaEmpezado):
+        next(g)

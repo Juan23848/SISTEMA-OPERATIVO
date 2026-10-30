@@ -18,7 +18,7 @@ from typing import List, Optional
 
 import customtkinter as ctk
 
-from . import __version__
+from . import __version__, aceleracion
 from .fuentes import ErrorFuente, carpeta_temporal, desde_archivo, desde_url, es_url, expandir
 from .salida import nombre_seguro
 from .segmentos import Cancelado, formato_tiempo
@@ -120,6 +120,7 @@ class Aplicacion(_ventana_base()):
         self.ultimo_resultado: Optional[Path] = None
 
         self._armar()
+        threading.Thread(target=self._revisar_placa, daemon=True).start()
         self.after(100, self._atender_eventos)
         self.protocol("WM_DELETE_WINDOW", self._cerrar)
         if entradas_iniciales:
@@ -151,6 +152,16 @@ class Aplicacion(_ventana_base()):
         ctk.CTkLabel(cab, text="Transcriptor", font=ctk.CTkFont(size=26, weight="bold")).pack(anchor="w")
         ctk.CTkLabel(cab, text="Pasá clases, videos y audios a texto y a Word. Todo en tu compu, sin reproducir nada.",
                      text_color=TEXTO_SUAVE).pack(anchor="w")
+
+        # Aviso de la placa de video (solo aparece si hay una NVIDIA).
+        self.aviso_placa = ctk.CTkFrame(cab, fg_color=("#FFF6DD", "#2B2510"), corner_radius=10,
+                                        border_width=1, border_color=("#E8C25A", "#7A6420"))
+        self.texto_placa = ctk.CTkLabel(self.aviso_placa, text="", anchor="w", justify="left")
+        self.texto_placa.pack(side="left", padx=12, pady=8)
+        self.boton_placa = ctk.CTkButton(self.aviso_placa, text="", width=180, fg_color=("#B8860B", "#C9A227"),
+                                         hover_color=("#996F09", "#DDB637"), text_color=("white", "#1A1405"),
+                                         text_color_disabled=("#FFF3C4", "#6B5A1E"), command=self._activar_placa)
+        self.nombre_placa: Optional[str] = None
 
         # Entrada: arrastrar, elegir o pegar
         entrada = self._tarjeta(self)
@@ -526,6 +537,70 @@ class Aplicacion(_ventana_base()):
                 self._avisar("error", "Grabación", str(e))
                 self._avisar("fin", "No se pudo grabar.")
 
+    # ------------------------------------------------------ placa de video
+
+    def _revisar_placa(self):
+        if not aceleracion.aplica():
+            return
+        nombre = aceleracion.placa_nvidia()
+        if not nombre:
+            return
+        if aceleracion.gpu_lista():
+            estado = "lista"
+        elif aceleracion.instalada() and aceleracion.leer_estado().get("prueba") == "falla":
+            estado = "falla"
+        else:
+            estado = "sin_instalar"
+        self._avisar("placa", nombre, estado)
+
+    def _mostrar_placa(self, nombre: str, estado: str):
+        self.nombre_placa = nombre
+        self.aviso_placa.pack(anchor="w", fill="x", pady=(10, 0))
+        if estado == "lista":
+            self.texto_placa.configure(text=f"⚡ Usando la placa de video: {nombre}")
+            self.boton_placa.pack_forget()
+        elif estado == "falla":
+            self.texto_placa.configure(text=f"No se pudo usar la placa de video ({nombre}); se usa el procesador.")
+            self.boton_placa.configure(text="Probar de nuevo", state="normal")
+            self.boton_placa.pack(side="right", padx=10, pady=8)
+        else:
+            self.texto_placa.configure(
+                text=f"⚡ Tu compu tiene una {nombre}: puede transcribir varias veces más rápido.\n"
+                     f"Activarla baja una sola vez las bibliotecas de NVIDIA (~{aceleracion.TAMANO_APROXIMADO}).")
+            self.boton_placa.configure(text="Activar placa de video", state="normal")
+            self.boton_placa.pack(side="right", padx=10, pady=8)
+
+    def _activar_placa(self):
+        if self.trabajando:
+            return
+        self.boton_placa.configure(state="disabled")
+        self._modo_trabajo(True)
+        threading.Thread(target=self._trabajar_placa, daemon=True).start()
+
+    def _trabajar_placa(self):
+        nombre = self.nombre_placa or "la placa de video"
+        try:
+            if not aceleracion.instalada():
+                self._avisar("estado", "Bajando las bibliotecas de NVIDIA (una sola vez)…", 0.0)
+
+                def al_progreso(fraccion: float, texto: str):
+                    self._avisar("barra", fraccion)
+                    self._avisar("detalle", texto)
+
+                aceleracion.instalar(al_progreso, cancelado=self._cancelado)
+            self._avisar("estado", "Probando la placa de video…", None)
+            self._avisar("detalle", "Puede tardar un par de minutos la primera vez.")
+            if aceleracion.probar():
+                self._avisar("placa", nombre, "lista")
+                self._avisar("fin", "¡Placa de video activada! Las próximas transcripciones van a ser mucho más rápidas.", "")
+            else:
+                self._avisar("placa", nombre, "falla")
+                self._avisar("fin", "La placa de video no pasó la prueba; se sigue usando el procesador.",
+                            "Podés seguir transcribiendo normalmente; solo va a tardar más.")
+        except Exception as e:
+            self._avisar("placa", nombre, "falla" if aceleracion.instalada() else "sin_instalar")
+            self._avisar("fin", f"No se pudo activar la placa de video: {e}", "")
+
     # -------------------------------------------- eventos (en el hilo de la ventana)
 
     def _atender_eventos(self):
@@ -551,8 +626,11 @@ class Aplicacion(_ventana_base()):
                     self.detalle.configure(text=datos[0])
                 elif tipo == "registro":
                     linea = datos[0].strip()
-                    if linea.startswith(("Probando", "No se pudo", "Funcionó", "Descargando", "Encontré")):
+                    if linea.startswith(("Probando", "No se pudo", "Funcionó", "Descargando", "Encontré",
+                                         "Procesando", "La placa")):
                         self.detalle.configure(text=linea)
+                elif tipo == "placa":
+                    self._mostrar_placa(*datos)
                 elif tipo == "grabacion_terminada":
                     self.b_grabar.configure(text="● Grabar lo que suena", state="disabled")
                 elif tipo == "resultado":
@@ -570,7 +648,8 @@ class Aplicacion(_ventana_base()):
                     self.barra.stop()
                     self.barra.configure(mode="determinate")
                     self.estado.configure(text=datos[0])
-                    self.detalle.configure(text=f"Guardado en: {self.carpeta_salida}")
+                    detalle = datos[1] if len(datos) > 1 else f"Guardado en: {self.carpeta_salida}"
+                    self.detalle.configure(text=detalle)
                     self._modo_trabajo(False)
         except queue.Empty:
             pass

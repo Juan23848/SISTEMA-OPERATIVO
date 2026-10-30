@@ -1,7 +1,8 @@
 """Punto de entrada de Transcriptor.exe (PyInstaller no acepta imports relativos acá).
 
 Abre la ventana. Con --cli adelante funciona como el comando `transcribir`
-(lo usan las pruebas automáticas y quien prefiera la terminal).
+(lo usan las pruebas automáticas y quien prefiera la terminal). --probar-gpu
+es el proceso aparte con el que se prueba la placa de video.
 """
 
 import os
@@ -23,6 +24,13 @@ def _registro_si_no_hay_consola() -> None:
 
 
 if __name__ == "__main__":
+    if sys.argv[1:2] == ["--probar-gpu"]:
+        # Proceso de prueba de la placa de video (lo lanza la ventana): sin
+        # registro propio, para no pisar el del programa principal.
+        sys.stdout = sys.stdout or open(os.devnull, "w")
+        sys.stderr = sys.stderr or open(os.devnull, "w")
+        from transcriptor.aceleracion import prueba_en_este_proceso
+        sys.exit(prueba_en_este_proceso())
     _registro_si_no_hay_consola()
     if sys.argv[1:2] == ["--cli"]:
         from transcriptor.cli import main

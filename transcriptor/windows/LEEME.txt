@@ -20,6 +20,13 @@ Los documentos quedan en:  Documentos\Transcripciones
 También podés arrastrar videos o carpetas ENCIMA del ícono de
 "Transcriptor.exe" y arranca solo.
 
+PLACA DE VIDEO NVIDIA
+--------------------
+Si tu compu tiene una placa NVIDIA, arriba de todo aparece un aviso con el
+botón "Activar placa de video". Baja una sola vez las bibliotecas de NVIDIA
+(~1,4 GB), prueba la placa, y desde ahí transcribe varias veces más rápido.
+Si la placa no pasa la prueba, el programa sigue usando el procesador.
+
 VIDEOS DE DRIVE PRIVADOS (compartidos solo con tu cuenta)
 ---------------------------------------------------------
 El programa prueba solo con la sesión de tus navegadores. Para que funcione,

@@ -26,6 +26,9 @@ def cargar_modelo(nombre: str, dispositivo: str = "auto"):
     clave = (nombre, dispositivo)
     if clave in _cache_modelos:
         return _cache_modelos[clave]
+    from . import aceleracion
+
+    aceleracion.preparar_bibliotecas()
     try:
         from faster_whisper import WhisperModel
     except ImportError as e:
@@ -53,17 +56,23 @@ HILOS_CPU = os.cpu_count() or 4
 def _crear_modelo(WhisperModel, nombre: str, dispositivo: str):
     if dispositivo == "auto":
         import ctranslate2
-        # En el .exe de Windows no se usa la placa de video salvo que se pida
-        # con --gpu: si falta cuDNN, CTranslate2 cierra el programa de golpe
-        # (no es un error que se pueda atrapar), y casi nadie lo tiene instalado.
-        empaquetado = getattr(sys, "frozen", False)
-        hay_gpu = not empaquetado and ctranslate2.get_cuda_device_count() > 0
+
+        from . import aceleracion
+        # En el .exe de Windows la placa se usa solo si ya se bajaron las
+        # bibliotecas de NVIDIA y pasó la prueba en un proceso aparte: si falta
+        # cuDNN, CTranslate2 cierra el programa de golpe (no es un error atrapable).
+        if aceleracion.aplica():
+            hay_gpu = aceleracion.gpu_lista()
+        else:
+            hay_gpu = ctranslate2.get_cuda_device_count() > 0
         dispositivo = "cuda" if hay_gpu else "cpu"
     if dispositivo == "cpu":
         modelo = WhisperModel(nombre, device="cpu", compute_type="int8", cpu_threads=HILOS_CPU)
     else:
         try:
-            modelo = WhisperModel(nombre, device="cuda", compute_type="auto")
+            # float16 explícito: el automático elige int8_float16, que las RTX 50
+            # (Blackwell) no soportan ("CUBLAS_STATUS_NOT_SUPPORTED").
+            modelo = WhisperModel(nombre, device="cuda", compute_type="float16")
         except (RuntimeError, ValueError) as e:
             # Típico: hay GPU pero faltan las librerías de CUDA. Caemos al procesador.
             print(f"  No pude usar la placa de video ({e}); uso el procesador.")
@@ -92,10 +101,34 @@ def transcribir(audio: Path, modelo: str = MODELO_POR_DEFECTO, idioma: Optional[
     el avance: si se corta la luz en la hora 2 de 3, no se pierde todo.
     `al_progreso(segundos_hechos, segundos_totales)` es para la barra de la ventana.
     """
-    from faster_whisper import BatchedInferencePipeline
-
     whisper = cargar_modelo(modelo, dispositivo)
     en_gpu = whisper.model.device == "cuda"
+    try:
+        return _transcribir_con(whisper, en_gpu, audio, idioma, al_segmento, al_progreso)
+    except RuntimeError as e:
+        if not en_gpu or isinstance(e, _YaEmpezado):
+            raise getattr(e, "original", e)
+        # La placa falló (bibliotecas incompatibles, memoria...): se marca para
+        # no volver a intentarlo hasta que la persona reintente, y se hace en el procesador.
+        from . import aceleracion
+        aceleracion.marcar_falla()
+        _cache_modelos.clear()  # que el próximo "auto" no reuse el modelo de la placa
+        print(f"  La placa de video falló ({e}); sigo con el procesador.")
+        return transcribir(audio, modelo, idioma, "cpu", al_segmento, al_progreso)
+
+
+class _YaEmpezado(RuntimeError):
+    """Un error después de haber entregado texto: no se reintenta (se duplicaría)."""
+
+    def __init__(self, original: BaseException):
+        super().__init__(str(original))
+        self.original = original
+
+
+def _transcribir_con(whisper, en_gpu: bool, audio: Path, idioma: Optional[str], al_segmento,
+                     al_progreso) -> Tuple[List[Segmento], float]:
+    from faster_whisper import BatchedInferencePipeline
+
     print("  Procesando con " + ("la placa de video." if en_gpu else f"el procesador ({HILOS_CPU} hilos)."))
     # En lotes: corta el audio en las pausas (detector de voz) y procesa varios
     # pedazos a la vez en vez de uno detrás del otro. Es entre 2 y 4 veces más
@@ -114,6 +147,7 @@ def transcribir(audio: Path, modelo: str = MODELO_POR_DEFECTO, idioma: Optional[
     inicio = time.monotonic()
     segmentos: List[Segmento] = []
     interactivo = sys.stdout.isatty()
+    segmentos_gen = _marcar_si_ya_empezo(segmentos_gen)
     for s in segmentos_gen:
         seg = Segmento(s.start, s.end, s.text.strip())
         segmentos.append(seg)
@@ -126,3 +160,21 @@ def transcribir(audio: Path, modelo: str = MODELO_POR_DEFECTO, idioma: Optional[
     if interactivo:
         print(_barra(duracion, duracion, inicio))
     return segmentos, duracion
+
+
+def _marcar_si_ya_empezo(generador):
+    """Deja pasar los errores del primer pedazo tal cual (ahí se puede reintentar en
+    el procesador) y envuelve los de después, cuando ya se entregó texto."""
+    primero = True
+    iterador = iter(generador)
+    while True:
+        try:
+            s = next(iterador)
+        except StopIteration:
+            return
+        except RuntimeError as e:
+            if primero:
+                raise
+            raise _YaEmpezado(e) from e
+        primero = False
+        yield s

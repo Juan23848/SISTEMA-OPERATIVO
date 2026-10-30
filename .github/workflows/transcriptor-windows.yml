@@ -69,6 +69,15 @@ jobs:
           if ($p.ExitCode -ne 0) { throw "Transcriptor.exe terminó con error $($p.ExitCode)" }
           if (-not (Select-String -Path prueba-link\*.txt -Pattern "country" -Quiet)) { throw "La transcripción del link no tiene el texto esperado" }
 
+      # La máquina de GitHub no tiene placa NVIDIA: el proceso de prueba de la
+      # placa tiene que responder "no" (código distinto de 0) sin colgarse.
+      - name: Probar la detección de la placa de video
+        timeout-minutes: 10
+        run: |
+          $p = Start-Process .\dist\Transcriptor\Transcriptor.exe -ArgumentList '--probar-gpu' -Wait -PassThru
+          "Código de la prueba de placa: $($p.ExitCode)"
+          if ($p.ExitCode -eq 0) { throw "Dijo que la placa de video funciona en una máquina sin placa" }
+
       # Que la ventana abra y siga abierta (si faltara algo del empaquetado,
       # como los temas o el arrastrar y soltar, se cerraría enseguida).
       - name: Probar que la ventana abre
